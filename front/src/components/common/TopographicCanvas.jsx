@@ -322,10 +322,10 @@ const TopographicCanvas = () => {
     animate();
 
     const handleMouseMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
+      // Use clientX/Y directly since we're listening on window
       mousePosRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX,
+        y: e.clientY,
       };
     };
 
@@ -333,11 +333,12 @@ const TopographicCanvas = () => {
       setupCanvas();
     };
 
-    canvas.addEventListener("mousemove", handleMouseMove);
+    // Listen on window instead of canvas to capture all mouse movements
+    window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("resize", handleResize);
 
     return () => {
-      canvas.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);

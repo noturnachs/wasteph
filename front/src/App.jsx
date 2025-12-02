@@ -35,25 +35,27 @@ const App = () => {
     <>
       {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
 
-      {/* Global topographic background - receives all mouse events */}
-      <div className="fixed inset-0" style={{ zIndex: 1 }}>
-        <TopographicCanvas />
-      </div>
+      <div className="relative">
+        {/* Global topographic background - receives all mouse events */}
+        <div className="fixed inset-0" style={{ zIndex: 0 }}>
+          <TopographicCanvas />
+        </div>
 
-      {/* Content layer - pointer-events-none except for interactive elements */}
-      <div className="pointer-events-none relative" style={{ zIndex: 10 }}>
-        <ScrollableLayout>
-          <Header />
-          <main className="pt-20">
-            <HeroSection />
-            <MessageSection />
-            <ServicesSection />
-            <WasteStreamsShowcase />
-            <ProcessSection />
-            <CTASection />
-          </main>
-          <Footer />
-        </ScrollableLayout>
+        {/* Content layer - pointer-events-none except for interactive elements */}
+        <div className="pointer-events-none relative" style={{ zIndex: 1 }}>
+          <ScrollableLayout>
+            <Header />
+            <main className="pt-20">
+              <HeroSection />
+              <MessageSection />
+              <ServicesSection />
+              <WasteStreamsShowcase />
+              <ProcessSection />
+              <CTASection />
+            </main>
+            <Footer />
+          </ScrollableLayout>
+        </div>
       </div>
     </>
   );

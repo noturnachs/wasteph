@@ -135,3 +135,27 @@ div {
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
 }
+
+/* Loading screen exit animation - circle expands from center to reveal homepage */
+@keyframes loading-exit-open {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+  }
+  100% {
+    clip-path: circle(150% at 50% 50%);
+  }
+}
+
+/* Circle reveal animation - expands from center outward */
+@keyframes circle-reveal {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+  }
+  100% {
+    clip-path: circle(150% at 50% 50%);
+  }
+}
+
+.animate-circle-reveal {
+  animation: circle-reveal 1s ease-in-out forwards;
+}
