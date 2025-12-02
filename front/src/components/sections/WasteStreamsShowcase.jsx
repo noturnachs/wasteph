@@ -39,8 +39,12 @@ const WasteStreamsShowcase = () => {
   return (
     <section
       id="waste-streams"
-      className="relative snap-start border-y border-white/10 bg-gradient-to-b from-[#15803d]/10 via-transparent to-black py-24 md:py-32 lg:py-40"
+      className="relative snap-start border-y border-white/10 py-24 md:py-32 lg:py-40"
       aria-labelledby="waste-streams-title"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(21, 128, 61, 0.05) 0%, transparent 50%, transparent 100%)",
+      }}
     >
       <ParallaxLayer
         speed={0.2}
@@ -93,41 +97,39 @@ const WasteStreamsShowcase = () => {
             </RevealOnScroll>
           </div>
 
-          <RevealOnScroll delayClass="delay-[400ms]">
-            <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-black/60 p-8 backdrop-blur">
-              <ParallaxLayer
-                speed={0.08}
-                className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#15803d]/10 via-transparent to-transparent"
-              />
-              <div className="mb-8 flex items-center justify-between gap-3">
-                <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/80">
-                  Streams Rail
-                </p>
-                <p className="text-sm text-white/60">Scroll to view more →</p>
-              </div>
-              <div className="flex gap-6 overflow-x-auto pb-4 lg:gap-8">
-                {streams.map((stream, index) => (
-                  <article
-                    key={stream.label}
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                    }}
-                    className="min-w-[280px] flex-shrink-0 rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] hover:border-[#15803d] hover:bg-white/10 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/70">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {streams.map((stream, index) => (
+              <RevealOnScroll
+                key={stream.label}
+                delayClass={`delay-${Math.min((index + 1) * 75, 500)}`}
+              >
+                <article className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-8 backdrop-blur transition-all duration-500 hover:-translate-y-2 hover:border-[#15803d] hover:bg-white/10 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
+                  {/* Animated gradient on hover */}
+                  <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#15803d]/0 via-[#15803d]/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+                  {/* Badge */}
+                  <div className="mb-4 inline-block rounded-full bg-[#15803d]/20 px-4 py-1">
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#15803d]">
                       {stream.year}
                     </p>
-                    <h3 className="mt-4 text-xl font-black text-white">
-                      {stream.label}
-                    </h3>
-                    <p className="mt-3 text-base leading-relaxed text-white/70">
-                      {stream.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </RevealOnScroll>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-2xl font-black text-white transition-colors duration-300 group-hover:text-[#16a34a]">
+                    {stream.label}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="mt-4 text-base leading-relaxed text-white/70">
+                    {stream.description}
+                  </p>
+
+                  {/* Decorative line */}
+                  <div className="mt-6 h-1 w-0 rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] transition-all duration-500 group-hover:w-full" />
+                </article>
+              </RevealOnScroll>
+            ))}
+          </div>
         </div>
       </div>
     </section>

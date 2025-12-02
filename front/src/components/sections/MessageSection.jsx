@@ -1,6 +1,7 @@
 import React from "react";
 import SectionShell from "../common/SectionShell";
 import RevealOnScroll from "../common/RevealOnScroll";
+import TextHighlight from "../common/TextHighlight";
 
 const MessageSection = () => {
   return (
@@ -16,10 +17,16 @@ const MessageSection = () => {
           <div className="space-y-6 text-base leading-relaxed text-white/80 sm:text-lg">
             <p>
               Since our first truck rolled out,{" "}
-              <strong className="font-bold text-white">Waste PH</strong> has
-              focused on one mission:{" "}
               <strong className="font-bold text-white">
-                move waste the right way
+                <TextHighlight delay={0.3} duration={0.8} direction="left">
+                  Waste PH
+                </TextHighlight>
+              </strong>{" "}
+              has focused on one mission:{" "}
+              <strong className="font-bold text-white">
+                <TextHighlight delay={0.6} duration={1.0} direction="left">
+                  move waste the right way
+                </TextHighlight>
               </strong>
               . From dense city streets to large construction sites, we design
               hauling solutions that keep your operations clean, safe, and
@@ -41,7 +48,9 @@ const MessageSection = () => {
                 It doesn&apos;t matter where your waste starts. What matters is
                 where we take it from there—
                 <strong className="font-bold">
-                  diverted, recycled, and disposed of with care
+                  <TextHighlight delay={0.9} duration={1.2} direction="left">
+                    diverted, recycled, and disposed of with care
+                  </TextHighlight>
                 </strong>
                 .
               </p>
