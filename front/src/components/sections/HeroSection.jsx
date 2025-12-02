@@ -170,7 +170,7 @@ const HeroSection = () => {
                   role="button"
                   tabIndex={0}
                   aria-label="Scroll to contact section to get in touch with Waste PH"
-                  className="group relative inline-flex cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] px-10 py-5 text-sm font-black uppercase tracking-[0.3em] text-white shadow-[0_0_60px_rgba(21,128,61,0.5),0_10px_40px_rgba(0,0,0,0.4)] transition-all hover:scale-[1.05] hover:shadow-[0_0_80px_rgba(22,163,74,0.7),0_15px_50px_rgba(0,0,0,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                  className="group relative inline-flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] px-6 py-3 text-xs font-black uppercase tracking-[0.25em] text-white shadow-[0_0_60px_rgba(21,128,61,0.5),0_10px_40px_rgba(0,0,0,0.4)] transition-all hover:scale-[1.05] hover:shadow-[0_0_80px_rgba(22,163,74,0.7),0_15px_50px_rgba(0,0,0,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 sm:gap-3 sm:px-10 sm:py-5 sm:text-sm sm:tracking-[0.3em]"
                   onClick={handlePrimaryClick}
                   onKeyDown={handlePrimaryKeyDown}
                 >
@@ -180,7 +180,7 @@ const HeroSection = () => {
                   />
                   <span className="relative z-10">Contact Us</span>
                   <svg
-                    className="relative z-10 h-5 w-5 transition-transform group-hover:translate-x-1"
+                    className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1 sm:h-5 sm:w-5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -198,13 +198,13 @@ const HeroSection = () => {
                   role="button"
                   tabIndex={0}
                   aria-label="Scroll to services section to view Waste PH services"
-                  className="group inline-flex cursor-pointer items-center justify-center gap-3 rounded-full border-2 border-white/30 bg-white/5 px-10 py-5 text-sm font-black uppercase tracking-[0.3em] text-white backdrop-blur-sm transition-all hover:border-[#15803d] hover:bg-[#15803d]/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                  className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/5 px-6 py-3 text-xs font-black uppercase tracking-[0.25em] text-white backdrop-blur-sm transition-all hover:border-[#15803d] hover:bg-[#15803d]/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 sm:gap-3 sm:px-10 sm:py-5 sm:text-sm sm:tracking-[0.3em]"
                   onClick={handleSecondaryClick}
                   onKeyDown={handleSecondaryKeyDown}
                 >
                   <span>View Services</span>
                   <svg
-                    className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                    className="h-4 w-4 transition-transform group-hover:translate-x-1 sm:h-5 sm:w-5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

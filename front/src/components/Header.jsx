@@ -121,11 +121,11 @@ const Header = () => {
             </svg>
           </div>
 
-          <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-sm font-black uppercase tracking-[0.35em] text-white transition-all duration-300 group-hover:tracking-[0.4em]">
+          <div className="flex flex-col leading-tight">
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-white transition-all duration-300 group-hover:tracking-[0.35em] sm:text-sm sm:tracking-[0.35em] sm:group-hover:tracking-[0.4em]">
               Waste PH
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/70">
+            <span className="hidden text-[9px] font-bold uppercase tracking-[0.3em] text-white/70 sm:block">
               Waste Management
             </span>
           </div>

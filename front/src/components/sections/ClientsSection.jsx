@@ -38,17 +38,17 @@ const ClientsSection = () => {
               {duplicatedClients.map((client, index) => (
                 <div
                   key={`${client.name}-${index}`}
-                  className="group flex min-w-[200px] items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] px-8 py-6 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5"
+                  className="group flex min-w-[160px] items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] px-6 py-4 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5 sm:min-w-[200px] sm:px-8 sm:py-6"
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="flex h-12 items-center justify-center transition-all duration-300 group-hover:scale-110">
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="flex h-10 items-center justify-center transition-all duration-300 group-hover:scale-110 sm:h-12">
                       <img
                         src={client.logo}
                         alt={`${client.name} logo`}
-                        className="h-8 w-auto opacity-50 brightness-0 invert transition-all duration-300 group-hover:opacity-80"
+                        className="h-6 w-auto opacity-50 brightness-0 invert transition-all duration-300 group-hover:opacity-80 sm:h-8"
                       />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 group-hover:text-white/80">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-colors duration-300 group-hover:text-white/80 sm:text-xs">
                       {client.name}
                     </span>
                   </div>
