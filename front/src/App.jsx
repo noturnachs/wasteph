@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollableLayout from "./components/layout/ScrollableLayout";
 import HeroSection from "./components/sections/HeroSection";
+import ClientsSection from "./components/sections/ClientsSection";
 import MessageSection from "./components/sections/MessageSection";
 import ServicesSection from "./components/sections/ServicesSection";
 import WasteStreamsShowcase from "./components/sections/WasteStreamsShowcase";
@@ -47,6 +48,7 @@ const App = () => {
             <Header />
             <main className="pt-20">
               <HeroSection />
+              <ClientsSection />
               <MessageSection />
               <ServicesSection />
               <WasteStreamsShowcase />

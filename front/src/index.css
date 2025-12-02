@@ -165,6 +165,24 @@ div {
   transition-delay: 700ms;
 }
 
+/* Infinite horizontal scroll animation */
+@keyframes scroll-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.animate-scroll-infinite {
+  animation: scroll-infinite 30s linear infinite;
+}
+
+.animate-scroll-infinite:hover {
+  animation-play-state: paused;
+}
+
 /* Loading screen exit animation - circle expands from center to reveal homepage */
 @keyframes loading-exit-open {
   0% {

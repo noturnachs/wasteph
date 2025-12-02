@@ -55,6 +55,7 @@ const Header = () => {
       });
     }
   }, [activeSection]);
+
   const handleNavClick = (targetId) => {
     scrollToSection(targetId);
     setMobileMenuOpen(false); // Close mobile menu on navigation
@@ -214,27 +215,36 @@ const Header = () => {
           </svg>
         </button>
 
-        {/* 3D CTA button with pulse effect - Desktop */}
+        {/* Simple elegant CTA button - Desktop */}
         <button
           type="button"
-          className="group/cta relative hidden overflow-hidden rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] px-8 py-4 text-xs font-black uppercase tracking-[0.35em] text-white shadow-[0_0_40px_rgba(21,128,61,0.5),0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.08] hover:shadow-[0_0_60px_rgba(21,128,61,0.8),0_0_100px_rgba(22,163,74,0.4),0_6px_30px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:block"
+          className="group/cta relative hidden overflow-hidden rounded-xl border border-[#15803d]/30 bg-gradient-to-r from-[#15803d] to-[#16a34a] px-7 py-3.5 text-xs font-black uppercase tracking-[0.3em] text-white shadow-[0_0_20px_rgba(21,128,61,0.3)] backdrop-blur-sm transition-all duration-300 hover:border-[#15803d] hover:shadow-[0_0_40px_rgba(21,128,61,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15803d] focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:block"
           onClick={() => handleNavClick("contact")}
           onKeyDown={(event) => handleNavKeyDown(event, "contact")}
-          style={{ transform: "translateZ(0)" }}
         >
-          {/* Animated pulse ring */}
-          <div className="absolute -inset-1 animate-pulse-glow rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] opacity-0 blur-xl transition-opacity duration-300 group-hover/cta:opacity-75" />
+          {/* Subtle glow on hover */}
+          <div className="pointer-events-none absolute -inset-1 rounded-xl bg-[#15803d] opacity-0 blur-lg transition-opacity duration-300 group-hover/cta:opacity-50" />
 
-          {/* Animated gradient overlay */}
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
+          {/* Shimmer effect */}
+          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
 
-          {/* Inner glow */}
-          <div className="absolute inset-[1px] rounded-full bg-gradient-to-b from-white/10 to-transparent opacity-50" />
-
-          <span className="relative z-10 flex items-center gap-3">
-            Contact Us
+          <span className="relative z-10 flex items-center gap-2.5">
             <svg
-              className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-2 group-hover/cta:scale-110"
+              className="h-4 w-4 transition-transform duration-300 group-hover/cta:scale-110"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            Contact
+            <svg
+              className="h-3.5 w-3.5 transition-transform duration-300 group-hover/cta:translate-x-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
