@@ -78,40 +78,29 @@ const Header = () => {
   };
 
   return (
-    <header
-      className={`group fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "border-b border-white/10 bg-black/60 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
-          : "border-b border-white/5 bg-black/40 py-5"
-      } backdrop-blur-xl`}
-    >
-      {/* Animated gradient line at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#15803d] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-        <div className="absolute inset-0 -translate-x-full animate-slide-right bg-gradient-to-r from-transparent via-[#15803d]/60 to-transparent" />
-      </div>
-
-      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 lg:px-12">
-        {/* Logo with 3D effect */}
+    <header className="fixed inset-x-0 top-0 z-50 transition-all duration-500">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 py-4 lg:px-12">
+        {/* Logo - Floating Island */}
         <div
-          className="group relative flex cursor-pointer items-center gap-4 transition-transform duration-300 hover:scale-105"
+          className={`group relative flex cursor-pointer items-center gap-4 rounded-full border border-white/10 bg-black/60 px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-white/20 hover:bg-black/70 hover:shadow-[0_12px_48px_rgba(21,128,61,0.3)] ${
+            scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.5)]" : ""
+          }`}
           role="button"
           tabIndex={0}
           aria-label="Scroll to Waste PH hero section"
           onClick={handleLogoClick}
           onKeyDown={handleLogoKeyDown}
-          style={{ perspective: "1000px" }}
         >
           {/* Glow effect behind logo */}
-          <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-[#15803d]/20 to-[#16a34a]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+          <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-[#15803d]/20 to-[#16a34a]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
 
-          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-[0_0_40px_rgba(21,128,61,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all duration-500 group-hover:shadow-[0_0_60px_rgba(21,128,61,0.8),0_0_100px_rgba(22,163,74,0.4),inset_0_1px_0_rgba(255,255,255,0.3)]">
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-[0_0_20px_rgba(21,128,61,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all duration-500 group-hover:shadow-[0_0_30px_rgba(21,128,61,0.7),inset_0_1px_0_rgba(255,255,255,0.3)]">
             {/* Animated shine effect */}
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
 
             <svg
               aria-hidden="true"
-              className="relative z-10 h-8 w-8 text-white drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
+              className="relative z-10 h-6 w-6 text-white drop-shadow-lg transition-transform duration-500 group-hover:scale-110"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -133,18 +122,22 @@ const Header = () => {
           </div>
 
           <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-xl font-black uppercase tracking-[0.35em] text-white transition-all duration-300 group-hover:tracking-[0.4em]">
+            <span className="text-sm font-black uppercase tracking-[0.35em] text-white transition-all duration-300 group-hover:tracking-[0.4em]">
               Waste PH
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">
+            <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/70">
               Waste Management
             </span>
           </div>
         </div>
 
-        {/* Futuristic nav with animated background */}
+        {/* Navigation - Floating Island */}
         <nav className="hidden items-center gap-3 lg:flex">
-          <div className="group/nav relative flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-2.5 shadow-[0_0_20px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:shadow-[0_0_30px_rgba(21,128,61,0.2)]">
+          <div
+            className={`group/nav relative flex items-center gap-1 rounded-full border border-white/10 bg-black/60 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:bg-black/70 hover:shadow-[0_12px_48px_rgba(21,128,61,0.2)] ${
+              scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.5)]" : ""
+            }`}
+          >
             {/* Sliding active indicator - only show when section is active */}
             {activeSection && indicatorStyle.width && (
               <div
@@ -184,10 +177,12 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu button - Floating Island */}
         <button
           type="button"
-          className="flex items-center justify-center rounded-xl bg-white/5 p-3 text-white backdrop-blur-xl transition-all duration-300 hover:bg-white/10 lg:hidden"
+          className={`flex items-center justify-center rounded-full border border-white/10 bg-black/60 p-3 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-white/20 hover:bg-black/70 hover:shadow-[0_12px_48px_rgba(21,128,61,0.2)] lg:hidden ${
+            scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.5)]" : ""
+          }`}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle mobile menu"
           aria-expanded={mobileMenuOpen}
@@ -215,10 +210,12 @@ const Header = () => {
           </svg>
         </button>
 
-        {/* Simple elegant CTA button - Desktop */}
+        {/* CTA button - Floating Island */}
         <button
           type="button"
-          className="group/cta relative hidden overflow-hidden rounded-xl border border-[#15803d]/30 bg-gradient-to-r from-[#15803d] to-[#16a34a] px-7 py-3.5 text-xs font-black uppercase tracking-[0.3em] text-white shadow-[0_0_20px_rgba(21,128,61,0.3)] backdrop-blur-sm transition-all duration-300 hover:border-[#15803d] hover:shadow-[0_0_40px_rgba(21,128,61,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15803d] focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:block"
+          className={`group/cta relative hidden overflow-hidden rounded-full border border-[#15803d]/30 bg-gradient-to-r from-[#15803d] to-[#16a34a] px-7 py-3.5 text-xs font-black uppercase tracking-[0.3em] text-white shadow-[0_8px_32px_rgba(21,128,61,0.3)] backdrop-blur-sm transition-all duration-500 hover:scale-105 hover:border-[#15803d] hover:shadow-[0_12px_48px_rgba(21,128,61,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15803d] focus-visible:ring-offset-2 focus-visible:ring-offset-black lg:block ${
+            scrolled ? "shadow-[0_8px_32px_rgba(21,128,61,0.4)]" : ""
+          }`}
           onClick={() => handleNavClick("contact")}
           onKeyDown={(event) => handleNavKeyDown(event, "contact")}
         >
@@ -260,11 +257,11 @@ const Header = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Floating Island Style */}
       <div
-        className={`absolute left-0 right-0 top-full overflow-hidden border-b border-white/10 backdrop-blur-xl transition-all duration-300 lg:hidden ${
+        className={`absolute left-6 right-6 top-full mt-2 overflow-hidden rounded-3xl border border-white/10 backdrop-blur-xl transition-all duration-300 lg:hidden ${
           mobileMenuOpen
-            ? "max-h-screen bg-black/90"
+            ? "max-h-screen bg-black/90 shadow-[0_12px_48px_rgba(0,0,0,0.5)]"
             : "max-h-0 border-transparent"
         }`}
       >
