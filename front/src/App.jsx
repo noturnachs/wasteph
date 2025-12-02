@@ -9,6 +9,7 @@ import WasteStreamsShowcase from "./components/sections/WasteStreamsShowcase";
 import ProcessSection from "./components/sections/ProcessSection";
 import CTASection from "./components/sections/CTASection";
 import LoadingScreen from "./components/common/LoadingScreen";
+import TopographicCanvas from "./components/common/TopographicCanvas";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -34,18 +35,27 @@ const App = () => {
     <>
       {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
 
-      <ScrollableLayout>
-        <Header />
-        <main className="pt-20">
-          <HeroSection />
-          <MessageSection />
-          <ServicesSection />
-          <WasteStreamsShowcase />
-          <ProcessSection />
-          <CTASection />
-        </main>
-        <Footer />
-      </ScrollableLayout>
+      {/* Global topographic background */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+        <div className="pointer-events-auto absolute inset-0">
+          <TopographicCanvas />
+        </div>
+      </div>
+
+      <div className="relative" style={{ zIndex: 10 }}>
+        <ScrollableLayout>
+          <Header />
+          <main className="pt-20">
+            <HeroSection />
+            <MessageSection />
+            <ServicesSection />
+            <WasteStreamsShowcase />
+            <ProcessSection />
+            <CTASection />
+          </main>
+          <Footer />
+        </ScrollableLayout>
+      </div>
     </>
   );
 };

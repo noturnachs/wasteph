@@ -27,12 +27,15 @@ const TopographicCanvas = () => {
     const thickLineColor = "rgba(21, 128, 61, 0.4)"; // Reduced opacity from 0.5 to 0.4
 
     const setupCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+      // Use window dimensions for full viewport coverage
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      canvas.style.width = rect.width + "px";
-      canvas.style.height = rect.height + "px";
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
 
       colsRef.current = Math.floor(canvas.width / res) + 1;
       rowsRef.current = Math.floor(canvas.height / res) + 1;
@@ -54,13 +57,12 @@ const TopographicCanvas = () => {
       for (let y = 0; y < rowsRef.current; y++) {
         inputValuesRef.current[y] = [];
         for (let x = 0; x <= colsRef.current; x++) {
+          // Use zOffset as a multiplier/amplitude modifier, not as coordinate offset
+          const baseNoise = noise2D(x * 0.02, y * 0.02);
           const noiseValue =
-            noise2D(
-              x * 0.02,
-              y * 0.02 + zOffsetRef.current + zBoostValuesRef.current[y]?.[x]
-            ) *
-              50 +
-            50;
+            baseNoise * (45 + zOffsetRef.current * 10) +
+            50 +
+            (zBoostValuesRef.current[y]?.[x] || 0) * 50;
           inputValuesRef.current[y][x] = noiseValue;
 
           if (noiseValue < noiseMin) noiseMin = noiseValue;
@@ -296,8 +298,8 @@ const TopographicCanvas = () => {
       ctx.fillStyle = "#0a1f0f";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Use sine wave for oscillating animation (no panning)
-      zOffsetRef.current = Math.sin(Date.now() * 0.0001) * 0.5;
+      // Use sine wave for oscillating animation (no panning) - increased amplitude
+      zOffsetRef.current = Math.sin(Date.now() * 0.0003) * 2;
       const { noiseMin, noiseMax } = generateNoise();
 
       const roundedNoiseMin =
@@ -348,8 +350,10 @@ const TopographicCanvas = () => {
       ref={canvasRef}
       className="absolute inset-0 h-full w-full"
       style={{
+        width: "100%",
+        height: "100%",
+        display: "block",
         pointerEvents: "auto",
-        zIndex: 1,
       }}
     />
   );

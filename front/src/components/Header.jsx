@@ -71,9 +71,9 @@ const Header = () => {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "border-b border-white/10 bg-black/80 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
-          : "border-b border-white/5 bg-transparent py-5"
-      } backdrop-blur-2xl`}
+          ? "border-b border-white/10 bg-black/60 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+          : "border-b border-white/5 bg-black/40 py-5"
+      } backdrop-blur-xl`}
     >
       <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 lg:px-12">
         {/* Animated gradient line */}

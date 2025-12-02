@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ParallaxLayer from "../common/ParallaxLayer";
 import RevealOnScroll from "../common/RevealOnScroll";
-import TopographicCanvas from "../common/TopographicCanvas";
 import { scrollToSection } from "../../utils/scrollToSection";
 
 const HeroSection = () => {
@@ -58,33 +57,28 @@ const HeroSection = () => {
       className="relative flex min-h-screen snap-start items-center overflow-hidden pb-20 pt-32 md:pt-40"
       aria-labelledby="hero-title"
     >
-      {/* Topographic Map Background */}
-      <div className="absolute inset-0 z-0">
-        <TopographicCanvas />
-
-        {/* Subtle ambient lighting orbs on top - with pointer-events-none */}
-        <div className="pointer-events-none absolute inset-0">
-          <ParallaxLayer speed={0.1}>
-            <div
-              className="absolute -left-40 top-0 h-[600px] w-[600px] animate-pulse-glow rounded-full bg-[#15803d]/10 blur-[120px] transition-transform duration-700 ease-out"
-              style={{
-                transform: `translate(${mousePosition.x * 15}px, ${
-                  mousePosition.y * 15
-                }px)`,
-              }}
-            />
-          </ParallaxLayer>
-          <ParallaxLayer speed={-0.1}>
-            <div
-              className="absolute -right-40 bottom-10 h-[500px] w-[500px] animate-pulse-glow rounded-full bg-[#16a34a]/8 blur-[100px] transition-transform duration-1000 ease-out"
-              style={{
-                transform: `translate(${mousePosition.x * -20}px, ${
-                  mousePosition.y * -20
-                }px)`,
-              }}
-            />
-          </ParallaxLayer>
-        </div>
+      {/* Subtle ambient lighting orbs - pointer-events-none */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <ParallaxLayer speed={0.1}>
+          <div
+            className="absolute -left-40 top-0 h-[600px] w-[600px] animate-pulse-glow rounded-full bg-[#15803d]/10 blur-[120px] transition-transform duration-700 ease-out"
+            style={{
+              transform: `translate(${mousePosition.x * 15}px, ${
+                mousePosition.y * 15
+              }px)`,
+            }}
+          />
+        </ParallaxLayer>
+        <ParallaxLayer speed={-0.1}>
+          <div
+            className="absolute -right-40 bottom-10 h-[500px] w-[500px] animate-pulse-glow rounded-full bg-[#16a34a]/8 blur-[100px] transition-transform duration-1000 ease-out"
+            style={{
+              transform: `translate(${mousePosition.x * -20}px, ${
+                mousePosition.y * -20
+              }px)`,
+            }}
+          />
+        </ParallaxLayer>
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16">
