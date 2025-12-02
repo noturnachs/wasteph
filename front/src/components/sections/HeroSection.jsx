@@ -5,6 +5,7 @@ import { scrollToSection } from "../../utils/scrollToSection";
 
 const HeroSection = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
   const heroRef = useRef(null);
 
   useEffect(() => {
@@ -18,15 +19,22 @@ const HeroSection = () => {
       setMousePosition({ x, y });
     };
 
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
     const heroElement = heroRef.current;
     if (heroElement) {
       heroElement.addEventListener("mousemove", handleMouseMove);
     }
 
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
       if (heroElement) {
         heroElement.removeEventListener("mousemove", handleMouseMove);
       }
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -81,7 +89,14 @@ const HeroSection = () => {
         </ParallaxLayer>
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16">
+      <div
+        className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-col gap-16 px-6 lg:gap-20 lg:px-12 xl:px-16"
+        style={{
+          transform: `translateY(${scrollY * 0.3}px)`,
+          opacity: Math.max(0, 1 - scrollY / 600),
+          transition: "transform 0.1s ease-out, opacity 0.1s ease-out",
+        }}
+      >
         {/* Hero Content */}
         <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-16">
           <div className="flex flex-col justify-center">
