@@ -14,6 +14,38 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Custom text selection colors */
+::selection {
+  background-color: #15803d;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: #15803d;
+  color: #ffffff;
+}
+
+/* Make interactive elements clickable while content layer has pointer-events-none */
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[tabindex="0"],
+[tabindex]:not([tabindex="-1"]),
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+div {
+  pointer-events: auto !important;
+}
+
 @keyframes float {
   0%,
   100% {
@@ -66,6 +98,33 @@ body {
   }
   100% {
     transform: translateY(100%);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-medium {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes spin-fast {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 

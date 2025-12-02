@@ -35,14 +35,13 @@ const App = () => {
     <>
       {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
 
-      {/* Global topographic background */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-        <div className="pointer-events-auto absolute inset-0">
-          <TopographicCanvas />
-        </div>
+      {/* Global topographic background - receives all mouse events */}
+      <div className="fixed inset-0" style={{ zIndex: 1 }}>
+        <TopographicCanvas />
       </div>
 
-      <div className="relative" style={{ zIndex: 10 }}>
+      {/* Content layer - pointer-events-none except for interactive elements */}
+      <div className="pointer-events-none relative" style={{ zIndex: 10 }}>
         <ScrollableLayout>
           <Header />
           <main className="pt-20">
