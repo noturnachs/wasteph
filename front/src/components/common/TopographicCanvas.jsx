@@ -19,12 +19,12 @@ const TopographicCanvas = () => {
     const noise2D = createNoise2D();
 
     // Configuration
-    const thresholdIncrement = 15; // Increased from 10 to 15 = even fewer lines
+    const thresholdIncrement = 10; // Decreased for more lines/detail
     const thickLineThresholdMultiple = 3;
-    const res = 12; // Increased from 10 to 12 = smoother/less detail
+    const res = 10; // Decreased for more detail/curls
     const baseZOffset = 0.0002;
-    const lineColor = "rgba(21, 128, 61, 0.2)"; // Reduced opacity from 0.3 to 0.2
-    const thickLineColor = "rgba(21, 128, 61, 0.4)"; // Reduced opacity from 0.5 to 0.4
+    const lineColor = "rgba(21, 128, 61, 0.25)"; // Slightly increased opacity
+    const thickLineColor = "rgba(21, 128, 61, 0.5)"; // Slightly increased opacity
 
     const setupCanvas = () => {
       // Use window dimensions for full viewport coverage
