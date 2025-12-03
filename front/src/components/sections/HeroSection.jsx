@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ParallaxLayer from "../common/ParallaxLayer";
 import RevealOnScroll from "../common/RevealOnScroll";
 import { scrollToSection } from "../../utils/scrollToSection";
+import truckImage from "../../assets/trucks/truck.png";
 
 const HeroSection = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -233,15 +234,11 @@ const HeroSection = () => {
               <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl">
                 {/* Image Container */}
                 <div className="relative aspect-[4/5] overflow-hidden">
-                  <ParallaxLayer speed={-0.05}>
-                    <div
-                      className="absolute inset-0 bg-cover bg-center transition-all duration-[1500ms] group-hover:scale-110"
-                      style={{
-                        backgroundImage:
-                          "url('https://images.unsplash.com/photo-1549989476-69a92fa57c36?auto=format&fit=crop&w=900&q=80')",
-                      }}
-                    />
-                  </ParallaxLayer>
+                  <img
+                    src={truckImage}
+                    alt="Waste management truck"
+                    className="h-full w-full object-cover transition-all duration-[1500ms] group-hover:scale-110"
+                  />
 
                   {/* Premium gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90" />
@@ -282,7 +279,7 @@ const HeroSection = () => {
                       </h3>
                       <p className="text-sm leading-relaxed text-white/80">
                         Precision routing for businesses and communities across
-                        Metro Manila and beyond.
+                        the Philippines.
                       </p>
                     </div>
 
@@ -307,34 +304,6 @@ const HeroSection = () => {
 
                 {/* Decorative corner accent */}
                 <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[#15803d]/20 blur-3xl transition-all duration-1000 group-hover:scale-150" />
-              </div>
-            </RevealOnScroll>
-
-            {/* Floating secondary stat card */}
-            <RevealOnScroll delayClass="delay-300">
-              <div className="absolute -bottom-6 -left-6 w-48 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#15803d] to-[#16a34a] p-1.5">
-                    <svg
-                      className="h-full w-full text-white"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-white/60">
-                      Quick Response
-                    </p>
-                  </div>
-                </div>
-                <p className="text-3xl font-black text-white">
-                  &lt;2<span className="text-xl">hrs</span>
-                </p>
-                <p className="mt-1 text-xs text-white/70">
-                  Average pickup time
-                </p>
               </div>
             </RevealOnScroll>
           </div>
