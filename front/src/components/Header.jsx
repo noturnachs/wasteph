@@ -29,14 +29,34 @@ const Header = () => {
         "process",
         "contact",
       ];
-      const current = sections.find((section) => {
+
+      // Get header height for better detection
+      const headerHeight = 120; // Approximate header height
+      const triggerPoint = headerHeight + 100; // Point where we consider a section "active"
+
+      // Find the section closest to the trigger point
+      let closestSection = "hero";
+      let closestDistance = Infinity;
+
+      sections.forEach((section) => {
         const element = document.getElementById(section);
-        if (!element) return false;
+        if (!element) return;
+
         const rect = element.getBoundingClientRect();
-        return rect.top <= 150 && rect.bottom >= 150;
+        const distance = Math.abs(rect.top - triggerPoint);
+
+        // Check if this section is in view and closer to trigger point
+        if (
+          rect.top <= triggerPoint &&
+          rect.bottom >= 0 &&
+          distance < closestDistance
+        ) {
+          closestDistance = distance;
+          closestSection = section;
+        }
       });
 
-      setActiveSection(current || "hero");
+      setActiveSection(closestSection);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

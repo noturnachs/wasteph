@@ -1,6 +1,7 @@
 import React from "react";
 import ParallaxLayer from "../common/ParallaxLayer";
 import RevealOnScroll from "../common/RevealOnScroll";
+import WordReveal from "../common/WordReveal";
 
 const streams = [
   {
@@ -72,9 +73,13 @@ const WasteStreamsShowcase = () => {
                 className="text-[clamp(3rem,10vw,6rem)] font-black uppercase leading-[0.9] tracking-tighter text-white"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Hall of
+                <WordReveal delay={0.1} staggerDelay={0.05}>
+                  Hall of
+                </WordReveal>
                 <br />
-                Streams
+                <WordReveal delay={0.3} staggerDelay={0.05}>
+                  Streams
+                </WordReveal>
               </h2>
             </RevealOnScroll>
 
