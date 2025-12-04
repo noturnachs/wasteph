@@ -230,10 +230,6 @@ div {
   animation: scroll-infinite 30s linear infinite;
 }
 
-.animate-scroll-infinite:hover {
-  animation-play-state: paused;
-}
-
 /* Loading screen exit animation - circle expands from center to reveal homepage */
 @keyframes loading-exit-open {
   0% {
