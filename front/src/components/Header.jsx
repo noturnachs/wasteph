@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { scrollToSection } from "../utils/scrollToSection";
 import ContactButton from "./common/ContactButton";
+import logoImage from "../assets/logo/wasteNoBG.png";
 
 const navItems = [
   { label: "About Us", targetId: "hero", icon: "home" },
@@ -224,43 +225,24 @@ const Header = () => {
       <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 py-4 lg:px-12">
         {/* Logo - Left Side */}
         <div
-          className={`pointer-events-auto group relative flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-black/60 px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-white/20 hover:bg-black/70 ${
-            scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.5)]" : ""
-          }`}
+          className="pointer-events-auto group flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-black/60 px-3 py-2 shadow-lg backdrop-blur-xl transition-all duration-500 hover:opacity-80 md:border-transparent md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none"
           role="button"
           tabIndex={0}
           aria-label="Scroll to Waste PH hero section"
           onClick={handleLogoClick}
           onKeyDown={handleLogoKeyDown}
         >
-          <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-[0_0_20px_rgba(21,128,61,0.4)]">
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
-            <svg
-              aria-hidden="true"
-              className="relative z-10 h-5 w-5 text-white drop-shadow-lg"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <rect
-                x="3"
-                y="9"
-                width="11"
-                height="7"
-                rx="1.5"
-                className="fill-white"
-              />
-              <path
-                d="M14 10h4.2c.3 0 .57.13.76.36l1.8 2.2c.15.19.24.43.24.68V16H14v-6Z"
-                className="fill-white"
-              />
-              <circle cx="7.5" cy="17" r="1.8" className="fill-white" />
-              <circle cx="17" cy="17" r="1.8" className="fill-white" />
-            </svg>
-          </div>
-
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-white sm:text-sm">
-              Waste PH
+          <img
+            src={logoImage}
+            alt="Waste PH Logo"
+            className="h-12 w-auto scale-125 object-contain transition-all duration-500 group-hover:scale-[1.375] sm:h-14"
+          />
+          <div className="flex flex-col leading-none">
+            <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text text-xl font-black uppercase tracking-tight text-transparent transition-all duration-500 group-hover:from-[#15803d] group-hover:to-[#16a34a] sm:text-2xl">
+              WASTEPH
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50 sm:text-xs">
+              Philippines
             </span>
           </div>
         </div>
