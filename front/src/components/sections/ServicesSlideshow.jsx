@@ -1,5 +1,6 @@
 import React from "react";
 import SectionShell from "../common/SectionShell";
+import RevealOnScroll from "../common/RevealOnScroll";
 import {
   SlideShow,
   SlideShowText,
@@ -241,38 +242,45 @@ const ServicesSlideshow = () => {
           {/* Left Side - Event List */}
           <div className="order-2 flex h-full flex-col justify-center gap-1.5 md:gap-2 lg:order-1 lg:gap-2">
             {showcaseEvents.map((event, index) => (
-              <EventCard
+              <RevealOnScroll
                 key={event.id}
-                event={event}
-                index={index}
-                activeIndex={activeCardIndex}
-                onToggle={handleCardToggle}
-              />
+                delayClass={`delay-[${(index + 1) * 100}ms]`}
+                variant="fade-right"
+              >
+                <EventCard
+                  event={event}
+                  index={index}
+                  activeIndex={activeCardIndex}
+                  onToggle={handleCardToggle}
+                />
+              </RevealOnScroll>
             ))}
           </div>
 
           {/* Right Side - Image Display */}
-          <div className="order-1 flex items-center lg:order-2">
-            <div className="relative w-full overflow-hidden rounded-lg border border-white/20 bg-black/40 backdrop-blur-xl sm:rounded-xl lg:max-h-[85%]">
-              <SlideShowImageWrap className="aspect-[4/3] h-auto sm:aspect-[3/2] lg:aspect-auto lg:h-full">
-                {showcaseEvents.map((event, index) => (
-                  <SlideShowImage
-                    key={event.id}
-                    index={index}
-                    imageUrl={event.image}
-                    alt={event.title}
-                    className="object-cover"
-                  />
-                ))}
-              </SlideShowImageWrap>
+          <RevealOnScroll delayClass="delay-100" variant="fade-left">
+            <div className="order-1 flex items-center lg:order-2">
+              <div className="relative w-full overflow-hidden rounded-lg border border-white/20 bg-black/40 backdrop-blur-xl sm:rounded-xl lg:max-h-[85%]">
+                <SlideShowImageWrap className="aspect-[4/3] h-auto sm:aspect-[3/2] lg:aspect-auto lg:h-full">
+                  {showcaseEvents.map((event, index) => (
+                    <SlideShowImage
+                      key={event.id}
+                      index={index}
+                      imageUrl={event.image}
+                      alt={event.title}
+                      className="object-cover"
+                    />
+                  ))}
+                </SlideShowImageWrap>
 
-              {/* Gradient Overlay */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                {/* Gradient Overlay */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* Active Event Date Badge */}
-              <DateBadge />
+                {/* Active Event Date Badge */}
+                <DateBadge />
+              </div>
             </div>
-          </div>
+          </RevealOnScroll>
         </SlideShow>
       </div>
     </SectionShell>
