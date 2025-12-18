@@ -226,9 +226,6 @@ const ServicesSlideshow = () => {
       fullHeight
     >
       <style>{`
-        #community-showcase-title {
-          white-space: nowrap !important;
-        }
         #community-showcase > div {
           gap: 0.75rem !important;
         }
