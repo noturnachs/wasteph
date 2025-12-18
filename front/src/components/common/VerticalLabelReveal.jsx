@@ -38,9 +38,11 @@ const VerticalLabelReveal = ({ children, className = "", delay = 0 }) => {
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible
-          ? "translateX(0) scale(1)"
-          : "translateX(-20px) scale(0.95)",
+          ? "translate3d(0, 0, 0) scale(1)"
+          : "translate3d(-20px, 0, 0) scale(0.95)",
         transitionDelay: `${delay}ms`,
+        willChange: isVisible ? "auto" : "transform, opacity",
+        backfaceVisibility: "hidden",
       }}
     >
       {children}

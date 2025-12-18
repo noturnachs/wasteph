@@ -1,17 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollableLayout from "./components/layout/ScrollableLayout";
 import HeroSection from "./components/sections/HeroSection";
-import ClientsSection from "./components/sections/ClientsSection";
-import MessageSection from "./components/sections/MessageSection";
-import ServicesSection from "./components/sections/ServicesSection";
-import WasteStreamsShowcase from "./components/sections/WasteStreamsShowcase";
-import ProcessSection from "./components/sections/ProcessSection";
-import ServicesSlideshow from "./components/sections/ServicesSlideshow";
-import CTASection from "./components/sections/CTASection";
 import LoadingScreen from "./components/common/LoadingScreen";
 import TopographicCanvas from "./components/common/TopographicCanvas";
+
+// Lazy load sections that are below the fold for faster initial load
+const ClientsSection = lazy(() =>
+  import("./components/sections/ClientsSection")
+);
+const MessageSection = lazy(() =>
+  import("./components/sections/MessageSection")
+);
+const ServicesSection = lazy(() =>
+  import("./components/sections/ServicesSection")
+);
+const WasteStreamsShowcase = lazy(() =>
+  import("./components/sections/WasteStreamsShowcase")
+);
+const ProcessSection = lazy(() =>
+  import("./components/sections/ProcessSection")
+);
+const ServicesSlideshow = lazy(() =>
+  import("./components/sections/ServicesSlideshow")
+);
+const CTASection = lazy(() => import("./components/sections/CTASection"));
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -49,13 +63,15 @@ const App = () => {
             <Header />
             <main className="pt-20">
               <HeroSection />
-              <MessageSection />
-              <ServicesSection />
-              <WasteStreamsShowcase />
-              <ProcessSection />
-              <ServicesSlideshow />
-              <CTASection />
-              <ClientsSection />
+              <Suspense fallback={<div className="min-h-screen" />}>
+                <MessageSection />
+                <ServicesSection />
+                <WasteStreamsShowcase />
+                <ProcessSection />
+                <ServicesSlideshow />
+                <CTASection />
+                <ClientsSection />
+              </Suspense>
             </main>
             <Footer />
           </ScrollableLayout>

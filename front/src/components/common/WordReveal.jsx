@@ -41,7 +41,13 @@ const WordReveal = ({
   const words = typeof children === "string" ? children.split(" ") : [children];
 
   return (
-    <span ref={elementRef} className={`inline-block ${className}`}>
+    <span
+      ref={elementRef}
+      className={`inline-block ${className}`}
+      style={{
+        willChange: isVisible ? "auto" : "transform, opacity",
+      }}
+    >
       {words.map((word, index) => (
         <span
           key={index}
@@ -50,15 +56,18 @@ const WordReveal = ({
             marginRight: index < words.length - 1 ? "0.25em" : "0",
           }}
         >
-          {/* The word */}
+          {/* The word - GPU accelerated */}
           <span
             className="inline-block"
             style={{
-              transform: isVisible ? "translateY(0)" : "translateY(100%)",
+              transform: isVisible
+                ? "translate3d(0, 0, 0)"
+                : "translate3d(0, 100%, 0)",
               opacity: isVisible ? 1 : 0,
               transition: `transform 0.8s cubic-bezier(0.77, 0, 0.175, 1) ${
                 delay + index * staggerDelay
               }s, opacity 0.8s ease ${delay + index * staggerDelay}s`,
+              willChange: isVisible ? "auto" : "transform, opacity",
             }}
           >
             {word}

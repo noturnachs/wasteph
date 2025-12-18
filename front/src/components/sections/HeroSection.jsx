@@ -123,6 +123,11 @@ const HeroSection = () => {
                     onLoad={() => setImageLoaded(true)}
                     loading="eager"
                     fetchPriority="high"
+                    decoding="async"
+                    style={{
+                      contentVisibility: "auto",
+                      willChange: imageLoaded ? "auto" : "opacity",
+                    }}
                   />
 
                   {/* Premium gradient overlay - Less intense to show image better */}

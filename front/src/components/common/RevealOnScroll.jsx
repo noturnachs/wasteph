@@ -89,6 +89,7 @@ const RevealOnScroll = ({
       className={resolvedClasses}
       style={{
         transitionTimingFunction: transitionTiming,
+        backfaceVisibility: "hidden",
       }}
     >
       {children}
