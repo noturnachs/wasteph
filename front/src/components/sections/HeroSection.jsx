@@ -67,7 +67,7 @@ const HeroSection = () => {
     <section
       ref={heroRef}
       id="hero"
-      className="relative flex min-h-screen snap-start items-center overflow-visible py-16 md:py-20 lg:py-24 xl:py-32"
+      className="relative flex min-h-screen snap-start items-center overflow-visible pb-16 pt-24 sm:pt-20 md:py-20 lg:py-24 xl:py-32"
       aria-labelledby="hero-title"
     >
       {/* Premium ambient lighting */}
