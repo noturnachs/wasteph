@@ -18,6 +18,8 @@ const HeroSection = () => {
   const [mapTimeout, setMapTimeout] = useState(null);
   const [isHoveringMap, setIsHoveringMap] = useState(false);
   const [isHoveringStat, setIsHoveringStat] = useState(false);
+  const [showLegalInfo, setShowLegalInfo] = useState(false);
+  const [isHoveringLegal, setIsHoveringLegal] = useState(false);
 
   // Update map visibility based on hover states
   useEffect(() => {
@@ -25,10 +27,20 @@ const HeroSection = () => {
       if (mapTimeout) clearTimeout(mapTimeout);
       setShowMap(true);
     } else {
-      const timeout = setTimeout(() => setShowMap(false), 500);
+      const timeout = setTimeout(() => setShowMap(false), 100);
       setMapTimeout(timeout);
     }
   }, [isHoveringMap, isHoveringStat]);
+
+  // Update legal info visibility based on hover state
+  useEffect(() => {
+    if (isHoveringLegal) {
+      setShowLegalInfo(true);
+    } else {
+      const timeout = setTimeout(() => setShowLegalInfo(false), 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [isHoveringLegal]);
   const heroRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -210,10 +222,89 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Original Content - Fades out when map shows */}
+            {/* Legal Info Overlay - Shows when hovering Compliant & Legal stats */}
+            <div
+              className={`absolute inset-0 z-20 flex items-center justify-center will-change-transform transition-all duration-500 ease-in-out ${
+                showLegalInfo
+                  ? "opacity-100 visible scale-100"
+                  : "opacity-0 invisible scale-95 pointer-events-none"
+              }`}
+              onMouseEnter={() => setIsHoveringLegal(true)}
+              onMouseLeave={() => setIsHoveringLegal(false)}
+            >
+              <div className="space-y-1 sm:space-y-2 md:space-y-3">
+                <div className="relative block w-full">
+                  <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2rem,6vw,5rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      ECC
+                    </span>
+                    <div className="hidden text-[0.4em] text-white/40 sm:inline-block">
+                      ·
+                    </div>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      COMPLIANT
+                    </span>
+                  </span>
+                </div>
+                <div className="relative block w-full">
+                  <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2rem,6vw,5rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      DENR
+                    </span>
+                    <div className="hidden text-[0.4em] text-white/40 sm:inline-block">
+                      ·
+                    </div>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      REGISTERED
+                    </span>
+                  </span>
+                </div>
+                <div className="relative block w-full">
+                  <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2rem,6vw,5rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      DOT
+                    </span>
+                    <div className="hidden text-[0.4em] text-white/40 sm:inline-block">
+                      ·
+                    </div>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      CERTIFIED
+                    </span>
+                  </span>
+                </div>
+                <div className="relative block w-full">
+                  <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2rem,6vw,5rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      ISO
+                    </span>
+                    <div className="hidden text-[0.4em] text-white/40 sm:inline-block">
+                      ·
+                    </div>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      14001
+                    </span>
+                  </span>
+                </div>
+                <div className="relative block w-full">
+                  <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2rem,6vw,5rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
+                      FULLY
+                    </span>
+                    <div className="hidden text-[0.4em] text-white/40 sm:inline-block">
+                      ·
+                    </div>
+                    <span className="bg-gradient-to-br from-[#15803d] via-[#16a34a] to-[#22c55e] bg-clip-text text-transparent">
+                      LICENSED
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Original Content - Fades out when map or legal info shows */}
             <div
               className={`relative z-10 space-y-4 py-4 will-change-transform transition-all duration-500 ease-in-out sm:space-y-5 sm:py-6 md:space-y-6 lg:space-y-8 lg:py-8 ${
-                showMap
+                showMap || showLegalInfo
                   ? "opacity-0 scale-95 pointer-events-none"
                   : "opacity-100 scale-100"
               }`}
@@ -244,7 +335,7 @@ const HeroSection = () => {
                   className="space-y-2 sm:space-y-3 md:space-y-4"
                 >
                   <div className="relative block w-full">
-                    <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(1.8rem,8vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
+                    <span className="inline-flex flex-wrap items-center gap-[0.15em] text-[clamp(2.5rem,8vw,8rem)] font-black uppercase leading-[0.85] tracking-[-0.05em] sm:flex-nowrap">
                       <StaggerText
                         delay={0.3}
                         staggerDelay={0.05}
@@ -429,7 +520,12 @@ const HeroSection = () => {
                 </FadeInUp>
 
                 <FadeInUp delay={1.2}>
-                  <div className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.12] sm:p-5">
+                  <div
+                    className="group rounded-xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl transition-colors duration-200 ease-out hover:border-[#15803d]/50 hover:bg-white/[0.12] sm:p-5"
+                    onMouseEnter={() => setIsHoveringLegal(true)}
+                    onMouseLeave={() => setIsHoveringLegal(false)}
+                    role="presentation"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-3xl font-black text-white sm:text-4xl">
@@ -453,6 +549,14 @@ const HeroSection = () => {
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
+                      </div>
+                    </div>
+
+                    {/* Hover Hint */}
+                    <div className="mt-3 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100">
+                      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#22c55e]">
+                        <div className="h-1 w-1 rounded-full bg-[#22c55e] animate-pulse" />
+                        <span>View Certifications</span>
                       </div>
                     </div>
                   </div>
