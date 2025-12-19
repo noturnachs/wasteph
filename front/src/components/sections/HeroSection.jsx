@@ -7,6 +7,7 @@ import ScaleIn from "../common/ScaleIn";
 import PhilippinesMap from "../common/PhilippinesMap";
 import { scrollToSection } from "../../utils/scrollToSection";
 import montageVideo from "../../assets/video/montage.mp4";
+import trucksVideo from "../../assets/trucks/trucks2.mp4";
 
 const HeroSection = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -329,12 +330,11 @@ const HeroSection = () => {
                   loop
                   muted
                   playsInline
+                  preload="metadata"
                   className="h-full w-full object-cover object-[center_60%]"
                 >
-                  <source
-                    src="/src/assets/trucks/trucks2.mp4"
-                    type="video/mp4"
-                  />
+                  <source src={trucksVideo} type="video/mp4" />
+                  Your browser does not support the video tag.
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
