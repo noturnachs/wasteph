@@ -17,7 +17,7 @@ const servicesData = [
   },
   {
     id: "purchasing-recyclables",
-    title: "Purchasing of Recyclables",
+    title: "Recycling",
     description:
       "We buy carton, plastic, aluminum, copper, metal with transparent weights and fair pricing.",
     bullets: [

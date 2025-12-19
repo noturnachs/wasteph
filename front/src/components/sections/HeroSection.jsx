@@ -421,7 +421,7 @@ const HeroSection = () => {
                       <div className="mt-3 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100">
                         <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#22c55e]">
                           <div className="h-1 w-1 rounded-full bg-[#22c55e] animate-pulse" />
-                          <span>Hover to view coverage map</span>
+                          <span>Serving Cebu Province</span>
                         </div>
                       </div>
                     </div>
