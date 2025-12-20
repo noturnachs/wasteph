@@ -25,21 +25,19 @@ const Login = () => {
     setError("");
     setIsLoading(true);
 
-    // Simulate login - replace with actual API call
-    setTimeout(() => {
-      if (email && password) {
-        login({
-          id: 1,
-          email: email,
-          full_name: "Sales Representative",
-          role: "sales",
-        });
+    try {
+      const result = await login(email, password);
+
+      if (result.success) {
         navigate("/admin/dashboard");
       } else {
-        setError("Please enter valid credentials");
+        setError(result.message || "Invalid credentials");
       }
+    } catch (error) {
+      setError(error.message || "An error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -151,7 +149,7 @@ const Login = () => {
 
               <div className="mt-6 text-center">
                 <p className="rounded-lg border border-[#15803d]/20 bg-[#15803d]/5 px-4 py-2 text-xs font-medium text-white/50 backdrop-blur-sm">
-                  Demo credentials: Any email and password
+                  Use your admin credentials to sign in
                 </p>
               </div>
             </CardContent>

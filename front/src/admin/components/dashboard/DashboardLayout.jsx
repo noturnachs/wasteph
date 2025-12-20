@@ -175,7 +175,9 @@ const DashboardLayout = () => {
               >
                 <Avatar className="h-9 w-9 border-2 border-[#15803d]">
                   <AvatarFallback className="bg-gradient-to-br from-[#15803d] to-[#16a34a] text-sm font-bold text-white">
-                    {user?.full_name?.charAt(0) || "U"}
+                    {user?.firstName?.charAt(0) ||
+                      user?.email?.charAt(0) ||
+                      "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -184,7 +186,7 @@ const DashboardLayout = () => {
                       theme === "dark" ? "text-white" : "text-slate-900"
                     }`}
                   >
-                    {user?.full_name}
+                    {user?.firstName} {user?.lastName}
                   </p>
                   <p
                     className={`truncate text-xs font-medium capitalize ${
@@ -245,7 +247,7 @@ const DashboardLayout = () => {
                   theme === "dark" ? "text-white/50" : "text-slate-500"
                 }`}
               >
-                Welcome back, {user?.full_name}
+                Welcome back, {user?.firstName} {user?.lastName}
               </p>
             </div>
             <span

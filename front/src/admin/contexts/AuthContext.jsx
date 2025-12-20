@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { api } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -7,26 +8,49 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user on mount
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check if user is authenticated on mount
+    checkAuth();
   }, []);
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  const checkAuth = async () => {
+    try {
+      const response = await api.getCurrentUser();
+      if (response.success) {
+        setUser(response.user);
+      }
+    } catch (error) {
+      // User not authenticated
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
+  const login = async (email, password) => {
+    try {
+      const response = await api.login(email, password);
+      if (response.success) {
+        setUser(response.user);
+        return { success: true };
+      }
+      return { success: false, message: response.message };
+    } catch (error) {
+      return { success: false, message: error.message || "Login failed" };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

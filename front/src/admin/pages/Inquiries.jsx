@@ -194,12 +194,21 @@ const Inquiries = () => {
   };
 
   const getSourceIcon = (source) => {
-    const icons = {
+    const iconsDark = {
       Facebook: <MessageSquare className="h-4 w-4 text-blue-400" />,
       Email: <Mail className="h-4 w-4 text-white/60" />,
       Phone: <Phone className="h-4 w-4 text-[#15803d]" />,
       "Cold Approach": <Phone className="h-4 w-4 text-violet-400" />,
     };
+
+    const iconsLight = {
+      Facebook: <MessageSquare className="h-4 w-4 text-blue-600" />,
+      Email: <Mail className="h-4 w-4 text-slate-600" />,
+      Phone: <Phone className="h-4 w-4 text-emerald-600" />,
+      "Cold Approach": <Phone className="h-4 w-4 text-violet-600" />,
+    };
+
+    const icons = theme === "dark" ? iconsDark : iconsLight;
     return icons[source] || <MessageSquare className="h-4 w-4" />;
   };
 

@@ -342,11 +342,19 @@ const Potentials = () => {
                     />
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                  <div
+                    className={`flex gap-2 pt-2 border-t ${
+                      theme === "dark" ? "border-white/10" : "border-slate-200"
+                    }`}
+                  >
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className={`flex-1 text-xs ${
+                        theme === "dark"
+                          ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          : "border-slate-300 text-slate-900 hover:bg-slate-100"
+                      }`}
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       View
@@ -354,7 +362,11 @@ const Potentials = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className={`flex-1 text-xs ${
+                        theme === "dark"
+                          ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          : "border-slate-300 text-slate-900 hover:bg-slate-100"
+                      }`}
                     >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit

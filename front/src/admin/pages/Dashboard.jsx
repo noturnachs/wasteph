@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import DashboardCard from "../components/common/DashboardCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,44 +11,100 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import { api } from "../services/api";
 
 const Dashboard = () => {
   const { theme } = useTheme();
-  // Mock data - replace with actual API calls
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Total Inquiries",
-      value: "48",
-      change: "+12%",
+      value: "0",
+      change: "+0%",
       trend: "up",
       icon: UserPlus,
       color: "emerald",
     },
     {
       title: "Active Leads",
-      value: "23",
-      change: "+8%",
+      value: "0",
+      change: "+0%",
       trend: "up",
       icon: TrendingUp,
       color: "blue",
     },
     {
       title: "Potentials",
-      value: "15",
-      change: "+5%",
+      value: "0",
+      change: "+0%",
       trend: "up",
       icon: FileText,
       color: "amber",
     },
     {
       title: "Contracted Clients",
-      value: "32",
-      change: "+15%",
+      value: "0",
+      change: "+0%",
       trend: "up",
       icon: Users,
       color: "violet",
     },
-  ];
+  ]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const [inquiries, leads, potentials, clients] = await Promise.all([
+        api.getInquiries(),
+        api.getLeads(),
+        api.getPotentials(),
+        api.getClients(),
+      ]);
+
+      setStats([
+        {
+          title: "Total Inquiries",
+          value: inquiries.data?.length.toString() || "0",
+          change: "+0%",
+          trend: "up",
+          icon: UserPlus,
+          color: "emerald",
+        },
+        {
+          title: "Active Leads",
+          value: leads.data?.length.toString() || "0",
+          change: "+0%",
+          trend: "up",
+          icon: TrendingUp,
+          color: "blue",
+        },
+        {
+          title: "Potentials",
+          value: potentials.data?.length.toString() || "0",
+          change: "+0%",
+          trend: "up",
+          icon: FileText,
+          color: "amber",
+        },
+        {
+          title: "Contracted Clients",
+          value: clients.data?.length.toString() || "0",
+          change: "+0%",
+          trend: "up",
+          icon: Users,
+          color: "violet",
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const recentInquiries = [
     {

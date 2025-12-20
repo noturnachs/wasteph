@@ -338,12 +338,24 @@ const Leads = () => {
             mobileCards={filteredLeads.map((lead) => (
               <MobileCard key={lead.id}>
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
+                  <div
+                    className={`flex items-start justify-between gap-3 pb-3 border-b ${
+                      theme === "dark" ? "border-white/10" : "border-slate-200"
+                    }`}
+                  >
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-900 truncate mb-1">
+                      <h3
+                        className={`font-semibold truncate mb-1 ${
+                          theme === "dark" ? "text-white" : "text-slate-900"
+                        }`}
+                      >
                         {lead.name}
                       </h3>
-                      <p className="text-sm text-slate-600 truncate">
+                      <p
+                        className={`text-sm truncate ${
+                          theme === "dark" ? "text-white/70" : "text-slate-600"
+                        }`}
+                      >
                         {lead.company}
                       </p>
                     </div>
@@ -356,7 +368,13 @@ const Leads = () => {
                     <MobileCardRow
                       label="Contract Type"
                       value={
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-xs font-medium whitespace-nowrap">
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
+                            theme === "dark"
+                              ? "bg-white/10 text-white/70"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
                           {lead.contractType}
                         </span>
                       }
@@ -371,11 +389,19 @@ const Leads = () => {
                     />
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                  <div
+                    className={`flex gap-2 pt-2 border-t ${
+                      theme === "dark" ? "border-white/10" : "border-slate-200"
+                    }`}
+                  >
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className={`flex-1 text-xs ${
+                        theme === "dark"
+                          ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          : "border-slate-300 text-slate-900 hover:bg-slate-100"
+                      }`}
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       View
@@ -383,7 +409,11 @@ const Leads = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className={`flex-1 text-xs ${
+                        theme === "dark"
+                          ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          : "border-slate-300 text-slate-900 hover:bg-slate-100"
+                      }`}
                     >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit
