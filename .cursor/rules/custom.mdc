@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+always use shadcn components only create our own if shadcn doesnt have that component
