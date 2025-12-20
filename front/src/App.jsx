@@ -28,8 +28,8 @@ const ServicesSlideshow = lazy(() =>
 );
 const CTASection = lazy(() => import("./components/sections/CTASection"));
 
-// Lazy load admin app
-const AdminApp = lazy(() => import("./admin/index"));
+// Lazy load CRM app
+const CRMApp = lazy(() => import("./admin/index"));
 
 const PublicApp = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -87,22 +87,22 @@ const PublicApp = () => {
 
 const App = () => {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const isCRMRoute = location.pathname.startsWith("/admin");
 
   return (
     <Routes>
-      {/* Admin routes */}
+      {/* CRM routes (Admin/Sales/Marketing) */}
       <Route
         path="/admin/*"
         element={
           <Suspense
             fallback={
-              <div className="flex h-screen w-full items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+              <div className="flex h-screen w-full items-center justify-center bg-[#0a1f0f]">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#15803d]/30 border-t-[#15803d]" />
               </div>
             }
           >
-            <AdminApp />
+            <CRMApp />
           </Suspense>
         }
       />

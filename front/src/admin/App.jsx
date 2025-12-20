@@ -9,7 +9,7 @@ import Leads from "./pages/Leads";
 import Potentials from "./pages/Potentials";
 import Clients from "./pages/Clients";
 
-const AdminApp = () => {
+const CRMApp = () => {
   return (
     <AuthProvider>
       <Routes>
@@ -33,4 +33,4 @@ const AdminApp = () => {
   );
 };
 
-export default AdminApp;
+export default CRMApp;

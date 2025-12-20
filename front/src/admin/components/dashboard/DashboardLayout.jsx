@@ -54,12 +54,12 @@ const DashboardLayout = () => {
         {/* Logo Header */}
         <SidebarHeader>
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md">
-              <Trash2 className="w-6 h-6 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#15803d] to-[#16a34a] shadow-md">
+              <Trash2 className="h-6 w-6 text-white" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">WastePH</h1>
-              <p className="text-xs text-muted-foreground">Admin CRM</p>
+              <p className="text-xs text-muted-foreground">CRM System</p>
             </div>
           </div>
         </SidebarHeader>
@@ -96,8 +96,8 @@ const DashboardLayout = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
-                <Avatar className="w-8 h-8 bg-emerald-600">
-                  <AvatarFallback className="bg-emerald-600 text-white text-sm font-bold">
+                <Avatar className="h-8 w-8 bg-gradient-to-br from-[#15803d] to-[#16a34a]">
+                  <AvatarFallback className="bg-gradient-to-br from-[#15803d] to-[#16a34a] text-sm font-bold text-white">
                     {user?.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>

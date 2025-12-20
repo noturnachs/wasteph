@@ -118,7 +118,7 @@
     @apply border-border outline-ring/50;
   }
 
-  /* Override public site font with Inter for admin */
+  /* Override public site font with Inter for CRM */
   html,
   body,
   * {
@@ -131,7 +131,7 @@
   }
 }
 
-/* Smooth transitions for admin panel */
+/* Smooth transitions for CRM system */
 @layer components {
   /* Smooth sidebar navigation transitions */
   [data-sidebar] a,

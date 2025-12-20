@@ -1,4 +1,4 @@
 import "./index.css";
-import AdminApp from "./App";
+import CRMApp from "./App";
 
-export default AdminApp;
+export default CRMApp;
