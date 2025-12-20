@@ -1,4 +1,5 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, Link } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import PageTransition from "../common/PageTransition";
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -77,10 +79,10 @@ const DashboardLayout = () => {
                       isActive={location.pathname === item.path}
                       tooltip={item.name}
                     >
-                      <a href={item.path}>
+                      <Link to={item.path}>
                         <item.icon className="w-4 h-4" />
                         <span>{item.name}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -147,7 +149,11 @@ const DashboardLayout = () => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <PageTransition key={location.pathname}>
+              <Outlet />
+            </PageTransition>
+          </AnimatePresence>
         </main>
       </SidebarInset>
     </SidebarProvider>
