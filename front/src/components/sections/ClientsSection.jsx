@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import flickrLogo from "../../assets/clients/flickr.svg";
 import metaLogo from "../../assets/clients/meta.svg";
 import tiktokLogo from "../../assets/clients/tiktok.svg";
@@ -142,11 +143,11 @@ const ClientsSection = () => {
               >
                 {/* Loading State */}
                 {!videoLoaded && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-gradient-to-br from-[#15803d]/10 to-[#051008]">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-linear-to-br from-[#15803d]/10 to-[#051008]">
                     <div className="text-center">
                       <div className="mb-4 h-2 w-64 overflow-hidden rounded-full bg-white/10 shadow-inner">
                         <div
-                          className="h-full bg-gradient-to-r from-[#15803d] to-[#16a34a] shadow-[0_0_10px_rgba(21,128,61,0.5)] transition-all duration-300"
+                          className="h-full bg-linear-to-r from-[#15803d] to-[#16a34a] shadow-[0_0_10px_rgba(21,128,61,0.5)] transition-all duration-300"
                           style={{ width: `${loadingProgress}%` }}
                         />
                       </div>
@@ -180,7 +181,7 @@ const ClientsSection = () => {
                   </video>
 
                   {/* Gradient Overlay for Better Contrast */}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
 
                   {/* Custom Play/Pause Button - Center */}
                   <div
@@ -215,7 +216,7 @@ const ClientsSection = () => {
 
                   {/* Bottom Controls Bar */}
                   <div
-                    className={`absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transition-all duration-300 sm:p-6 ${
+                    className={`absolute bottom-0 left-0 right-0 z-10 bg-linear-to-t from-black/90 via-black/60 to-transparent p-4 transition-all duration-300 sm:p-6 ${
                       showControls
                         ? "translate-y-0 opacity-100"
                         : "translate-y-full opacity-0"
@@ -292,7 +293,7 @@ const ClientsSection = () => {
 
               {/* Testimonial Message - Premium Design */}
               <FadeInUp delay={0.3}>
-                <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#15803d]/10 via-white/[0.02] to-transparent p-8 backdrop-blur-xl sm:p-10 md:mt-10 lg:p-12">
+                <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-[#15803d]/10 via-white/2 to-transparent p-8 backdrop-blur-xl sm:p-10 md:mt-10 lg:p-12">
                   {/* Decorative quote icon */}
                   <div className="absolute right-6 top-6 opacity-10 sm:right-8 sm:top-8">
                     <svg
@@ -317,9 +318,9 @@ const ClientsSection = () => {
 
                     {/* Divider */}
                     <div className="mx-auto my-5 flex w-24 items-center gap-2">
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#15803d]/50" />
+                      <div className="h-px flex-1 bg-linear-to-r from-transparent to-[#15803d]/50" />
                       <div className="h-1.5 w-1.5 rounded-full bg-[#15803d]" />
-                      <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#15803d]/50" />
+                      <div className="h-px flex-1 bg-linear-to-l from-transparent to-[#15803d]/50" />
                     </div>
 
                     {/* Secondary text */}
@@ -341,12 +342,28 @@ const ClientsSection = () => {
           </div>
         </RevealOnScroll>
 
-        {/* Trusted By Section */}
+        {/* Trusted By Section with Link */}
         <div className="mb-8 text-center">
           <FadeInUp delay={0.4}>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/40">
+            <Link
+              to="/clients"
+              className="pointer-events-auto group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.35em] text-white/40 transition-colors duration-300 hover:text-[#16a34a]"
+            >
               Trusted By Leading Organizations
-            </p>
+              <svg
+                className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </Link>
           </FadeInUp>
         </div>
       </div>
@@ -354,8 +371,8 @@ const ClientsSection = () => {
       {/* Client Logos - Full Width Infinite Scroll */}
       <div className="relative w-full">
         {/* Gradient fade edges */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-[#0a1f0f] to-transparent md:w-40 lg:w-48" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-r from-transparent to-[#0a1f0f] md:w-40 lg:w-48" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-linear-to-r from-[#0a1f0f] to-transparent md:w-40 lg:w-48" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-linear-to-r from-transparent to-[#0a1f0f] md:w-40 lg:w-48" />
 
         {/* Scrolling track - full width */}
         <div className="flex overflow-x-clip">
@@ -363,7 +380,7 @@ const ClientsSection = () => {
             {duplicatedClients.map((client, index) => (
               <div
                 key={`${client.name}-${index}`}
-                className="group flex min-w-[120px] items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5 sm:min-w-[140px] sm:px-5 sm:py-3.5 md:min-w-[160px]"
+                className="group flex min-w-[120px] items-center justify-center rounded-xl border border-white/5 bg-white/2 px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-[#15803d]/30 hover:bg-white/5 sm:min-w-[140px] sm:px-5 sm:py-3.5 md:min-w-[160px]"
               >
                 <div className="flex flex-col items-center gap-1.5">
                   <div className="flex h-7 items-center justify-center transition-all duration-300 group-hover:scale-110 sm:h-8">

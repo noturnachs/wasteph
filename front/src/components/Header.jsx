@@ -34,6 +34,8 @@ const Header = () => {
   const expandedRef = useRef(null);
 
   const isHomePage = location.pathname === "/";
+  const showHomeButton =
+    location.pathname.startsWith("/blog") || location.pathname === "/clients";
 
   useEffect(() => {
     let scrollTimeout = null;
@@ -300,8 +302,8 @@ const Header = () => {
 
         {/* Navigation Group - Desktop */}
         <div className="pointer-events-auto hidden items-center gap-3 lg:flex">
-          {/* Conditional Navigation - Show Home button on blog pages, otherwise show normal nav */}
-          {location.pathname.startsWith("/blog") ? (
+          {/* Conditional Navigation - Show Home button on blog/clients pages, otherwise show normal nav */}
+          {showHomeButton ? (
             /* Home Button - When on blog pages */
             <Link
               to="/"
@@ -421,8 +423,8 @@ const Header = () => {
 
         {/* Mobile Menu Button & Blog/Home Button */}
         <div className="pointer-events-auto flex items-center gap-2 transition-all duration-1000 ease-in-out lg:hidden">
-          {/* Conditional Button - Home on blog pages, Blog on other pages */}
-          {location.pathname.startsWith("/blog") ? (
+          {/* Conditional Button - Home on blog/clients pages, Blog on other pages */}
+          {showHomeButton ? (
             /* Home Button - Mobile */
             <Link
               to="/"
