@@ -287,7 +287,11 @@ export default function Inquiries() {
           <h1 className="text-3xl font-bold tracking-tight">Inquiries</h1>
           <p className="text-muted-foreground">Manage inquiry leads</p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => {
+          resetFormData();
+          setFormErrors({});
+          setIsCreateDialogOpen(true);
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Inquiry
         </Button>
