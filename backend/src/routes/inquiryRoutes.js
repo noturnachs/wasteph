@@ -27,12 +27,7 @@ router.get("/", requireAuth, getAllInquiries);
 router.get("/:id", requireAuth, getInquiryById);
 router.patch("/:id", requireAuth, updateInquiry);
 
-// Delete - admin/manager only
-router.delete(
-  "/:id",
-  requireAuth,
-  requireRole("admin", "manager"),
-  deleteInquiry
-);
+// Delete - all authenticated users (including sales)
+router.delete("/:id", requireAuth, deleteInquiry);
 
 export default router;

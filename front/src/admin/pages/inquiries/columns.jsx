@@ -3,13 +3,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "../../components/StatusBadge";
 
-export const createColumns = ({ onEdit, onConvert, onDelete, userRole }) => [
+export const createColumns = ({ onView, onEdit, onConvert, onDelete, userRole }) => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -119,28 +120,33 @@ export const createColumns = ({ onEdit, onConvert, onDelete, userRole }) => [
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(inquiry)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onView(inquiry)} className="cursor-pointer">
+              <span className="flex-1">View Detail</span>
+              <Eye className="h-4 w-4" />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => onEdit(inquiry)} className="cursor-pointer">
+              <span className="flex-1">Edit</span>
+              <Pencil className="h-4 w-4" />
             </DropdownMenuItem>
 
             {inquiry.status === "qualified" && (
-              <DropdownMenuItem onClick={() => onConvert(inquiry)}>
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Convert to Lead
+              <DropdownMenuItem onClick={() => onConvert(inquiry)} className="cursor-pointer">
+                <span className="flex-1">Convert to Lead</span>
+                <ArrowRight className="h-4 w-4" />
               </DropdownMenuItem>
             )}
 
-            {(userRole === "admin" || userRole === "manager") && (
-              <DropdownMenuItem
-                onClick={() => onDelete(inquiry)}
-                className="text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onClick={() => onDelete(inquiry)}
+              className="text-destructive cursor-pointer"
+            >
+              <span className="flex-1">Delete</span>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

@@ -35,7 +35,10 @@ import { Input } from "@/components/ui/input";
 import { DataTable } from "../components/DataTable";
 import { FacetedFilter } from "../components/FacetedFilter";
 import { SearchInput } from "../components/SearchInput";
+import { StatusBadge } from "../components/StatusBadge";
+import { DeleteConfirmationModal } from "../components/modals";
 import { createColumns } from "./inquiries/columns";
+import { format } from "date-fns";
 
 export default function Inquiries() {
   const { user } = useAuth();
@@ -52,6 +55,8 @@ export default function Inquiries() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   // Form data
@@ -161,14 +166,39 @@ export default function Inquiries() {
 
   const handleUpdateInquiry = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    const errors = {};
+    if (!formData.name.trim()) {
+      errors.name = "Name is required";
+    }
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    }
+    if (!formData.message.trim()) {
+      errors.message = "Message is required";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await api.updateInquiry(selectedInquiry.id, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        message: formData.message,
+        source: formData.source,
         status: formData.status,
         notes: formData.notes,
       });
       toast.success("Inquiry updated successfully");
       setIsEditDialogOpen(false);
+      setFormErrors({});
       fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
@@ -193,18 +223,20 @@ export default function Inquiries() {
     }
   };
 
-  const handleDeleteInquiry = async (inquiry) => {
-    if (!window.confirm("Are you sure you want to delete this inquiry?")) {
-      return;
-    }
+  const handleDeleteInquiry = (inquiry) => {
+    setSelectedInquiry(inquiry);
+    setIsDeleteDialogOpen(true);
+  };
 
+  const confirmDelete = async () => {
     try {
-      await api.deleteInquiry(inquiry.id);
+      await api.deleteInquiry(selectedInquiry.id);
       toast.success("Inquiry deleted successfully");
       fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
       toast.error(error.message || "Failed to delete inquiry");
+      throw error;
     }
   };
 
@@ -221,9 +253,19 @@ export default function Inquiries() {
 
   // Table columns setup
   const columns = createColumns({
+    onView: (inquiry) => {
+      setSelectedInquiry(inquiry);
+      setIsViewDialogOpen(true);
+    },
     onEdit: (inquiry) => {
       setSelectedInquiry(inquiry);
       setFormData({
+        name: inquiry.name,
+        email: inquiry.email,
+        phone: inquiry.phone || "",
+        company: inquiry.company || "",
+        message: inquiry.message,
+        source: inquiry.source || "phone",
         status: inquiry.status,
         notes: inquiry.notes || "",
       });
@@ -446,16 +488,101 @@ export default function Inquiries() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Inquiry</DialogTitle>
             <DialogDescription>
-              Update inquiry status and notes
+              Update the inquiry here. Click save changes when you're done.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleUpdateInquiry} className="space-y-4">
-            <div>
-              <Label htmlFor="edit-status">Status</Label>
+          <form onSubmit={handleUpdateInquiry} className="space-y-4 mt-4">
+            <div className="grid grid-cols-[120px_1fr] items-start gap-4">
+              <Label htmlFor="edit-name" className="text-right pt-2">Name</Label>
+              <div className="flex-1">
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (formErrors.name) {
+                      setFormErrors({ ...formErrors, name: null });
+                    }
+                  }}
+                  className={formErrors.name ? "border-red-500" : ""}
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-start gap-4">
+              <Label htmlFor="edit-email" className="text-right pt-2">Email</Label>
+              <div className="flex-1">
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (formErrors.email) {
+                      setFormErrors({ ...formErrors, email: null });
+                    }
+                  }}
+                  className={formErrors.email ? "border-red-500" : ""}
+                />
+                {formErrors.email && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <Label htmlFor="edit-phone" className="text-right">Phone Number</Label>
+              <Input
+                id="edit-phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <Label htmlFor="edit-company" className="text-right">Company</Label>
+              <Input
+                id="edit-company"
+                value={formData.company}
+                onChange={(e) =>
+                  setFormData({ ...formData, company: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <Label htmlFor="edit-source" className="text-right">Source</Label>
+              <Select
+                value={formData.source}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, source: val })
+                }
+              >
+                <SelectTrigger id="edit-source">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="website">Website</SelectItem>
+                  <SelectItem value="phone">Phone</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="walk-in">Walk-in</SelectItem>
+                  <SelectItem value="cold-approach">Cold Approach</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <Label htmlFor="edit-status" className="text-right">Status</Label>
               <Select
                 value={formData.status}
                 onValueChange={(val) =>
@@ -474,32 +601,46 @@ export default function Inquiries() {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="edit-notes">Notes</Label>
+            <div className="grid grid-cols-[120px_1fr] items-start gap-4">
+              <Label htmlFor="edit-message" className="text-right pt-2">Message</Label>
+              <div className="flex-1">
+                <Textarea
+                  id="edit-message"
+                  rows={4}
+                  value={formData.message}
+                  onChange={(e) => {
+                    setFormData({ ...formData, message: e.target.value });
+                    if (formErrors.message) {
+                      setFormErrors({ ...formErrors, message: null });
+                    }
+                  }}
+                  className={formErrors.message ? "border-red-500" : ""}
+                />
+                {formErrors.message && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[120px_1fr] items-start gap-4">
+              <Label htmlFor="edit-notes" className="text-right pt-2">Notes</Label>
               <Textarea
                 id="edit-notes"
-                rows={4}
+                rows={3}
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
+                placeholder="Add internal notes"
               />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
+            <DialogFooter className="mt-6">
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Update Inquiry
+                Save changes
               </Button>
             </DialogFooter>
           </form>
@@ -559,6 +700,111 @@ export default function Inquiries() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Inquiry Details</DialogTitle>
+            <DialogDescription>
+              View complete inquiry information
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedInquiry && (
+            <div className="space-y-6">
+              {/* Contact Information */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3 text-foreground">Contact Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="text-sm font-medium">{selectedInquiry.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="text-sm font-medium">{selectedInquiry.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="text-sm font-medium">{selectedInquiry.phone || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Company</p>
+                    <p className="text-sm font-medium">{selectedInquiry.company || "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3 text-foreground">Inquiry Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Source</p>
+                    <p className="text-sm font-medium capitalize">{selectedInquiry.source?.replace("-", " ")}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <div className="mt-1">
+                      <StatusBadge status={selectedInquiry.status} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Created</p>
+                    <p className="text-sm font-medium">
+                      {format(new Date(selectedInquiry.createdAt), "MMM dd, yyyy 'at' hh:mm a")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Last Updated</p>
+                    <p className="text-sm font-medium">
+                      {format(new Date(selectedInquiry.updatedAt), "MMM dd, yyyy 'at' hh:mm a")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-2 text-foreground">Message</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {selectedInquiry.message}
+                </p>
+              </div>
+
+              {selectedInquiry.notes && (
+                <div className="border-t pt-4">
+                  <h3 className="text-sm font-semibold mb-2 text-foreground">Internal Notes</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {selectedInquiry.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete"
+        itemName={selectedInquiry?.name || selectedInquiry?.email}
+        itemType="inquiry"
+        actionsList={[
+          "Permanently delete this inquiry",
+          "Remove all associated data",
+          "This cannot be undone"
+        ]}
+        warningMessage="This action cannot be undone."
+      />
     </div>
   );
 }

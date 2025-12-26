@@ -76,11 +76,17 @@ class InquiryService {
    * @throws {AppError} If inquiry not found
    */
   async updateInquiry(inquiryId, updateData, userId, metadata = {}) {
-    const { status, assignedTo, notes } = updateData;
+    const { name, email, phone, company, message, source, status, assignedTo, notes } = updateData;
 
     const [inquiry] = await db
       .update(inquiryTable)
       .set({
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(phone !== undefined && { phone }),
+        ...(company !== undefined && { company }),
+        ...(message && { message }),
+        ...(source && { source }),
         ...(status && { status }),
         ...(assignedTo !== undefined && { assignedTo }),
         ...(notes !== undefined && { notes }),
@@ -99,7 +105,7 @@ class InquiryService {
       action: "inquiry_updated",
       entityType: "inquiry",
       entityId: inquiry.id,
-      details: { status, assignedTo, notes },
+      details: { name, email, phone, company, message, source, status, assignedTo, notes },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
