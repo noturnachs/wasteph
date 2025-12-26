@@ -8,6 +8,14 @@ import {
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -16,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SlidersHorizontal } from "lucide-react";
 
 export function DataTable({
   columns,
@@ -23,6 +32,7 @@ export function DataTable({
   isLoading = false,
   emptyMessage = "No data found",
   pageSize = 10,
+  showViewOptions = false,
 }) {
   const table = useReactTable({
     data,
@@ -98,6 +108,40 @@ export function DataTable({
 
   return (
     <div className="space-y-4">
+      {showViewOptions && (
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                View
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[150px]">
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>

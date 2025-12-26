@@ -2,18 +2,17 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "sonner";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -24,17 +23,29 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 import { DataTable } from "../components/DataTable";
+import { FacetedFilter } from "../components/FacetedFilter";
+import { SearchInput } from "../components/SearchInput";
 import { createColumns } from "./inquiries/columns";
 
 export default function Inquiries() {
   const { user } = useAuth();
   const [inquiries, setInquiries] = useState([]);
+  const [allInquiries, setAllInquiries] = useState([]); // Store all inquiries for counting
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState([]);
+  const [sourceFilter, setSourceFilter] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Dialogs
@@ -55,17 +66,33 @@ export default function Inquiries() {
 
   // Submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Fetch inquiries
+  // Fetch all inquiries (for counts)
+  useEffect(() => {
+    fetchAllInquiries();
+  }, []);
+
+  // Fetch filtered inquiries
   useEffect(() => {
     fetchInquiries();
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter, sourceFilter, searchTerm]);
+
+  const fetchAllInquiries = async () => {
+    try {
+      const response = await api.getInquiries({});
+      setAllInquiries(response.data || response);
+    } catch (error) {
+      console.error("Failed to fetch all inquiries:", error);
+    }
+  };
 
   const fetchInquiries = async () => {
     try {
       setIsLoading(true);
       const response = await api.getInquiries({
-        status: statusFilter || undefined,
+        status: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+        source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
         search: searchTerm || undefined,
       });
       setInquiries(response.data || response);
@@ -76,15 +103,54 @@ export default function Inquiries() {
     }
   };
 
+  // Get count for each status from all inquiries
+  const getStatusCount = (status) => {
+    return allInquiries.filter((inquiry) => inquiry.status === status).length;
+  };
+
+  // Get count for each source from all inquiries
+  const getSourceCount = (source) => {
+    return allInquiries.filter((inquiry) => inquiry.source === source).length;
+  };
+
+  // Form validation
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.name?.trim()) {
+      errors.name = "Name is required.";
+    }
+
+    if (!formData.email?.trim()) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.message?.trim()) {
+      errors.message = "Message is required.";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // CRUD Handlers
   const handleCreateInquiry = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await api.createInquiry(formData);
       toast.success("Inquiry created successfully");
       setIsCreateDialogOpen(false);
       resetFormData();
+      setFormErrors({});
+      fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
       toast.error(error.message || "Failed to create inquiry");
@@ -103,6 +169,7 @@ export default function Inquiries() {
       });
       toast.success("Inquiry updated successfully");
       setIsEditDialogOpen(false);
+      fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
       toast.error(error.message || "Failed to update inquiry");
@@ -117,6 +184,7 @@ export default function Inquiries() {
       await api.convertInquiryToLead(selectedInquiry.id);
       toast.success("Inquiry converted to lead successfully");
       setIsConvertDialogOpen(false);
+      fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
       toast.error(error.message || "Failed to convert inquiry");
@@ -133,6 +201,7 @@ export default function Inquiries() {
     try {
       await api.deleteInquiry(inquiry.id);
       toast.success("Inquiry deleted successfully");
+      fetchAllInquiries();
       fetchInquiries();
     } catch (error) {
       toast.error(error.message || "Failed to delete inquiry");
@@ -183,43 +252,68 @@ export default function Inquiries() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or company..."
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SearchInput
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            onChange={setSearchTerm}
+            placeholder="Search inquiries..."
+          />
+
+          <FacetedFilter
+            title="Status"
+            options={["new", "contacted", "qualified", "converted", "closed"]}
+            selectedValues={statusFilter}
+            onSelectionChange={setStatusFilter}
+            getCount={getStatusCount}
+          />
+
+          <FacetedFilter
+            title="Source"
+            options={["website", "facebook", "email", "phone", "walk-in", "cold-approach"]}
+            selectedValues={sourceFilter}
+            onSelectionChange={setSourceFilter}
+            getCount={getSourceCount}
           />
         </div>
 
-        <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="contacted">Contacted</SelectItem>
-            <SelectItem value="qualified">Qualified</SelectItem>
-            <SelectItem value="converted">Converted</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* View Options */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[150px]">
+            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {columns
+              .filter((column) => column.accessorKey)
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.accessorKey}
+                    className="capitalize"
+                    checked={true}
+                  >
+                    {column.accessorKey}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Table */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">All Inquiries ({inquiries.length})</h2>
-        <DataTable
-          columns={columns}
-          data={inquiries}
-          isLoading={isLoading}
-          emptyMessage="No inquiries found"
-          pageSize={10}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={inquiries}
+        isLoading={isLoading}
+        emptyMessage="No inquiries found"
+        pageSize={10}
+        showViewOptions={false}
+      />
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -235,12 +329,18 @@ export default function Inquiries() {
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
-                required
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formErrors.name) {
+                    setFormErrors({ ...formErrors, name: null });
+                  }
+                }}
+                className={formErrors.name ? "border-red-500" : ""}
               />
+              {formErrors.name && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
+              )}
             </div>
 
             <div>
@@ -248,12 +348,18 @@ export default function Inquiries() {
               <Input
                 id="email"
                 type="email"
-                required
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (formErrors.email) {
+                    setFormErrors({ ...formErrors, email: null });
+                  }
+                }}
+                className={formErrors.email ? "border-red-500" : ""}
               />
+              {formErrors.email && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -303,13 +409,19 @@ export default function Inquiries() {
               <Label htmlFor="message">Message *</Label>
               <Textarea
                 id="message"
-                required
                 rows={4}
                 value={formData.message}
-                onChange={(e) =>
-                  setFormData({ ...formData, message: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, message: e.target.value });
+                  if (formErrors.message) {
+                    setFormErrors({ ...formErrors, message: null });
+                  }
+                }}
+                className={formErrors.message ? "border-red-500" : ""}
               />
+              {formErrors.message && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.message}</p>
+              )}
             </div>
 
             <DialogFooter>

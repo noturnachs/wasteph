@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,21 +5,42 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, ArrowRight } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
-
-const statusVariants = {
-  new: "default",
-  contacted: "secondary",
-  qualified: "default",
-  converted: "outline",
-  closed: "destructive",
-};
+import { StatusBadge } from "../../components/StatusBadge";
 
 export const createColumns = ({ onEdit, onConvert, onDelete, userRole }) => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              Name
+              {isSorted === "asc" ? (
+                <ArrowUp className="ml-2 h-4 w-4" />
+              ) : isSorted === "desc" ? (
+                <ArrowDown className="ml-2 h-4 w-4" />
+              ) : (
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+              <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              Asc
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+              <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              Desc
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
   {
     accessorKey: "email",
@@ -48,16 +68,40 @@ export const createColumns = ({ onEdit, onConvert, onDelete, userRole }) => [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      return (
-        <Badge variant={statusVariants[status] || "default"}>
-          {status}
-        </Badge>
-      );
+      return <StatusBadge status={status} />;
     },
   },
   {
     accessorKey: "createdAt",
-    header: "Date",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              Date
+              {isSorted === "asc" ? (
+                <ArrowUp className="ml-2 h-4 w-4" />
+              ) : isSorted === "desc" ? (
+                <ArrowDown className="ml-2 h-4 w-4" />
+              ) : (
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+              <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              Asc
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+              <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              Desc
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
     cell: ({ row }) => {
       return format(new Date(row.original.createdAt), "MMM dd, yyyy");
     },

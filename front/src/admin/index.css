@@ -93,11 +93,11 @@
   --popover-foreground: #0f172a;
   --primary: #15803d;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
+  --secondary: #f8fafc;
   --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --muted: #f8fafc;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
+  --accent: #f8fafc;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
   --border: #e2e8f0;
@@ -114,7 +114,7 @@
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #15803d;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
+  --sidebar-accent: #f8fafc;
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #15803d;
@@ -306,5 +306,37 @@
   html.light [data-sidebar] a:not([data-active="true"]):hover svg,
   html.light [data-sidebar] button:not([data-active="true"]):hover svg {
     color: #0f172a !important;
+  }
+
+  /* Cursor pointer for all clickable elements */
+  button,
+  a,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  select,
+  [onclick],
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer !important;
+  }
+
+  /* Keep text cursor for text inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea {
+    cursor: text !important;
+  }
+
+  /* Default cursor for disabled elements */
+  button:disabled,
+  [disabled] {
+    cursor: not-allowed !important;
   }
 }

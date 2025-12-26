@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { inquiryTable, activityLogTable, leadTable } from "../db/schema.js";
-import { eq, desc, and, or, like } from "drizzle-orm";
+import { eq, desc, and, or, like, inArray } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -186,9 +186,14 @@ class InquiryService {
 
     const conditions = [];
 
-    // Status filter
+    // Status filter - support multiple statuses (comma-separated)
     if (status) {
-      conditions.push(eq(inquiryTable.status, status));
+      const statuses = status.split(',').map(s => s.trim());
+      if (statuses.length === 1) {
+        conditions.push(eq(inquiryTable.status, statuses[0]));
+      } else {
+        conditions.push(inArray(inquiryTable.status, statuses));
+      }
     }
 
     // Assigned to filter
@@ -196,9 +201,14 @@ class InquiryService {
       conditions.push(eq(inquiryTable.assignedTo, assignedTo));
     }
 
-    // Source filter
+    // Source filter - support multiple sources (comma-separated)
     if (source) {
-      conditions.push(eq(inquiryTable.source, source));
+      const sources = source.split(',').map(s => s.trim());
+      if (sources.length === 1) {
+        conditions.push(eq(inquiryTable.source, sources[0]));
+      } else {
+        conditions.push(inArray(inquiryTable.source, sources));
+      }
     }
 
     // Search filter (name, email, company)
