@@ -83,6 +83,8 @@ class ApiClient {
     if (filters.assignedTo) params.append("assignedTo", filters.assignedTo);
     if (filters.search) params.append("search", filters.search);
     if (filters.source) params.append("source", filters.source);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
 
     const queryString = params.toString();
     return this.request(`/inquiries${queryString ? `?${queryString}` : ""}`);
@@ -103,6 +105,13 @@ class ApiClient {
     return this.request(`/inquiries/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
+    });
+  }
+
+  async assignInquiry(inquiryId, assignedTo) {
+    return this.request(`/inquiries/${inquiryId}/assign`, {
+      method: "POST",
+      body: JSON.stringify({ assignedTo }),
     });
   }
 
@@ -203,6 +212,15 @@ class ApiClient {
     return this.request(`/clients/${id}`, {
       method: "DELETE",
     });
+  }
+
+  // User endpoints
+  async getUsers(role = "sales") {
+    const params = new URLSearchParams();
+    if (role) params.append("role", role);
+
+    const queryString = params.toString();
+    return this.request(`/users${queryString ? `?${queryString}` : ""}`);
   }
 }
 

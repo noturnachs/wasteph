@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "sonner";
-import { Plus, Loader2, SlidersHorizontal } from "lucide-react";
+import { Plus, Loader2, SlidersHorizontal, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,10 +46,32 @@ export default function Inquiries() {
   const [allInquiries, setAllInquiries] = useState([]); // Store all inquiries for counting
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
   // Filters
   const [statusFilter, setStatusFilter] = useState([]);
   const [sourceFilter, setSourceFilter] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Column visibility
+  const [columnVisibility, setColumnVisibility] = useState({
+    name: true,
+    email: true,
+    company: true,
+    source: true,
+    status: true,
+    assignedTo: true,
+    createdAt: true,
+  });
+
+  // Users for assignment
+  const [users, setUsers] = useState([]);
 
   // Dialogs
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -67,40 +89,59 @@ export default function Inquiries() {
     company: "",
     message: "",
     source: "phone",
+    assignedTo: "",
   });
 
   // Submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
-  // Fetch all inquiries (for counts)
+  // Fetch users on mount
   useEffect(() => {
+    fetchUsers();
     fetchAllInquiries();
   }, []);
 
   // Fetch filtered inquiries
   useEffect(() => {
-    fetchInquiries();
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
+    fetchInquiries(1);
   }, [statusFilter, sourceFilter, searchTerm]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.getUsers();
+      const userData = response.data || response;
+      setUsers(userData);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
 
   const fetchAllInquiries = async () => {
     try {
       const response = await api.getInquiries({});
-      setAllInquiries(response.data || response);
+      // Backend returns { data, pagination } so we need response.data
+      setAllInquiries(response.data || []);
     } catch (error) {
       console.error("Failed to fetch all inquiries:", error);
     }
   };
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = async (page = pagination.page, limit = pagination.limit) => {
     try {
       setIsLoading(true);
       const response = await api.getInquiries({
         status: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
         source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
         search: searchTerm || undefined,
+        page,
+        limit,
       });
-      setInquiries(response.data || response);
+
+      // Backend now returns { data, pagination }
+      setInquiries(response.data || []);
+      setPagination(response.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 });
     } catch (error) {
       toast.error(error.message || "Failed to fetch inquiries");
     } finally {
@@ -195,6 +236,7 @@ export default function Inquiries() {
         source: formData.source,
         status: formData.status,
         notes: formData.notes,
+        assignedTo: formData.assignedTo,
       });
       toast.success("Inquiry updated successfully");
       setIsEditDialogOpen(false);
@@ -248,11 +290,13 @@ export default function Inquiries() {
       company: "",
       message: "",
       source: "phone",
+      assignedTo: "",
     });
   };
 
   // Table columns setup
-  const columns = createColumns({
+  const allColumns = createColumns({
+    users,
     onView: (inquiry) => {
       setSelectedInquiry(inquiry);
       setIsViewDialogOpen(true);
@@ -268,6 +312,7 @@ export default function Inquiries() {
         source: inquiry.source || "phone",
         status: inquiry.status,
         notes: inquiry.notes || "",
+        assignedTo: inquiry.assignedTo || "",
       });
       setIsEditDialogOpen(true);
     },
@@ -277,6 +322,12 @@ export default function Inquiries() {
     },
     onDelete: handleDeleteInquiry,
     userRole: user?.role,
+  });
+
+  // Filter columns based on visibility
+  const columns = allColumns.filter(column => {
+    if (!column.accessorKey) return true; // Always show actions column
+    return columnVisibility[column.accessorKey];
   });
 
   return (
@@ -321,6 +372,22 @@ export default function Inquiries() {
             onSelectionChange={setSourceFilter}
             getCount={getSourceCount}
           />
+
+          {(statusFilter.length > 0 || sourceFilter.length > 0 || searchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStatusFilter([]);
+                setSourceFilter([]);
+                setSearchTerm("");
+              }}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* View Options */}
@@ -332,16 +399,22 @@ export default function Inquiries() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[150px]">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-bold">Toggle columns</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {columns
+            {allColumns
               .filter((column) => column.accessorKey)
               .map((column) => {
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.accessorKey}
                     className="capitalize"
-                    checked={true}
+                    checked={columnVisibility[column.accessorKey]}
+                    onCheckedChange={(value) =>
+                      setColumnVisibility((prev) => ({
+                        ...prev,
+                        [column.accessorKey]: value,
+                      }))
+                    }
                   >
                     {column.accessorKey}
                   </DropdownMenuCheckboxItem>
@@ -357,9 +430,134 @@ export default function Inquiries() {
         data={inquiries}
         isLoading={isLoading}
         emptyMessage="No inquiries found"
-        pageSize={10}
         showViewOptions={false}
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        {/* Rows per page */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchInquiries(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Page info */}
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        {/* Navigation buttons */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchInquiries(1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">First page</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchInquiries(pagination.page - 1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchInquiries(pagination.page + 1)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchInquiries(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -605,6 +803,31 @@ export default function Inquiries() {
               </Select>
             </div>
 
+            <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+              <Label htmlFor="edit-assigned" className="text-right">Assigned To</Label>
+              <Select
+                value={formData.assignedTo}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, assignedTo: val })
+                }
+              >
+                <SelectTrigger id="edit-assigned">
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">No users found</div>
+                  ) : (
+                    users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.firstName} {user.lastName} ({user.role})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-[120px_1fr] items-start gap-4">
               <Label htmlFor="edit-message" className="text-right pt-2">Message</Label>
               <div className="flex-1">
@@ -752,6 +975,18 @@ export default function Inquiries() {
                     <div className="mt-1">
                       <StatusBadge status={selectedInquiry.status} />
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Assigned To</p>
+                    <p className="text-sm font-medium">
+                      {(() => {
+                        if (!selectedInquiry.assignedTo) return "Unassigned";
+                        const assignedUser = users.find(u => u.id === selectedInquiry.assignedTo);
+                        return assignedUser
+                          ? `${assignedUser.firstName} ${assignedUser.lastName}`
+                          : "Unknown User";
+                      })()}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Created</p>

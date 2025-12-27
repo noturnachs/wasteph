@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { inquiryTable, activityLogTable, leadTable } from "../db/schema.js";
-import { eq, desc, and, or, like, inArray } from "drizzle-orm";
+import { eq, desc, and, or, like, inArray, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -34,16 +34,84 @@ class InquiryService {
   }
 
   /**
-   * Get all inquiries with optional filtering
-   * @returns {Promise<Array>} Array of inquiries
+   * Get all inquiries with optional filtering, search, and pagination
+   * @param {Object} options - Query options { status, assignedTo, search, source, page, limit }
+   * @returns {Promise<Object>} Object with data and pagination info
    */
-  async getAllInquiries() {
-    const inquiries = await db
-      .select()
-      .from(inquiryTable)
-      .orderBy(desc(inquiryTable.createdAt));
+  async getAllInquiries(options = {}) {
+    const { status, assignedTo, search, source, page = 1, limit = 10 } = options;
 
-    return inquiries;
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build base query
+    let query = db.select().from(inquiryTable);
+    const conditions = [];
+
+    // Status filter - support multiple statuses (comma-separated)
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim());
+      if (statuses.length === 1) {
+        conditions.push(eq(inquiryTable.status, statuses[0]));
+      } else {
+        conditions.push(inArray(inquiryTable.status, statuses));
+      }
+    }
+
+    // Assigned to filter
+    if (assignedTo) {
+      conditions.push(eq(inquiryTable.assignedTo, assignedTo));
+    }
+
+    // Source filter - support multiple sources (comma-separated)
+    if (source) {
+      const sources = source.split(',').map(s => s.trim());
+      if (sources.length === 1) {
+        conditions.push(eq(inquiryTable.source, sources[0]));
+      } else {
+        conditions.push(inArray(inquiryTable.source, sources));
+      }
+    }
+
+    // Search filter (name, email, company)
+    if (search) {
+      const searchTerm = `%${search}%`;
+      conditions.push(
+        or(
+          like(inquiryTable.name, searchTerm),
+          like(inquiryTable.email, searchTerm),
+          like(inquiryTable.company, searchTerm)
+        )
+      );
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count for pagination
+    let countQuery = db.select({ value: count() }).from(inquiryTable);
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+    const [{ value: total }] = await countQuery;
+
+    // Order by creation date and apply pagination
+    const inquiries = await query
+      .orderBy(desc(inquiryTable.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: inquiries,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**
@@ -180,64 +248,42 @@ class InquiryService {
     return inquiry;
   }
 
+
   /**
-   * Get all inquiries with filtering and search
-   * @param {Object} filters - Filter parameters
-   * @returns {Promise<Array>} Filtered inquiries array
+   * Assign inquiry to a user
+   * @param {string} inquiryId - Inquiry UUID
+   * @param {string} assignToUserId - User ID to assign to
+   * @param {string} userId - User performing the assignment
+   * @param {Object} metadata - Request metadata (ip, userAgent)
+   * @returns {Promise<Object>} Updated inquiry
+   * @throws {AppError} If inquiry not found
    */
-  async getAllInquiriesFiltered(filters = {}) {
-    const { status, assignedTo, search, source } = filters;
+  async assignInquiry(inquiryId, assignToUserId, userId, metadata = {}) {
+    // Get the inquiry first
+    const inquiry = await this.getInquiryById(inquiryId);
 
-    let query = db.select().from(inquiryTable);
+    // Update the inquiry with new assignment
+    const [updatedInquiry] = await db
+      .update(inquiryTable)
+      .set({
+        assignedTo: assignToUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(inquiryTable.id, inquiryId))
+      .returning();
 
-    const conditions = [];
+    // Log activity
+    await this.logActivity({
+      userId,
+      action: "inquiry_assigned",
+      entityType: "inquiry",
+      entityId: inquiry.id,
+      details: { assignedTo: assignToUserId },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
 
-    // Status filter - support multiple statuses (comma-separated)
-    if (status) {
-      const statuses = status.split(',').map(s => s.trim());
-      if (statuses.length === 1) {
-        conditions.push(eq(inquiryTable.status, statuses[0]));
-      } else {
-        conditions.push(inArray(inquiryTable.status, statuses));
-      }
-    }
-
-    // Assigned to filter
-    if (assignedTo) {
-      conditions.push(eq(inquiryTable.assignedTo, assignedTo));
-    }
-
-    // Source filter - support multiple sources (comma-separated)
-    if (source) {
-      const sources = source.split(',').map(s => s.trim());
-      if (sources.length === 1) {
-        conditions.push(eq(inquiryTable.source, sources[0]));
-      } else {
-        conditions.push(inArray(inquiryTable.source, sources));
-      }
-    }
-
-    // Search filter (name, email, company)
-    if (search) {
-      const searchTerm = `%${search}%`;
-      conditions.push(
-        or(
-          like(inquiryTable.name, searchTerm),
-          like(inquiryTable.email, searchTerm),
-          like(inquiryTable.company, searchTerm)
-        )
-      );
-    }
-
-    // Apply conditions if any
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Order by creation date
-    const inquiries = await query.orderBy(desc(inquiryTable.createdAt));
-
-    return inquiries;
+    return updatedInquiry;
   }
 
   /**

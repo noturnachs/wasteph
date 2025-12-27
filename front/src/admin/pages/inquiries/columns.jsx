@@ -10,7 +10,7 @@ import { MoreHorizontal, Eye, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, 
 import { format } from "date-fns";
 import { StatusBadge } from "../../components/StatusBadge";
 
-export const createColumns = ({ onView, onEdit, onConvert, onDelete, userRole }) => [
+export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete, userRole }) => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -42,6 +42,17 @@ export const createColumns = ({ onView, onEdit, onConvert, onDelete, userRole })
         </DropdownMenu>
       );
     },
+    cell: ({ row }) => {
+      const inquiry = row.original;
+      return (
+        <button
+          onClick={() => onView(inquiry)}
+          className="font-bold underline hover:text-primary cursor-pointer text-left"
+        >
+          {inquiry.name}
+        </button>
+      );
+    },
   },
   {
     accessorKey: "email",
@@ -70,6 +81,17 @@ export const createColumns = ({ onView, onEdit, onConvert, onDelete, userRole })
     cell: ({ row }) => {
       const status = row.original.status;
       return <StatusBadge status={status} />;
+    },
+  },
+  {
+    accessorKey: "assignedTo",
+    header: "Assigned To",
+    cell: ({ row }) => {
+      const assignedTo = row.original.assignedTo;
+      if (!assignedTo) return "-";
+
+      const user = users.find(u => u.id === assignedTo);
+      return user ? `${user.firstName} ${user.lastName}` : "Unknown User";
     },
   },
   {

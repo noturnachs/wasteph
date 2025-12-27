@@ -52,24 +52,27 @@ export const createInquiryManual = async (req, res, next) => {
 };
 
 /**
- * Controller: Get all inquiries (with optional filters)
- * Route: GET /api/inquiries
+ * Controller: Get all inquiries (with optional filters and pagination)
+ * Route: GET /api/inquiries?page=1&limit=20&status=new&search=...
  * Access: Protected (all authenticated users)
  */
 export const getAllInquiries = async (req, res, next) => {
   try {
-    const { status, assignedTo, search, source } = req.query;
+    const { status, assignedTo, search, source, page, limit } = req.query;
 
-    // Check if any filters are provided
-    const hasFilters = status || assignedTo || search || source;
-
-    const inquiries = hasFilters
-      ? await inquiryService.getAllInquiriesFiltered({ status, assignedTo, search, source })
-      : await inquiryService.getAllInquiries();
+    const result = await inquiryService.getAllInquiries({
+      status,
+      assignedTo,
+      search,
+      source,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
+    });
 
     res.json({
       success: true,
-      data: inquiries,
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
@@ -115,6 +118,32 @@ export const updateInquiry = async (req, res, next) => {
     res.json({
       success: true,
       message: "Inquiry updated successfully",
+      data: inquiry,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller: Assign inquiry to a user
+ * Route: POST /api/inquiries/:id/assign
+ * Access: Protected (authenticated users)
+ */
+export const assignInquiry = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { assignedTo } = req.body;
+    const userId = req.user.id;
+
+    const inquiry = await inquiryService.assignInquiry(id, assignedTo, userId, {
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    res.json({
+      success: true,
+      message: "Inquiry assigned successfully",
       data: inquiry,
     });
   } catch (error) {

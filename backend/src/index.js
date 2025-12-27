@@ -13,6 +13,7 @@ import inquiryRoutes from "./routes/inquiryRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import potentialRoutes from "./routes/potentialRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/leads", leadRoutes);
 app.use("/api/potentials", potentialRoutes);
 app.use("/api/clients", clientRoutes);
+app.use("/api/users", userRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

@@ -5,6 +5,7 @@ import {
   getAllInquiries,
   getInquiryById,
   updateInquiry,
+  assignInquiry,
   convertInquiryToLead,
   deleteInquiry,
 } from "../controllers/inquiryController.js";
@@ -18,6 +19,9 @@ router.post("/", inquiryValidation, validate, createInquiry);
 
 // Protected routes - manual create (Sales/Admin)
 router.post("/manual", requireAuth, inquiryValidation, validate, createInquiryManual);
+
+// Assign inquiry - MUST be before /:id routes
+router.post("/:id/assign", requireAuth, assignInquiry);
 
 // Convert inquiry to lead - MUST be before /:id routes
 router.post("/:id/convert-to-lead", requireAuth, convertInquiryToLead);
