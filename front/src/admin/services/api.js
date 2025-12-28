@@ -115,9 +115,10 @@ class ApiClient {
     });
   }
 
-  async convertInquiryToLead(inquiryId) {
+  async convertInquiryToLead(inquiryId, serviceDetails = {}) {
     return this.request(`/inquiries/${inquiryId}/convert-to-lead`, {
       method: "POST",
+      body: JSON.stringify(serviceDetails),
     });
   }
 

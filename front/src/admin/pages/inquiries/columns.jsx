@@ -135,42 +135,56 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
       const inquiry = row.original;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => onView(inquiry)} className="cursor-pointer">
-              <span className="flex-1">View Detail</span>
-              <Eye className="h-4 w-4" />
-            </DropdownMenuItem>
-
-            <DropdownMenuItem onClick={() => onEdit(inquiry)} className="cursor-pointer">
-              <span className="flex-1">Edit</span>
-              <Pencil className="h-4 w-4" />
-            </DropdownMenuItem>
-
-            {inquiry.status === "qualified" && (
-              <DropdownMenuItem onClick={() => onConvert(inquiry)} className="cursor-pointer">
-                <span className="flex-1">Convert to Lead</span>
-                <ArrowRight className="h-4 w-4" />
-              </DropdownMenuItem>
-            )}
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem
-              onClick={() => onDelete(inquiry)}
-              className="text-destructive cursor-pointer"
+        <div className="flex items-center gap-2">
+          {inquiry.status === "qualified" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onConvert(inquiry)}
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              <span className="flex-1">Delete</span>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <ArrowRight className="h-4 w-4 mr-1" />
+              Convert
+            </Button>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onView(inquiry)} className="cursor-pointer">
+                <span className="flex-1">View Detail</span>
+                <Eye className="h-4 w-4" />
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => onEdit(inquiry)} className="cursor-pointer">
+                <span className="flex-1">Edit</span>
+                <Pencil className="h-4 w-4" />
+              </DropdownMenuItem>
+
+              {inquiry.status === "qualified" && (
+                <DropdownMenuItem onClick={() => onConvert(inquiry)} className="cursor-pointer">
+                  <span className="flex-1">Convert to Lead</span>
+                  <ArrowRight className="h-4 w-4" />
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={() => onDelete(inquiry)}
+                className="text-destructive cursor-pointer"
+              >
+                <span className="flex-1">Delete</span>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     },
   },

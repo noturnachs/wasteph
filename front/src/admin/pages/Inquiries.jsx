@@ -37,6 +37,7 @@ import { FacetedFilter } from "../components/FacetedFilter";
 import { SearchInput } from "../components/SearchInput";
 import { StatusBadge } from "../components/StatusBadge";
 import { DeleteConfirmationModal } from "../components/modals";
+import { ConvertToLeadDialog } from "../components/ConvertToLeadDialog";
 import { createColumns } from "./inquiries/columns";
 import { format } from "date-fns";
 
@@ -250,10 +251,10 @@ export default function Inquiries() {
     }
   };
 
-  const handleConvertToLead = async () => {
+  const handleConvertToLead = async (serviceDetails) => {
     setIsSubmitting(true);
     try {
-      await api.convertInquiryToLead(selectedInquiry.id);
+      await api.convertInquiryToLead(selectedInquiry.id, serviceDetails);
       toast.success("Inquiry converted to lead successfully");
       setIsConvertDialogOpen(false);
       fetchAllInquiries();
@@ -875,58 +876,13 @@ export default function Inquiries() {
       </Dialog>
 
       {/* Convert to Lead Dialog */}
-      <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convert to Lead</DialogTitle>
-            <DialogDescription>
-              This will create a new lead from this inquiry. You can add service
-              details later in the Leads page.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedInquiry && (
-            <div className="space-y-3">
-              <div className="rounded-lg border p-4 space-y-2">
-                <p>
-                  <strong>Name:</strong> {selectedInquiry.name}
-                </p>
-                <p>
-                  <strong>Email:</strong> {selectedInquiry.email}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {selectedInquiry.phone || "N/A"}
-                </p>
-                <p>
-                  <strong>Company:</strong> {selectedInquiry.company || "N/A"}
-                </p>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                The inquiry message will be added as a note in the lead. Service
-                requirement fields (address, waste type, volume) can be filled
-                in the Leads page.
-              </p>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsConvertDialogOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleConvertToLead} disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Convert to Lead
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConvertToLeadDialog
+        open={isConvertDialogOpen}
+        onOpenChange={setIsConvertDialogOpen}
+        inquiry={selectedInquiry}
+        onConvert={handleConvertToLead}
+        isSubmitting={isSubmitting}
+      />
 
       {/* View Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>

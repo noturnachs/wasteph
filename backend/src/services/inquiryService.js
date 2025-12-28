@@ -287,14 +287,15 @@ class InquiryService {
   }
 
   /**
-   * Convert inquiry to lead (simple one-click conversion)
+   * Convert inquiry to lead with optional service details
    * @param {string} inquiryId - Inquiry UUID
    * @param {string} userId - User performing the conversion
+   * @param {Object} serviceDetails - Optional service details from conversion form
    * @param {Object} metadata - Request metadata (ip, userAgent)
    * @returns {Promise<Object>} Created lead object
    * @throws {AppError} If inquiry not found
    */
-  async convertInquiryToLead(inquiryId, userId, metadata = {}) {
+  async convertInquiryToLead(inquiryId, userId, serviceDetails = {}, metadata = {}) {
     // 1. Fetch inquiry
     const inquiry = await this.getInquiryById(inquiryId);
 
@@ -305,19 +306,47 @@ class InquiryService {
       );
     }
 
-    // 3. Create lead with mapped fields
+    // 3. Extract service details (all optional)
+    const {
+      wasteType,
+      estimatedVolume,
+      address,
+      city,
+      province,
+      priority,
+      estimatedValue,
+      notes: additionalNotes,
+    } = serviceDetails;
+
+    // 4. Construct notes
+    let leadNotes = `Converted from inquiry.\n\nOriginal message: ${inquiry.message}`;
+    if (additionalNotes) {
+      leadNotes += `\n\n${additionalNotes}`;
+    }
+
+    // 5. Create lead with mapped fields
     const [lead] = await db
       .insert(leadTable)
       .values({
-        companyName: inquiry.company || inquiry.name, // Use company name or fallback to person name
+        // From inquiry (required)
+        companyName: inquiry.company || inquiry.name,
         contactPerson: inquiry.name,
         email: inquiry.email,
         phone: inquiry.phone,
-        notes: `Converted from inquiry.\n\nOriginal message: ${inquiry.message}`,
-        assignedTo: inquiry.assignedTo || userId, // Keep same assignment or assign to converter
+        assignedTo: inquiry.assignedTo || userId,
+
+        // From service details (all optional)
+        wasteType: wasteType || null,
+        estimatedVolume: estimatedVolume || null,
+        address: address || null,
+        city: city || null,
+        province: province || null,
+        priority: priority || 3,
+        estimatedValue: estimatedValue || null,
+
+        // Constructed
+        notes: leadNotes,
         status: "new",
-        priority: 3, // Default priority
-        // Leave empty: address, city, province, wasteType, estimatedVolume, estimatedValue
       })
       .returning();
 

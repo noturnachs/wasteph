@@ -152,7 +152,7 @@ export const assignInquiry = async (req, res, next) => {
 };
 
 /**
- * Controller: Convert inquiry to lead
+ * Controller: Convert inquiry to lead with optional service details
  * Route: POST /api/inquiries/:id/convert-to-lead
  * Access: Protected (authenticated users)
  */
@@ -160,11 +160,17 @@ export const convertInquiryToLead = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const serviceDetails = req.body; // Optional: wasteType, estimatedVolume, address, city, province, priority, estimatedValue, notes
 
-    const lead = await inquiryService.convertInquiryToLead(id, userId, {
-      ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
-    });
+    const lead = await inquiryService.convertInquiryToLead(
+      id,
+      userId,
+      serviceDetails,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      }
+    );
 
     res.status(201).json({
       success: true,
