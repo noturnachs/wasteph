@@ -6,20 +6,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
-import { StatusBadge } from "../../components/StatusBadge";
+import { StatusBadge } from "../StatusBadge";
 
-export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete, userRole }) => [
+export const createColumns = ({ users = [], onView, onEdit, onDelete }) => [
   {
-    accessorKey: "name",
+    accessorKey: "contactPerson",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              Name
+              Contact Person
               {isSorted === "asc" ? (
                 <ArrowUp className="ml-2 h-4 w-4" />
               ) : isSorted === "desc" ? (
@@ -43,37 +43,33 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
       );
     },
     cell: ({ row }) => {
-      const inquiry = row.original;
+      const lead = row.original;
       return (
         <button
-          onClick={() => onView(inquiry)}
+          onClick={() => onView(lead)}
           className="font-bold underline hover:text-primary cursor-pointer text-left"
         >
-          {inquiry.name}
+          {lead.contactPerson}
         </button>
       );
     },
+  },
+  {
+    accessorKey: "companyName",
+    header: "Company",
   },
   {
     accessorKey: "email",
     header: "Email",
   },
   {
-    accessorKey: "company",
-    header: "Company",
-    cell: ({ row }) => row.original.company || "-",
+    accessorKey: "phone",
+    header: "Phone",
   },
   {
-    accessorKey: "source",
-    header: "Source",
-    cell: ({ row }) => {
-      const source = row.original.source;
-      return (
-        <span className="capitalize">
-          {source?.replace("-", " ") || "website"}
-        </span>
-      );
-    },
+    accessorKey: "wasteType",
+    header: "Waste Type",
+    cell: ({ row }) => row.original.wasteType || "-",
   },
   {
     accessorKey: "status",
@@ -81,6 +77,25 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
     cell: ({ row }) => {
       const status = row.original.status;
       return <StatusBadge status={status} />;
+    },
+  },
+  {
+    accessorKey: "priority",
+    header: "Priority",
+    cell: ({ row }) => {
+      const priority = row.original.priority;
+      const colors = {
+        1: "text-gray-600",
+        2: "text-blue-600",
+        3: "text-yellow-600",
+        4: "text-orange-600",
+        5: "text-red-600",
+      };
+      return (
+        <span className={`font-medium ${colors[priority] || "text-gray-600"}`}>
+          {priority}
+        </span>
+      );
     },
   },
   {
@@ -132,59 +147,38 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
   {
     id: "actions",
     cell: ({ row }) => {
-      const inquiry = row.original;
+      const lead = row.original;
 
       return (
-        <div className="flex items-center gap-2">
-          {inquiry.status === "qualified" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onConvert(inquiry)}
-              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              <ArrowRight className="h-4 w-4 mr-1" />
-              Convert
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
-          )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onView(lead)} className="cursor-pointer">
+              <span className="flex-1">View Detail</span>
+              <Eye className="h-4 w-4" />
+            </DropdownMenuItem>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onView(inquiry)} className="cursor-pointer">
-                <span className="flex-1">View Detail</span>
-                <Eye className="h-4 w-4" />
-              </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(lead)} className="cursor-pointer">
+              <span className="flex-1">Edit</span>
+              <Pencil className="h-4 w-4" />
+            </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={() => onEdit(inquiry)} className="cursor-pointer">
-                <span className="flex-1">Edit</span>
-                <Pencil className="h-4 w-4" />
-              </DropdownMenuItem>
+            <DropdownMenuSeparator />
 
-              {inquiry.status === "qualified" && (
-                <DropdownMenuItem onClick={() => onConvert(inquiry)} className="cursor-pointer">
-                  <span className="flex-1">Convert to Lead</span>
-                  <ArrowRight className="h-4 w-4" />
-                </DropdownMenuItem>
-              )}
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                onClick={() => onDelete(inquiry)}
-                className="text-destructive cursor-pointer"
-              >
-                <span className="flex-1">Delete</span>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            <DropdownMenuItem
+              onClick={() => onDelete(lead)}
+              className="text-destructive cursor-pointer"
+            >
+              <span className="flex-1">Delete</span>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

@@ -129,8 +129,16 @@ class ApiClient {
   }
 
   // Lead endpoints
-  async getLeads() {
-    return this.request("/leads");
+  async getLeads(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.assignedTo) params.append("assignedTo", filters.assignedTo);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/leads${queryString ? `?${queryString}` : ""}`);
   }
 
   async createLead(data) {

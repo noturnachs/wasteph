@@ -29,17 +29,26 @@ export const createLead = async (req, res, next) => {
 };
 
 /**
- * Controller: Get all leads
- * Route: GET /api/leads
+ * Controller: Get all leads (with optional filters and pagination)
+ * Route: GET /api/leads?page=1&limit=20&status=new&search=...
  * Access: Protected (all authenticated users)
  */
 export const getAllLeads = async (req, res, next) => {
   try {
-    const leads = await leadService.getAllLeads();
+    const { status, assignedTo, search, page, limit } = req.query;
+
+    const result = await leadService.getAllLeads({
+      status,
+      assignedTo,
+      search,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
+    });
 
     res.json({
       success: true,
-      data: leads,
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
