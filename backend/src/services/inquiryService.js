@@ -15,7 +15,7 @@ class InquiryService {
    * @returns {Promise<Object>} Created inquiry
    */
   async createInquiry(inquiryData, options = {}) {
-    const { name, email, phone, company, message } = inquiryData;
+    const { name, email, phone, company, message, serviceType } = inquiryData;
     const { source = "website" } = options;
 
     const [inquiry] = await db
@@ -26,6 +26,7 @@ class InquiryService {
         phone,
         company,
         message,
+        serviceType,
         source,
       })
       .returning();
@@ -39,7 +40,7 @@ class InquiryService {
    * @returns {Promise<Object>} Object with data and pagination info
    */
   async getAllInquiries(options = {}) {
-    const { status, assignedTo, search, source, page = 1, limit = 10 } = options;
+    const { status, assignedTo, search, source, serviceType, page = 1, limit = 10 } = options;
 
     // Calculate offset
     const offset = (page - 1) * limit;
@@ -70,6 +71,16 @@ class InquiryService {
         conditions.push(eq(inquiryTable.source, sources[0]));
       } else {
         conditions.push(inArray(inquiryTable.source, sources));
+      }
+    }
+
+    // Service type filter - support multiple service types (comma-separated)
+    if (serviceType) {
+      const serviceTypes = serviceType.split(',').map(s => s.trim());
+      if (serviceTypes.length === 1) {
+        conditions.push(eq(inquiryTable.serviceType, serviceTypes[0]));
+      } else {
+        conditions.push(inArray(inquiryTable.serviceType, serviceTypes));
       }
     }
 
@@ -144,7 +155,7 @@ class InquiryService {
    * @throws {AppError} If inquiry not found
    */
   async updateInquiry(inquiryId, updateData, userId, metadata = {}) {
-    const { name, email, phone, company, message, source, status, assignedTo, notes } = updateData;
+    const { name, email, phone, company, message, source, status, assignedTo, notes, serviceType } = updateData;
 
     const [inquiry] = await db
       .update(inquiryTable)
@@ -158,6 +169,7 @@ class InquiryService {
         ...(status && { status }),
         ...(assignedTo !== undefined && { assignedTo }),
         ...(notes !== undefined && { notes }),
+        ...(serviceType !== undefined && { serviceType }),
         updatedAt: new Date(),
       })
       .where(eq(inquiryTable.id, inquiryId))
@@ -173,7 +185,7 @@ class InquiryService {
       action: "inquiry_updated",
       entityType: "inquiry",
       entityId: inquiry.id,
-      details: { name, email, phone, company, message, source, status, assignedTo, notes },
+      details: { name, email, phone, company, message, source, status, assignedTo, notes, serviceType },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -220,7 +232,7 @@ class InquiryService {
    * @returns {Promise<Object>} Created inquiry
    */
   async createInquiryManual(inquiryData, userId, metadata = {}) {
-    const { name, email, phone, company, message, source = "phone" } = inquiryData;
+    const { name, email, phone, company, message, source = "phone", serviceType } = inquiryData;
 
     const [inquiry] = await db
       .insert(inquiryTable)
@@ -231,6 +243,7 @@ class InquiryService {
         company,
         message,
         source,
+        serviceType,
         assignedTo: userId, // Auto-assign to creator
       })
       .returning();
@@ -287,14 +300,15 @@ class InquiryService {
   }
 
   /**
-   * Convert inquiry to lead (simple one-click conversion)
+   * Convert inquiry to lead with optional service details
    * @param {string} inquiryId - Inquiry UUID
    * @param {string} userId - User performing the conversion
+   * @param {Object} serviceDetails - Optional service details from conversion form
    * @param {Object} metadata - Request metadata (ip, userAgent)
    * @returns {Promise<Object>} Created lead object
    * @throws {AppError} If inquiry not found
    */
-  async convertInquiryToLead(inquiryId, userId, metadata = {}) {
+  async convertInquiryToLead(inquiryId, userId, data = {}, metadata = {}) {
     // 1. Fetch inquiry
     const inquiry = await this.getInquiryById(inquiryId);
 
@@ -305,35 +319,63 @@ class InquiryService {
       );
     }
 
-    // 3. Create lead with mapped fields
+    // 3. Extract service requests array (new format)
+    const { serviceRequests = [] } = data;
+
+    // 4. Construct notes
+    let leadNotes = `Converted from inquiry.\n\nOriginal message: ${inquiry.message}`;
+
+    // 5. Create lead with mapped fields
     const [lead] = await db
       .insert(leadTable)
       .values({
-        companyName: inquiry.company || inquiry.name, // Use company name or fallback to person name
+        // From inquiry (required)
+        companyName: inquiry.company || inquiry.name,
         contactPerson: inquiry.name,
         email: inquiry.email,
         phone: inquiry.phone,
-        notes: `Converted from inquiry.\n\nOriginal message: ${inquiry.message}`,
-        assignedTo: inquiry.assignedTo || userId, // Keep same assignment or assign to converter
+        assignedTo: inquiry.assignedTo || userId,
+
+        // Set defaults (old fields will be removed later)
+        wasteType: null,
+        estimatedVolume: null,
+        address: null,
+        city: null,
+        province: null,
+        priority: 3,
+        estimatedValue: null,
+
+        // Constructed
+        notes: leadNotes,
         status: "new",
-        priority: 3, // Default priority
-        // Leave empty: address, city, province, wasteType, estimatedVolume, estimatedValue
       })
       .returning();
 
-    // 4. Update inquiry status to converted
+    // 6. Create service requests if provided
+    if (serviceRequests && serviceRequests.length > 0) {
+      const serviceRequestService = (await import("./serviceRequestService.js")).default;
+
+      for (const serviceRequest of serviceRequests) {
+        await serviceRequestService.createServiceRequest({
+          ...serviceRequest,
+          leadId: lead.id,
+        });
+      }
+    }
+
+    // 7. Update inquiry status to converted
     await db
       .update(inquiryTable)
       .set({ status: "converted", updatedAt: new Date() })
       .where(eq(inquiryTable.id, inquiryId));
 
-    // 5. Log activities for both inquiry and lead
+    // 8. Log activities for both inquiry and lead
     await this.logActivity({
       userId,
       action: "inquiry_converted_to_lead",
       entityType: "inquiry",
       entityId: inquiry.id,
-      details: { leadId: lead.id },
+      details: { leadId: lead.id, serviceRequestsCount: serviceRequests.length },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -343,7 +385,7 @@ class InquiryService {
       action: "lead_created_from_inquiry",
       entityType: "lead",
       entityId: lead.id,
-      details: JSON.stringify({ inquiryId: inquiry.id }),
+      details: JSON.stringify({ inquiryId: inquiry.id, serviceRequestsCount: serviceRequests.length }),
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });

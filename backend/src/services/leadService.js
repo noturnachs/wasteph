@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { leadTable, activityLogTable } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, or, like, inArray, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -64,16 +64,74 @@ class LeadService {
   }
 
   /**
-   * Get all leads
-   * @returns {Promise<Array>} Array of leads
+   * Get all leads with optional filtering, search, and pagination
+   * @param {Object} options - Query options { status, assignedTo, search, page, limit }
+   * @returns {Promise<Object>} Object with data and pagination info
    */
-  async getAllLeads() {
-    const leads = await db
-      .select()
-      .from(leadTable)
-      .orderBy(desc(leadTable.createdAt));
+  async getAllLeads(options = {}) {
+    const { status, assignedTo, search, page = 1, limit = 10 } = options;
 
-    return leads;
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build base query
+    let query = db.select().from(leadTable);
+    const conditions = [];
+
+    // Status filter - support multiple statuses (comma-separated)
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim());
+      if (statuses.length === 1) {
+        conditions.push(eq(leadTable.status, statuses[0]));
+      } else {
+        conditions.push(inArray(leadTable.status, statuses));
+      }
+    }
+
+    // Assigned to filter
+    if (assignedTo) {
+      conditions.push(eq(leadTable.assignedTo, assignedTo));
+    }
+
+    // Search filter (companyName, contactPerson, email)
+    if (search) {
+      const searchTerm = `%${search}%`;
+      conditions.push(
+        or(
+          like(leadTable.companyName, searchTerm),
+          like(leadTable.contactPerson, searchTerm),
+          like(leadTable.email, searchTerm)
+        )
+      );
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count for pagination
+    let countQuery = db.select({ value: count() }).from(leadTable);
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+    const [{ value: total }] = await countQuery;
+
+    // Order by creation date and apply pagination
+    const leads = await query
+      .orderBy(desc(leadTable.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: leads,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**

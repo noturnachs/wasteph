@@ -115,9 +115,10 @@ class ApiClient {
     });
   }
 
-  async convertInquiryToLead(inquiryId) {
+  async convertInquiryToLead(inquiryId, serviceDetails = {}) {
     return this.request(`/inquiries/${inquiryId}/convert-to-lead`, {
       method: "POST",
+      body: JSON.stringify(serviceDetails),
     });
   }
 
@@ -128,8 +129,16 @@ class ApiClient {
   }
 
   // Lead endpoints
-  async getLeads() {
-    return this.request("/leads");
+  async getLeads(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.assignedTo) params.append("assignedTo", filters.assignedTo);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/leads${queryString ? `?${queryString}` : ""}`);
   }
 
   async createLead(data) {
@@ -221,6 +230,35 @@ class ApiClient {
 
     const queryString = params.toString();
     return this.request(`/users${queryString ? `?${queryString}` : ""}`);
+  }
+
+  // Service Request endpoints
+  async getServiceRequestsByLeadId(leadId) {
+    return this.request(`/service-requests/lead/${leadId}`);
+  }
+
+  async getServiceRequestById(id) {
+    return this.request(`/service-requests/${id}`);
+  }
+
+  async createServiceRequest(data) {
+    return this.request("/service-requests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateServiceRequest(id, data) {
+    return this.request(`/service-requests/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteServiceRequest(id) {
+    return this.request(`/service-requests/${id}`, {
+      method: "DELETE",
+    });
   }
 }
 

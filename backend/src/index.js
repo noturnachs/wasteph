@@ -14,6 +14,7 @@ import leadRoutes from "./routes/leadRoutes.js";
 import potentialRoutes from "./routes/potentialRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 
 dotenv.config();
 
@@ -64,6 +65,7 @@ app.use("/api/leads", leadRoutes);
 app.use("/api/potentials", potentialRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/service-requests", serviceRequestRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

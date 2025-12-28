@@ -11,11 +11,15 @@ import {
 // Enums
 export const userRoleEnum = pgEnum("user_role", ["admin", "sales"]);
 export const inquiryStatusEnum = pgEnum("inquiry_status", [
-  "new",
-  "contacted",
-  "qualified",
-  "converted",
-  "closed",
+  "submitted_proposal",
+  "initial_comms",
+  "negotiating",
+  "to_call",
+  "submitted_company_profile",
+  "na",
+  "waiting_for_feedback",
+  "declined",
+  "on_boarded",
 ]);
 export const leadStatusEnum = pgEnum("lead_status", [
   "new",
@@ -30,6 +34,31 @@ export const clientStatusEnum = pgEnum("client_status", [
   "inactive",
   "suspended",
 ]);
+export const serviceTypeEnum = pgEnum("service_type", [
+  "garbage_collection",
+  "septic_siphoning",
+  "hazardous_waste",
+  "onetime_hauling",
+]);
+export const serviceModeEnum = pgEnum("service_mode", [
+  "one_time",
+  "contract_based",
+]);
+export const collectionFrequencyEnum = pgEnum("collection_frequency", [
+  "daily",
+  "three_times_week",
+  "weekly",
+  "custom",
+]);
+export const propertyTypeEnum = pgEnum("property_type", [
+  "residential",
+  "commercial",
+]);
+export const priorityLevelEnum = pgEnum("priority_level", [
+  "low",
+  "medium",
+  "high",
+]);
 
 // Lucia Auth Tables
 export const userTable = pgTable("user", {
@@ -38,7 +67,7 @@ export const userTable = pgTable("user", {
   hashedPassword: text("hashed_password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  role: userRoleEnum("role").notNull().default("staff"),
+  role: userRoleEnum("role").notNull().default("sales"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -67,7 +96,8 @@ export const inquiryTable = pgTable("inquiry", {
   phone: text("phone"),
   company: text("company"),
   message: text("message").notNull(),
-  status: inquiryStatusEnum("status").notNull().default("new"),
+  serviceType: serviceTypeEnum("service_type"), // New field for service type
+  status: inquiryStatusEnum("status").notNull().default("initial_comms"),
   source: text("source").default("website"),
   assignedTo: text("assigned_to").references(() => userTable.id),
   notes: text("notes"),
@@ -150,6 +180,80 @@ export const clientTable = pgTable("client", {
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Service Requests
+export const serviceRequestTable = pgTable("service_request", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leadTable.id, { onDelete: "cascade" }),
+
+  // Common fields for all service types
+  serviceType: serviceTypeEnum("service_type").notNull(),
+  serviceMode: serviceModeEnum("service_mode").notNull(),
+  serviceLocation: text("service_location").notNull(),
+  city: text("city"),
+  estimatedVolume: text("estimated_volume"),
+  notes: text("notes"),
+  priority: priorityLevelEnum("priority").default("medium"),
+  attachments: text("attachments"), // JSON array of file URLs
+
+  // Garbage Collection specific fields
+  collectionFrequency: collectionFrequencyEnum("collection_frequency"),
+  wasteType: text("waste_type"), // general / mixed / food
+  containerInfo: text("container_info"),
+  garbagePhoto: text("garbage_photo"),
+  pricingModel: text("pricing_model"), // fixed / variable
+
+  // Septic Siphoning specific fields
+  propertyType: propertyTypeEnum("property_type"),
+  lastSiphoningDate: timestamp("last_siphoning_date", { withTimezone: true }),
+  estimatedTankSize: text("estimated_tank_size"),
+  accessNotes: text("access_notes"),
+  urgencyTargetDate: timestamp("urgency_target_date", { withTimezone: true }),
+
+  // Hazardous Waste specific fields
+  hazardousCategory: text("hazardous_category"),
+  packagingCondition: text("packaging_condition"), // sealed drums / loose
+  hazardousQuantity: text("hazardous_quantity"),
+  storageCondition: text("storage_condition"),
+  complianceNotes: text("compliance_notes"),
+
+  // One-time Hauling specific fields
+  materialType: text("material_type"), // construction debris, junk, etc.
+  loadSize: text("load_size"),
+  preferredPickupDate: timestamp("preferred_pickup_date", { withTimezone: true }),
+  loadingConstraints: text("loading_constraints"),
+  haulingPhoto: text("hauling_photo"),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Reference Data Tables
+export const wasteTypeTable = pgTable("waste_type", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const provinceTable = pgTable("province", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  region: text("region"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
