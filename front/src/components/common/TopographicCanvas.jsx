@@ -10,6 +10,7 @@ const TopographicCanvas = () => {
   const inputValuesRef = useRef([]);
   const colsRef = useRef(0);
   const rowsRef = useRef(0);
+  const frameCountRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -268,27 +269,32 @@ const TopographicCanvas = () => {
 
     const animate = () => {
       mouseOffset();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frameCountRef.current++;
 
-      // Draw dark background
-      ctx.fillStyle = "#0a1f0f";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Only update every 3rd frame (20fps instead of 60fps for better performance)
+      if (frameCountRef.current % 3 === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Use sine wave for oscillating animation (no panning) - increased amplitude
-      zOffsetRef.current = Math.sin(Date.now() * 0.0003) * 2;
-      const { noiseMin, noiseMax } = generateNoise();
+        // Draw dark background
+        ctx.fillStyle = "#0a1f0f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const roundedNoiseMin =
-        Math.floor(noiseMin / thresholdIncrement) * thresholdIncrement;
-      const roundedNoiseMax =
-        Math.ceil(noiseMax / thresholdIncrement) * thresholdIncrement;
+        // Use sine wave for oscillating animation (no panning) - increased amplitude
+        zOffsetRef.current = Math.sin(Date.now() * 0.0003) * 2;
+        const { noiseMin, noiseMax } = generateNoise();
 
-      for (
-        let threshold = roundedNoiseMin;
-        threshold < roundedNoiseMax;
-        threshold += thresholdIncrement
-      ) {
-        renderAtThreshold(threshold);
+        const roundedNoiseMin =
+          Math.floor(noiseMin / thresholdIncrement) * thresholdIncrement;
+        const roundedNoiseMax =
+          Math.ceil(noiseMax / thresholdIncrement) * thresholdIncrement;
+
+        for (
+          let threshold = roundedNoiseMin;
+          threshold < roundedNoiseMax;
+          threshold += thresholdIncrement
+        ) {
+          renderAtThreshold(threshold);
+        }
       }
 
       animationFrameRef.current = requestAnimationFrame(animate);
