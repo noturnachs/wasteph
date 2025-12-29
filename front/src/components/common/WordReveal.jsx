@@ -20,13 +20,15 @@ const WordReveal = ({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Show when entering viewport, hide when leaving
-          setIsVisible(entry.isIntersecting);
+          // Only trigger once when entering viewport, never hide again
+          if (entry.isIntersecting && !isVisible) {
+            setIsVisible(true);
+          }
         });
       },
       {
         threshold: 0.2,
-        rootMargin: "0px 0px -10% 0px",
+        rootMargin: "0px 0px -100px 0px",
       }
     );
 
@@ -35,7 +37,7 @@ const WordReveal = ({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [isVisible]);
 
   // Split text into words
   const words = typeof children === "string" ? children.split(" ") : [children];

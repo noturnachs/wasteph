@@ -14,40 +14,26 @@ const RevealOnScroll = ({
     const node = containerRef.current;
     if (!node) return;
 
-    const handleScroll = () => {
-      const rect = node.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      // Calculate how far the element is scrolled into view (0 to 1)
-      const progress = Math.max(
-        0,
-        Math.min(1, (windowHeight - rect.top) / (windowHeight + rect.height))
-      );
-
-      setScrollProgress(progress);
-    };
-
-    const handleEntries = (entries, observerInstance) => {
+    const handleEntries = (entries) => {
       entries.forEach((entry) => {
-        // Show when entering viewport, hide when leaving
-        setIsVisible(entry.isIntersecting);
+        // Only trigger once when entering viewport, never hide again
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true);
+        }
       });
     };
 
     const observer = new IntersectionObserver(handleEntries, {
       threshold: 0.1,
-      rootMargin: "-50px",
+      rootMargin: "0px 0px -100px 0px",
     });
 
     observer.observe(node);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [isVisible]);
 
   const baseClasses =
     "transform-gpu transition-all duration-[1200ms] will-change-transform will-change-opacity";
