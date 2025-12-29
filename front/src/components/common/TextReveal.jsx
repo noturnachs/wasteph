@@ -21,13 +21,15 @@ const TextReveal = ({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Show when entering viewport, hide when leaving
-          setIsVisible(entry.isIntersecting);
+          // Only trigger once when entering viewport, never hide again
+          if (entry.isIntersecting && !isVisible) {
+            setIsVisible(true);
+          }
         });
       },
       {
         threshold: 0.2,
-        rootMargin: "0px 0px -10% 0px",
+        rootMargin: "0px 0px -100px 0px",
       }
     );
 
@@ -36,7 +38,7 @@ const TextReveal = ({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [isVisible]);
 
   // Direction-based transform - using translate3d for GPU acceleration
   const getTransform = () => {
@@ -67,7 +69,7 @@ const TextReveal = ({
 
       {/* Animated overlay/curtain that slides away - GPU accelerated */}
       <span
-        className="absolute inset-0 z-20 bg-gradient-to-r from-[#15803d] to-[#16a34a]"
+        className="absolute inset-0 z-20 bg-linear-to-r from-[#15803d] to-[#16a34a]"
         style={{
           transform: isVisible ? getTransform() : "translate3d(0, 0, 0)",
           transition: `transform ${duration}s cubic-bezier(0.77, 0, 0.175, 1) ${delay}s`,

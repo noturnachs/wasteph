@@ -19,52 +19,27 @@ const ScrollAnimation = ({
     const element = elementRef.current;
     if (!element) return;
 
-    const handleScroll = () => {
-      const rect = element.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      // Calculate scroll progress (0 to 1)
-      const elementTop = rect.top;
-      const elementHeight = rect.height;
-      const progress = Math.max(
-        0,
-        Math.min(
-          1,
-          (windowHeight - elementTop) / (windowHeight + elementHeight)
-        )
-      );
-
-      setScrollProgress(progress);
-
-      // Trigger visibility
-      if (elementTop < windowHeight * 0.85 && elementTop > -elementHeight) {
-        setIsVisible(true);
-      }
-    };
-
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          // Only trigger once when entering viewport, never hide again
+          if (entry.isIntersecting && !isVisible) {
             setIsVisible(true);
           }
         });
       },
       {
         threshold: 0.1,
-        rootMargin: "0px 0px -15% 0px",
+        rootMargin: "0px 0px -100px 0px",
       }
     );
 
     observer.observe(element);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [isVisible]);
 
   // Variant styles
   const getVariantStyle = () => {
