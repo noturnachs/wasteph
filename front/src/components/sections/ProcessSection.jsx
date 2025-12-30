@@ -154,7 +154,7 @@ const ProcessSection = () => {
       id="process"
       label="How It Works"
       headline="Clean, simple, predictable."
-      subheadline="Four steps from contact to disposal—keeping you confident and compliant."
+      subheadline="Four steps from contact to disposal, keeping you confident and compliant."
       variant="default"
     >
       <div

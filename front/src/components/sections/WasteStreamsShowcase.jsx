@@ -6,33 +6,112 @@ import SectionShell from "../common/SectionShell";
 const streams = [
   {
     label: "Mixed Waste",
-    year: "2025",
     description: "General refuse from commercial and residential sites.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 6h18" />
+        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      </svg>
+    ),
   },
   {
     label: "Food Waste",
-    year: "2025",
     description: "Organic streams from kitchens, canteens, and F&B sites.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+        <line x1="6" y1="1" x2="6" y2="4" />
+        <line x1="10" y1="1" x2="10" y2="4" />
+        <line x1="14" y1="1" x2="14" y2="4" />
+      </svg>
+    ),
   },
   {
     label: "Residual Waste",
-    year: "2025",
     description: "Non-recyclable materials destined for safe disposal.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <line x1="10" y1="11" x2="10" y2="17" />
+        <line x1="14" y1="11" x2="14" y2="17" />
+      </svg>
+    ),
   },
   {
     label: "Construction Debris",
-    year: "Projects",
     description: "Concrete, soil, and demolition material from builds.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    ),
   },
   {
     label: "Recyclables",
-    year: "Partners",
     description: "Carton, plastic, aluminum, copper, metal, and more.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17 1l4 4-4 4" />
+        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+        <path d="M7 23l-4-4 4-4" />
+        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      </svg>
+    ),
   },
   {
     label: "Septic & Liquid",
-    year: "Critical",
     description: "Septic tank and liquid waste for compliant treatment.",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+      </svg>
+    ),
   },
 ];
 
@@ -42,7 +121,7 @@ const WasteStreamsShowcase = () => {
       id="waste-streams"
       label="Waste Streams"
       headline="Hall of Streams"
-      subheadline="Managing materials with responsible, traceable handling."
+      subheadline="Every type of waste we collect, haul, and process."
       variant="accent"
       fullHeight
     >
@@ -55,35 +134,39 @@ const WasteStreamsShowcase = () => {
         className="pointer-events-none absolute left-10 top-20 -z-10 h-[400px] w-[400px] rounded-full bg-[#16a34a]/20 blur-[100px]"
       />
 
-      <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3 lg:gap-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
         {streams.map((stream, index) => (
           <RevealOnScroll
             key={stream.label}
             delayClass={`delay-${Math.min((index + 1) * 75, 500)}`}
           >
-            <article className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-4 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-[#15803d] hover:bg-white/10 hover:shadow-[0_15px_40px_rgba(21,128,61,0.3)] sm:p-5 lg:p-6">
-              {/* Animated gradient on hover */}
-              <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#15803d]/0 via-[#15803d]/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <article className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_15px_40px_rgba(21,128,61,0.25)]">
+              {/* Icon & Title Section with Background */}
+              <div className="relative border-b border-white/10 bg-gradient-to-br from-[#15803d]/10 to-transparent p-4 transition-colors duration-500 group-hover:from-[#15803d]/20">
+                {/* Corner accent */}
+                <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-[#15803d]/20 to-transparent blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-              {/* Badge */}
-              <div className="mb-2 inline-block rounded-full bg-[#15803d]/20 px-3 py-0.5 sm:mb-3 sm:px-4 sm:py-1">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#15803d] sm:text-[10px] sm:tracking-[0.25em]">
-                  {stream.year}
-                </p>
+                <div className="relative flex items-center gap-3">
+                  {/* Icon */}
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#15803d] to-[#16a34a] text-white shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(21,128,61,0.5)]">
+                    <div className="h-5 w-5">{stream.icon}</div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-black uppercase tracking-tight text-white transition-colors duration-300 group-hover:text-[#16a34a] sm:text-lg">
+                      {stream.label}
+                    </h3>
+                  </div>
+                </div>
               </div>
 
-              {/* Title */}
-              <h3 className="text-base font-black text-white transition-colors duration-300 group-hover:text-[#16a34a] sm:text-lg lg:text-xl">
-                {stream.label}
-              </h3>
-
-              {/* Description */}
-              <p className="mt-2 text-xs leading-snug text-white/70 sm:mt-3 sm:text-sm sm:leading-relaxed">
-                {stream.description}
-              </p>
-
-              {/* Decorative line */}
-              <div className="mt-3 h-0.5 w-0 rounded-full bg-gradient-to-r from-[#15803d] to-[#16a34a] transition-all duration-500 group-hover:w-full sm:mt-4 sm:h-1" />
+              {/* Description Section */}
+              <div className="p-4">
+                <p className="text-xs leading-relaxed text-white/70 sm:text-sm">
+                  {stream.description}
+                </p>
+              </div>
             </article>
           </RevealOnScroll>
         ))}

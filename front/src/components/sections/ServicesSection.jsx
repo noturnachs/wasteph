@@ -1,6 +1,7 @@
 import React from "react";
 import SectionShell from "../common/SectionShell";
 import RevealOnScroll from "../common/RevealOnScroll";
+import TextHighlight from "../common/TextHighlight";
 
 const servicesData = [
   {
@@ -47,7 +48,7 @@ const ServicesSection = () => {
       id="services"
       label="Our Services"
       headline="Built for Real Operations."
-      subheadline="Mixed waste to recyclables—keeping your sites moving."
+      subheadline="Mixed waste to recyclables. Keeping your sites moving."
       variant="default"
     >
       <div className="grid gap-3 md:grid-cols-3 lg:gap-4">
@@ -65,7 +66,13 @@ const ServicesSection = () => {
                   </p>
                 </div>
                 <h3 className="mb-2 text-sm font-bold leading-tight text-white sm:mb-3 sm:text-base lg:text-lg">
-                  {service.title}
+                  <TextHighlight
+                    delay={(index + 1) * 0.3}
+                    duration={1.0}
+                    direction="left"
+                  >
+                    {service.title}
+                  </TextHighlight>
                 </h3>
                 <p className="text-xs leading-snug text-white/70 sm:text-sm sm:leading-relaxed">
                   {service.description}

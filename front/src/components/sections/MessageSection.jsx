@@ -9,7 +9,6 @@ const MessageSection = () => {
       id="message"
       label="Our Story"
       headline="Redefining Waste Management"
-      subheadline="Reducing landfill, maximizing recyclables, keeping communities clean."
       variant="default"
     >
       <RevealOnScroll delayClass="delay-300">
@@ -44,7 +43,7 @@ const MessageSection = () => {
                 Our Approach
               </p>
               <p className="mt-2 text-sm leading-relaxed text-white">
-                We take waste from where it starts to where it belongs—
+                We take waste from where it starts to where it belongs:
                 <strong className="font-bold">
                   <TextHighlight delay={0.9} duration={1.2} direction="left">
                     {" "}
@@ -53,89 +52,6 @@ const MessageSection = () => {
                 </strong>
                 .
               </p>
-            </div>
-
-            {/* Key Points - 2x2 Grid */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {/* Transparent Operations */}
-              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur transition-all duration-300 hover:border-white/20">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#15803d]/20">
-                  <svg
-                    className="h-3.5 w-3.5 text-[#15803d]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </div>
-                <span className="text-xs font-medium text-white">
-                  Transparent
-                </span>
-              </div>
-
-              {/* Compliant */}
-              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur transition-all duration-300 hover:border-white/20">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#15803d]/20">
-                  <svg
-                    className="h-3.5 w-3.5 text-[#15803d]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                </div>
-                <span className="text-xs font-medium text-white">
-                  Compliant
-                </span>
-              </div>
-
-              {/* Community */}
-              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur transition-all duration-300 hover:border-white/20">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#15803d]/20">
-                  <svg
-                    className="h-3.5 w-3.5 text-[#15803d]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </div>
-                <span className="text-xs font-medium text-white">
-                  Community
-                </span>
-              </div>
-
-              {/* Sustainable */}
-              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur transition-all duration-300 hover:border-white/20">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#15803d]/20">
-                  <svg
-                    className="h-3.5 w-3.5 text-[#15803d]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M17 1l4 4-4 4" />
-                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                    <path d="M7 23l-4-4 4-4" />
-                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                  </svg>
-                </div>
-                <span className="text-xs font-medium text-white">
-                  Sustainable
-                </span>
-              </div>
             </div>
           </div>
 
@@ -198,28 +114,6 @@ const MessageSection = () => {
                   Septic
                 </p>
                 <p className="mt-1 text-xs text-white/70">Fast response</p>
-              </div>
-            </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">2019</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Est.
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">24/7</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Active
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center backdrop-blur">
-                <p className="text-xl font-black text-white">100%</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/60">
-                  Safe
-                </p>
               </div>
             </div>
           </div>
