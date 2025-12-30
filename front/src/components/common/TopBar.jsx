@@ -38,7 +38,7 @@ const TopBar = ({ scrolled }) => {
           {/* Email */}
           <a
             href="mailto:sales@waste.ph"
-            className="group hidden items-center gap-2 transition-colors hover:text-[#16a34a] sm:flex"
+            className="group flex items-center gap-2 transition-colors hover:text-[#16a34a]"
             aria-label="Email us at sales@waste.ph"
           >
             <svg
@@ -59,15 +59,21 @@ const TopBar = ({ scrolled }) => {
           </a>
         </div>
 
-        {/* Right side - Operating Hours or Badge */}
+        {/* Right side - Location */}
         <div className="hidden items-center gap-2 md:flex">
-          <div className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22c55e] opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-          </div>
-          <span className="text-xs font-medium text-white/60">
-            24/7 Available
-          </span>
+          <svg
+            className="h-3.5 w-3.5 text-[#16a34a]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span className="text-xs font-medium text-white/60">Cebu City</span>
         </div>
       </div>
     </div>
