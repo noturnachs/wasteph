@@ -29,6 +29,7 @@ import { AddInquiryDialog } from "../components/inquiries/AddInquiryDialog";
 import { EditInquiryDialog } from "../components/inquiries/EditInquiryDialog";
 import { ViewInquiryDialog } from "../components/inquiries/ViewInquiryDialog";
 import { ConvertToLeadDialog } from "../components/inquiries/ConvertToLeadDialog";
+import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
 import { createColumns } from "../components/inquiries/columns";
 
 export default function Inquiries() {
@@ -73,6 +74,7 @@ export default function Inquiries() {
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   // Submission states
@@ -236,6 +238,10 @@ export default function Inquiries() {
     onConvert: (inquiry) => {
       setSelectedInquiry(inquiry);
       setIsConvertDialogOpen(true);
+    },
+    onRequestProposal: (inquiry) => {
+      setSelectedInquiry(inquiry);
+      setIsRequestProposalDialogOpen(true);
     },
     onDelete: handleDeleteInquiry,
     userRole: user?.role,
@@ -534,6 +540,16 @@ export default function Inquiries() {
         onOpenChange={setIsViewDialogOpen}
         inquiry={selectedInquiry}
         users={users}
+      />
+
+      <RequestProposalDialog
+        open={isRequestProposalDialogOpen}
+        onOpenChange={setIsRequestProposalDialogOpen}
+        inquiry={selectedInquiry}
+        onSuccess={() => {
+          fetchAllInquiries();
+          fetchInquiries();
+        }}
       />
 
       {/* Delete Confirmation Modal */}

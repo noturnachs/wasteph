@@ -14,7 +14,8 @@
     "db:clear": "node src/scripts/clearDatabase.js",
     "db:reset": "node src/scripts/resetDatabase.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
-    "seed:services": "node src/scripts/seedServices.js"
+    "seed:services": "node src/scripts/seedServices.js",
+    "seed:proposal-template": "node src/scripts/seedProposalTemplate.js"
   },
   "keywords": [],
   "author": "",
@@ -31,7 +32,11 @@
     "cookie-parser": "^1.4.6",
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.9.7",
+    "puppeteer": "^21.6.1",
+    "handlebars": "^4.7.8",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",

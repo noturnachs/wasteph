@@ -267,6 +267,121 @@ class ApiClient {
       method: "DELETE",
     });
   }
+
+  // Proposal endpoints
+  async getProposals(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.inquiryId) params.append("inquiryId", filters.inquiryId);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/proposals${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getProposalById(id) {
+    return this.request(`/proposals/${id}`);
+  }
+
+  async createProposal(data) {
+    return this.request("/proposals", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProposal(id, data) {
+    return this.request(`/proposals/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async approveProposal(id, adminNotes = "") {
+    return this.request(`/proposals/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ adminNotes }),
+    });
+  }
+
+  async rejectProposal(id, rejectionReason) {
+    return this.request(`/proposals/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ rejectionReason }),
+    });
+  }
+
+  async cancelProposal(id) {
+    return this.request(`/proposals/${id}/cancel`, {
+      method: "POST",
+    });
+  }
+
+  async retryProposalEmail(id) {
+    return this.request(`/proposals/${id}/retry-email`, {
+      method: "POST",
+    });
+  }
+
+  async downloadProposalPDF(id) {
+    const url = `${this.baseURL}/proposals/${id}/pdf`;
+    window.open(url, "_blank");
+  }
+
+  // Proposal Template endpoints (Master Sales only)
+  async getProposalTemplates(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.isActive !== undefined) params.append("isActive", filters.isActive);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/proposal-templates${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getDefaultProposalTemplate() {
+    return this.request("/proposal-templates/default");
+  }
+
+  async getProposalTemplateById(id) {
+    return this.request(`/proposal-templates/${id}`);
+  }
+
+  async createProposalTemplate(data) {
+    return this.request("/proposal-templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProposalTemplate(id, data) {
+    return this.request(`/proposal-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async setDefaultProposalTemplate(id) {
+    return this.request(`/proposal-templates/${id}/set-default`, {
+      method: "POST",
+    });
+  }
+
+  async deleteProposalTemplate(id) {
+    return this.request(`/proposal-templates/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async previewProposalTemplate(templateHtml, sampleData) {
+    return this.request("/proposal-templates/preview", {
+      method: "POST",
+      body: JSON.stringify({ templateHtml, sampleData }),
+    });
+  }
 }
 
 // Export singleton instance

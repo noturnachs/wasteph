@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "../StatusBadge";
 import { format } from "date-fns";
+import { FileText } from "lucide-react";
+import { RequestProposalDialog } from "./RequestProposalDialog";
 
 const SERVICE_TYPE_LABELS = {
   garbage_collection: "Garbage Collection",
@@ -17,10 +20,16 @@ const SERVICE_TYPE_LABELS = {
   onetime_hauling: "One-time Hauling",
 };
 
-export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [] }) {
+export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [], onProposalCreated }) {
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
+
   if (!inquiry) return null;
 
   const assignedUser = users.find(u => u.id === inquiry.assignedTo);
+
+  const handleProposalSuccess = () => {
+    if (onProposalCreated) onProposalCreated();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,12 +124,28 @@ export function ViewInquiryDialog({ open, onOpenChange, inquiry, users = [] }) {
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button
+            variant="default"
+            onClick={() => setIsProposalDialogOpen(true)}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Request Proposal
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Request Proposal Dialog */}
+      <RequestProposalDialog
+        open={isProposalDialogOpen}
+        onOpenChange={setIsProposalDialogOpen}
+        inquiry={inquiry}
+        onSuccess={handleProposalSuccess}
+      />
     </Dialog>
   );
 }

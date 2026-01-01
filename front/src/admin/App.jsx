@@ -13,6 +13,7 @@ import Clients from "./pages/Clients";
 import BlogPosts from "./pages/BlogPosts";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import ProposalTemplates from "./pages/ProposalTemplates";
 
 const CRMApp = () => {
   return (
@@ -38,6 +39,9 @@ const CRMApp = () => {
             <Route path="leads" element={<Leads />} />
             <Route path="potentials" element={<Potentials />} />
             <Route path="clients" element={<Clients />} />
+
+            {/* Tools - Master Sales only */}
+            <Route path="proposal-templates" element={<ProposalTemplates />} />
 
             {/* Admin only routes */}
             <Route

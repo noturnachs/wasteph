@@ -6,11 +6,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "../StatusBadge";
 
-export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete, userRole }) => [
+export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete, onRequestProposal, userRole }) => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -150,6 +150,22 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
 
       return (
         <div className="flex items-center gap-2">
+          {/* Request Proposal Button - shown for inquiries not yet submitted */}
+          {inquiry.status !== "submitted_proposal" &&
+           inquiry.status !== "declined" &&
+           inquiry.status !== "on_boarded" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRequestProposal(inquiry)}
+              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Proposal
+            </Button>
+          )}
+
+          {/* Convert Button - shown for advanced status inquiries */}
           {(inquiry.status === "submitted_proposal" ||
             inquiry.status === "negotiating" ||
             inquiry.status === "waiting_for_feedback") && (
@@ -181,6 +197,15 @@ export const createColumns = ({ users = [], onView, onEdit, onConvert, onDelete,
                 <span className="flex-1">Edit</span>
                 <Pencil className="h-4 w-4" />
               </DropdownMenuItem>
+
+              {inquiry.status !== "submitted_proposal" &&
+               inquiry.status !== "declined" &&
+               inquiry.status !== "on_boarded" && (
+                <DropdownMenuItem onClick={() => onRequestProposal(inquiry)} className="cursor-pointer">
+                  <span className="flex-1">Request Proposal</span>
+                  <FileText className="h-4 w-4" />
+                </DropdownMenuItem>
+              )}
 
               {(inquiry.status === "submitted_proposal" ||
                 inquiry.status === "negotiating" ||

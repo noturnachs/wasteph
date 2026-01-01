@@ -37,8 +37,8 @@ export function AppSidebar() {
   const { theme } = useTheme();
   const location = useLocation();
 
-  // Get navigation items based on user role
-  const navigation = getNavigationByRole(user?.role || "sales");
+  // Get navigation items based on user role and master sales status
+  const navigation = getNavigationByRole(user?.role || "sales", user?.isMasterSales || false);
 
   return (
     <Sidebar
