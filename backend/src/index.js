@@ -15,6 +15,7 @@ import potentialRoutes from "./routes/potentialRoutes.js";
 import clientRoutes from "./routes/clientRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
+import facebookRoutes from "./routes/facebookRoutes.js";
 
 dotenv.config();
 
@@ -26,10 +27,7 @@ app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL || "http://localhost:5173",
-    process.env.ADMIN_URL || "http://localhost:5174",
-  ],
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -66,6 +64,7 @@ app.use("/api/potentials", potentialRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/service-requests", serviceRequestRoutes);
+app.use("/api/facebook", facebookRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

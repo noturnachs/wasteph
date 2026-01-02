@@ -1,14 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SectionShell from "../common/SectionShell";
 import RevealOnScroll from "../common/RevealOnScroll";
 import FadeInUp from "../common/FadeInUp";
+import {
+  fetchFacebookPosts,
+  transformFacebookPost,
+} from "../../services/facebookService";
+
+// Fallback events (used if Facebook API fails or is not configured)
 import sept26Image from "../../assets/showcase/sept26.png";
 import sept10Image from "../../assets/showcase/sept10.png";
 import sept5Image from "../../assets/showcase/sept5.png";
 import aug13Image from "../../assets/showcase/aug13.png";
 import june6Image from "../../assets/showcase/june6.png";
 
-const showcaseEvents = [
+const fallbackEvents = [
   {
     id: 1,
     title: "VisMin Hospitality Summit",
@@ -56,12 +62,23 @@ const showcaseEvents = [
   },
 ];
 
-// Event Card Component - Clean and professional
+// Event Card Component
 const EventCard = ({ event, index, isActive, onClick }) => {
+  const handleClick = () => onClick(index);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick(index);
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => onClick(index)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
       className={`group relative flex h-full w-full flex-col overflow-hidden rounded-xl border text-left transition-all duration-500 ${
         isActive
           ? "border-[#15803d] bg-[#15803d]/10 shadow-lg shadow-[#15803d]/20"
@@ -77,6 +94,7 @@ const EventCard = ({ event, index, isActive, onClick }) => {
           className={`h-full w-full object-cover transition-all duration-700 ${
             isActive ? "scale-100 opacity-100" : "scale-105 opacity-60"
           }`}
+          loading="lazy"
         />
 
         {/* Gradient Overlay */}
@@ -91,6 +109,7 @@ const EventCard = ({ event, index, isActive, onClick }) => {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              aria-hidden="true"
             >
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
@@ -114,13 +133,15 @@ const EventCard = ({ event, index, isActive, onClick }) => {
           {event.title}
         </h3>
 
-        <p
-          className={`mb-3 line-clamp-2 text-sm italic leading-relaxed transition-colors ${
-            isActive ? "text-[#16a34a]" : "text-white/50"
-          }`}
-        >
-          {event.tagline}
-        </p>
+        {event.tagline && (
+          <p
+            className={`mb-3 line-clamp-2 text-sm italic leading-relaxed transition-colors ${
+              isActive ? "text-[#16a34a]" : "text-white/50"
+            }`}
+          >
+            {event.tagline}
+          </p>
+        )}
 
         <div
           className={`mb-4 overflow-hidden transition-all duration-500 ${
@@ -132,7 +153,7 @@ const EventCard = ({ event, index, isActive, onClick }) => {
           </p>
         </div>
 
-        {/* View More Indicator - Push to bottom */}
+        {/* View More Indicator */}
         <div
           className={`mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider transition-all ${
             isActive ? "text-[#16a34a]" : "text-white/40"
@@ -147,10 +168,36 @@ const EventCard = ({ event, index, isActive, onClick }) => {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            aria-hidden="true"
           >
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </div>
+
+        {/* Facebook Link */}
+        {event.link && (
+          <a
+            href={event.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-[#16a34a] hover:text-[#15803d] transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>View on Facebook</span>
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        )}
       </div>
 
       {/* Bottom Border Accent */}
@@ -163,19 +210,108 @@ const EventCard = ({ event, index, isActive, onClick }) => {
   );
 };
 
+// Loading Skeleton Component
+const LoadingSkeleton = () => (
+  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div
+        key={i}
+        className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-white/5 bg-white/2"
+      >
+        <div className="aspect-video animate-pulse bg-white/5" />
+        <div className="flex flex-1 flex-col gap-3 p-5">
+          <div className="h-6 w-3/4 animate-pulse rounded bg-white/5" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-white/5" />
+          <div className="h-16 w-full animate-pulse rounded bg-white/5" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Error Message Component
+const ErrorMessage = ({ message, onRetry }) => (
+  <div className="flex flex-col items-center justify-center rounded-xl border border-red-500/20 bg-red-500/5 p-8 text-center">
+    <svg
+      className="mb-4 h-12 w-12 text-red-500/60"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+    <h3 className="mb-2 text-lg font-semibold text-white">
+      Unable to Load Posts
+    </h3>
+    <p className="mb-4 max-w-md text-sm text-white/60">{message}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="rounded-lg bg-[#15803d] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#166534]"
+    >
+      Try Again
+    </button>
+  </div>
+);
+
 const ServicesSlideshow = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showcaseEvents, setShowcaseEvents] = useState(fallbackEvents);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [useFallback, setUseFallback] = useState(false);
 
-  // Preload all images for better performance
-  React.useEffect(() => {
-    showcaseEvents.forEach((event) => {
-      const img = new Image();
-      img.src = event.image;
-    });
+  // Fetch Facebook posts on mount
+  useEffect(() => {
+    loadFacebookPosts();
   }, []);
+
+  const loadFacebookPosts = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const posts = await fetchFacebookPosts(6);
+
+      if (posts && posts.length > 0) {
+        const transformedPosts = posts.map(transformFacebookPost);
+        setShowcaseEvents(transformedPosts);
+        setUseFallback(false);
+      } else {
+        // No posts returned, use fallback
+        setShowcaseEvents(fallbackEvents);
+        setUseFallback(true);
+      }
+    } catch (err) {
+      console.error("Failed to load Facebook posts:", err);
+      setError(err.message || "Failed to load posts from Facebook");
+      setShowcaseEvents(fallbackEvents);
+      setUseFallback(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Preload all images
+  useEffect(() => {
+    showcaseEvents.forEach((event) => {
+      if (event.image) {
+        const img = new Image();
+        img.src = event.image;
+      }
+    });
+  }, [showcaseEvents]);
 
   const handleCardClick = (index) => {
     setActiveIndex(index);
+  };
+
+  const handleRetry = () => {
+    loadFacebookPosts();
   };
 
   return (
@@ -195,26 +331,41 @@ const ServicesSlideshow = () => {
               Discover our recent partnerships, events, and initiatives making a
               positive impact across Cebu
             </p>
+            {useFallback && !error && (
+              <p className="mt-2 text-xs text-white/40">
+                Showing recent highlights
+              </p>
+            )}
           </div>
         </FadeInUp>
 
+        {/* Loading State */}
+        {isLoading && <LoadingSkeleton />}
+
+        {/* Error State */}
+        {!isLoading && error && !useFallback && (
+          <ErrorMessage message={error} onRetry={handleRetry} />
+        )}
+
         {/* Events Grid */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {showcaseEvents.map((event, index) => (
-            <RevealOnScroll
-              key={event.id}
-              delayClass={`delay-[${(index + 1) * 100}ms]`}
-              variant="fade-up"
-            >
-              <EventCard
-                event={event}
-                index={index}
-                isActive={activeIndex === index}
-                onClick={handleCardClick}
-              />
-            </RevealOnScroll>
-          ))}
-        </div>
+        {!isLoading && showcaseEvents.length > 0 && (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+            {showcaseEvents.map((event, index) => (
+              <RevealOnScroll
+                key={event.id}
+                delayClass={`delay-[${(index + 1) * 100}ms]`}
+                variant="fade-up"
+              >
+                <EventCard
+                  event={event}
+                  index={index}
+                  isActive={activeIndex === index}
+                  onClick={handleCardClick}
+                />
+              </RevealOnScroll>
+            ))}
+          </div>
+        )}
       </div>
     </SectionShell>
   );
