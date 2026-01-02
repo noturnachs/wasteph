@@ -28,7 +28,7 @@ import { DeleteConfirmationModal } from "../components/modals";
 import { AddInquiryDialog } from "../components/inquiries/AddInquiryDialog";
 import { EditInquiryDialog } from "../components/inquiries/EditInquiryDialog";
 import { ViewInquiryDialog } from "../components/inquiries/ViewInquiryDialog";
-import { ConvertToLeadDialog } from "../components/inquiries/ConvertToLeadDialog";
+import { RequestProposalDialog } from "../components/inquiries/RequestProposalDialog";
 import { createColumns } from "../components/inquiries/columns";
 
 export default function Inquiries() {
@@ -60,6 +60,7 @@ export default function Inquiries() {
     source: true,
     serviceType: true,
     status: true,
+    proposalStatus: true,
     assignedTo: true,
     createdAt: true,
   });
@@ -70,9 +71,9 @@ export default function Inquiries() {
   // Dialogs
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   // Submission states
@@ -190,21 +191,6 @@ export default function Inquiries() {
     }
   };
 
-  const handleConvertToLead = async (serviceDetails) => {
-    setIsSubmitting(true);
-    try {
-      await api.convertInquiryToLead(selectedInquiry.id, serviceDetails);
-      toast.success("Inquiry converted to lead successfully");
-      setIsConvertDialogOpen(false);
-      fetchAllInquiries();
-      fetchInquiries();
-    } catch (error) {
-      toast.error(error.message || "Failed to convert inquiry");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDeleteInquiry = (inquiry) => {
     setSelectedInquiry(inquiry);
     setIsDeleteDialogOpen(true);
@@ -233,9 +219,9 @@ export default function Inquiries() {
       setSelectedInquiry(inquiry);
       setIsEditDialogOpen(true);
     },
-    onConvert: (inquiry) => {
+    onRequestProposal: (inquiry) => {
       setSelectedInquiry(inquiry);
-      setIsConvertDialogOpen(true);
+      setIsRequestProposalDialogOpen(true);
     },
     onDelete: handleDeleteInquiry,
     userRole: user?.role,
@@ -521,19 +507,21 @@ export default function Inquiries() {
         isSubmitting={isSubmitting}
       />
 
-      <ConvertToLeadDialog
-        open={isConvertDialogOpen}
-        onOpenChange={setIsConvertDialogOpen}
-        inquiry={selectedInquiry}
-        onConvert={handleConvertToLead}
-        isSubmitting={isSubmitting}
-      />
-
       <ViewInquiryDialog
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
         inquiry={selectedInquiry}
         users={users}
+      />
+
+      <RequestProposalDialog
+        open={isRequestProposalDialogOpen}
+        onOpenChange={setIsRequestProposalDialogOpen}
+        inquiry={selectedInquiry}
+        onSuccess={() => {
+          fetchAllInquiries();
+          fetchInquiries();
+        }}
       />
 
       {/* Delete Confirmation Modal */}

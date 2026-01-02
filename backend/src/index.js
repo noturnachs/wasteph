@@ -16,6 +16,8 @@ import clientRoutes from "./routes/clientRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import facebookRoutes from "./routes/facebookRoutes.js";
+import proposalRoutes from "./routes/proposalRoutes.js";
+import proposalTemplateRoutes from "./routes/proposalTemplateRoutes.js";
 
 dotenv.config();
 
@@ -65,6 +67,8 @@ app.use("/api/clients", clientRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/service-requests", serviceRequestRoutes);
 app.use("/api/facebook", facebookRoutes);
+app.use("/api/proposals", proposalRoutes);
+app.use("/api/proposal-templates", proposalTemplateRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

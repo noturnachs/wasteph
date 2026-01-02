@@ -36,7 +36,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   }
 
   // Check if user has access to the current path based on navigation config
-  if (!hasAccess(user.role, location.pathname)) {
+  if (!hasAccess(user.role, location.pathname, user.isMasterSales || false)) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 

@@ -7,6 +7,8 @@ import {
   Settings,
   UserCog,
   BookOpen,
+  FileEdit,
+  ScrollText,
 } from "lucide-react";
 
 /**
@@ -47,11 +49,12 @@ const salesPipelineItems = [
 ];
 
 /**
- * Get navigation items based on user role
+ * Get navigation items based on user role and isMasterSales flag
  * @param {string} role - User role (admin or staff for sales)
+ * @param {boolean} isMasterSales - Whether user is a master sales
  * @returns {Array} Navigation groups
  */
-export const getNavigationByRole = (role) => {
+export const getNavigationByRole = (role, isMasterSales = false) => {
   const baseNavigation = [
     {
       label: "General",
@@ -70,10 +73,46 @@ export const getNavigationByRole = (role) => {
     },
   ];
 
-  // Admin gets additional management section
+  // Master Sales gets Tools section
+  if (isMasterSales) {
+    baseNavigation.push({
+      label: "Tools",
+      items: [
+        {
+          title: "Proposal Templates",
+          url: "/admin/proposal-templates",
+          icon: FileEdit,
+          description: "Manage proposal templates",
+        },
+      ],
+    });
+  }
+
+  // Admin gets admin-only sections (NO sales pipeline access)
   if (role === "admin") {
     return [
-      ...baseNavigation,
+      {
+        label: "General",
+        items: [
+          {
+            title: "Dashboard",
+            url: "/admin/dashboard",
+            icon: LayoutDashboard,
+            description: "Overview and statistics",
+          },
+        ],
+      },
+      {
+        label: "Management",
+        items: [
+          {
+            title: "Proposals",
+            url: "/admin/proposals",
+            icon: ScrollText,
+            description: "Review and approve proposals",
+          },
+        ],
+      },
       {
         label: "Content",
         items: [
@@ -105,7 +144,7 @@ export const getNavigationByRole = (role) => {
     ];
   }
 
-  // Sales role (staff) gets only sales pipeline
+  // Sales role (staff) gets only sales pipeline (+ Tools if master sales)
   return baseNavigation;
 };
 
@@ -113,10 +152,11 @@ export const getNavigationByRole = (role) => {
  * Check if user has access to a specific route
  * @param {string} role - User role
  * @param {string} path - Route path
+ * @param {boolean} isMasterSales - Whether user is master sales
  * @returns {boolean} Whether user has access
  */
-export const hasAccess = (role, path) => {
-  const navigation = getNavigationByRole(role);
+export const hasAccess = (role, path, isMasterSales = false) => {
+  const navigation = getNavigationByRole(role, isMasterSales);
   const allItems = navigation.flatMap(group => group.items);
   return allItems.some(item => path.startsWith(item.url));
 };

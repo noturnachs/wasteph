@@ -6,6 +6,7 @@ import {
   boolean,
   uuid,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -53,6 +54,12 @@ export const priorityLevelEnum = pgEnum("priority_level", [
   "low",
   "medium",
   "high",
+]);
+export const proposalStatusEnum = pgEnum("proposal_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "cancelled",
 ]);
 
 // Lucia Auth Tables
@@ -257,6 +264,78 @@ export const provinceTable = pgTable("province", {
     .notNull()
     .defaultNow(),
 });
+
+// Proposal Templates
+export const proposalTemplateTable = pgTable("proposal_template", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  htmlTemplate: text("html_template").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  nameIdx: index("proposal_template_name_idx").on(table.name),
+  isDefaultIdx: index("proposal_template_is_default_idx").on(table.isDefault),
+}));
+
+// Proposals
+export const proposalTable = pgTable("proposal", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  // Relationships
+  inquiryId: uuid("inquiry_id")
+    .notNull()
+    .references(() => inquiryTable.id, { onDelete: "cascade" }),
+  templateId: uuid("template_id")
+    .notNull()
+    .references(() => proposalTemplateTable.id),
+  requestedBy: text("requested_by")
+    .notNull()
+    .references(() => userTable.id),
+  reviewedBy: text("reviewed_by").references(() => userTable.id),
+
+  // Proposal Data (JSON - services, pricing, terms)
+  proposalData: text("proposal_data").notNull(),
+
+  // Workflow Status
+  status: proposalStatusEnum("status").notNull().default("pending"),
+
+  // Review Details
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+  adminNotes: text("admin_notes"),
+
+  // Email Tracking
+  emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
+  emailStatus: text("email_status"), // "sent", "failed"
+
+  // PDF Storage
+  pdfUrl: text("pdf_url"),
+
+  // Timestamps
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  inquiryIdIdx: index("proposal_inquiry_id_idx").on(table.inquiryId),
+  templateIdIdx: index("proposal_template_id_idx").on(table.templateId),
+  statusIdx: index("proposal_status_idx").on(table.status),
+  requestedByIdx: index("proposal_requested_by_idx").on(table.requestedBy),
+  reviewedByIdx: index("proposal_reviewed_by_idx").on(table.reviewedBy),
+  statusRequestedByIdx: index("proposal_status_requested_by_idx").on(
+    table.status,
+    table.requestedBy
+  ),
+}));
 
 // Activity Log
 export const activityLogTable = pgTable("activity_log", {
