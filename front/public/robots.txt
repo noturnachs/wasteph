@@ -1,0 +1,12 @@
+# Waste PH - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin/*
+
+# Sitemap
+Sitemap: https://waste.ph/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
