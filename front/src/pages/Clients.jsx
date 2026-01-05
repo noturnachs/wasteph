@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import FadeInUp from "../components/common/FadeInUp";
 import RevealOnScroll from "../components/common/RevealOnScroll";
-import flickrLogo from "../assets/clients/flickr.svg";
-import metaLogo from "../assets/clients/meta.svg";
-import tiktokLogo from "../assets/clients/tiktok.svg";
-import youtubeLogo from "../assets/clients/youtube.svg";
+import flickrLogo from "../assets/clients/24chicken.png";
+import metaLogo from "../assets/clients/24chicken.png";
+import tiktokLogo from "../assets/clients/24chicken.png";
+import youtubeLogo from "../assets/clients/24chicken.png";
 
 // Mock client data with detailed backgrounds and testimonials
 const CLIENT_STORIES = [
@@ -125,7 +125,7 @@ const CLIENT_STORIES = [
 
 const ClientStoryCard = ({ story }) => {
   return (
-    <div className="pointer-events-auto group overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
+    <div className="group overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
       {/* Header */}
       <div className="border-b border-white/10 bg-[#15803d]/5 p-6 sm:p-8">
         <div className="flex items-start gap-4 sm:gap-6">
@@ -237,7 +237,7 @@ const ClientStoryCard = ({ story }) => {
 
 const Clients = () => {
   return (
-    <div className="pointer-events-none relative min-h-screen">
+    <div className="relative min-h-screen">
       {/* Hero Section */}
       <section className="relative px-4 pb-16 pt-32 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-7xl">
@@ -285,7 +285,7 @@ const Clients = () => {
             </p>
             <Link
               to="/"
-              className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-linear-to-r from-[#15803d] to-[#16a34a] px-8 py-4 font-bold uppercase tracking-wider text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#15803d]/30"
+              className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-[#15803d] to-[#16a34a] px-8 py-4 font-bold uppercase tracking-wider text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#15803d]/30"
             >
               Get Started
               <svg

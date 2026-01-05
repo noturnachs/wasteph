@@ -1,17 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 const ComingSoon = ({ pageName = "This Page" }) => {
-  // Prevent scrolling on this page
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
-
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-[#0a1f0f]">
+    <div className="relative -mt-20 flex min-h-[calc(100vh-5rem)] items-center justify-center overflow-hidden bg-[#0a1f0f] py-20">
       {/* Background Effects */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-[#15803d] blur-3xl" />
