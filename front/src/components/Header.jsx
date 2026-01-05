@@ -31,6 +31,10 @@ const Header = () => {
   const [navExpanded, setNavExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsedWidth, setCollapsedWidth] = useState(200);
+  const [showMobileLogo, setShowMobileLogo] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef(null);
+  const lastScrollY = useRef(0);
   const collapsedRef = useRef(null);
   const expandedRef = useRef(null);
 
@@ -52,6 +56,33 @@ const Header = () => {
       const heroSection = document.getElementById("hero");
       const threshold = heroSection ? heroSection.offsetHeight * 0.7 : 400;
       setScrolled(scrollY > threshold);
+
+      // Mobile logo visibility logic
+      if (scrollY < 100) {
+        // Show logo when at top of page
+        setShowMobileLogo(true);
+        // Clear any hide timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+      } else {
+        // Show logo when scrolling (beyond 100px)
+        setShowMobileLogo(true);
+        setIsScrolling(true);
+
+        // Clear existing timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+
+        // Hide logo after 800ms of no scrolling (only when not at top)
+        scrollTimeoutRef.current = setTimeout(() => {
+          setIsScrolling(false);
+          setShowMobileLogo(false);
+        }, 800);
+      }
+
+      lastScrollY.current = scrollY;
 
       // Clear any pending scroll detection
       if (scrollTimeout) {
@@ -122,6 +153,9 @@ const Header = () => {
       }
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, []);
@@ -277,12 +311,18 @@ const Header = () => {
           <TopBar scrolled={scrolled} />
         </div>
 
-        {/* Mobile Top Bar - Compact Logo Only */}
-        <div className="pointer-events-auto flex justify-center py-3 lg:hidden">
+        {/* Mobile Top Bar - Compact Logo Only (Shows when scrolling, hides when stopped) */}
+        <div
+          className={`pointer-events-auto flex justify-center py-3 transition-all duration-300 lg:hidden ${
+            showMobileLogo
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-full opacity-0 pointer-events-none"
+          }`}
+        >
           <div
-            className="group cursor-pointer rounded-full border border-white/5 bg-black/40 px-5 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-500 hover:border-white/10 hover:bg-black/50"
+            className="group cursor-pointer rounded-full border border-white/5 bg-black/40 px-5 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-300 hover:border-white/10 hover:bg-black/50"
             role="button"
-            tabIndex={0}
+            tabIndex={showMobileLogo ? 0 : -1}
             aria-label="Scroll to Waste PH hero section"
             onClick={handleLogoClick}
             onKeyDown={handleLogoKeyDown}
