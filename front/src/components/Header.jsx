@@ -498,99 +498,86 @@ const Header = () => {
 
       {/* Bottom Navigation Bar - Mobile Only */}
       <nav className="pointer-events-auto fixed bottom-0 inset-x-0 z-50 lg:hidden">
-        <div className="mx-3 mb-3 overflow-hidden rounded-2xl border border-white/10 bg-black/80 shadow-[0_-8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:mx-4 sm:mb-4">
-          <div className="flex items-center justify-around px-1 py-2.5 sm:px-2 sm:py-3">
-            {navItems.slice(0, 5).map((item) => {
-              const isActive = activeSection === item.targetId;
-              const shortLabel =
-                item.label === "About Us"
-                  ? "Home"
-                  : item.label === "Waste Streams"
-                  ? "Streams"
-                  : item.label;
+        {/* Safe area padding for notched devices */}
+        <div className="bg-gradient-to-t from-black/40 via-black/20 to-transparent pb-safe">
+          <div className="mx-auto max-w-md px-4 pb-2">
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/70 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] backdrop-blur-2xl">
+              <div className="flex items-center justify-around px-1 py-2">
+                {navItems.slice(0, 5).map((item) => {
+                  const isActive = activeSection === item.targetId;
+                  const shortLabel =
+                    item.label === "About Us"
+                      ? "Home"
+                      : item.label === "Waste Streams"
+                      ? "Streams"
+                      : item.label;
 
-              return (
+                  return (
+                    <button
+                      key={item.targetId}
+                      type="button"
+                      onClick={() => handleNavClick(item)}
+                      className="group relative flex flex-1 flex-col items-center gap-1 px-1 py-2 transition-all duration-200"
+                      aria-label={item.label}
+                    >
+                      {/* Active indicator pill */}
+                      {isActive && (
+                        <div className="absolute inset-1 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
+                      )}
+
+                      <div
+                        className={`relative z-10 transition-all duration-200 ${
+                          isActive
+                            ? "scale-110 text-[#16a34a]"
+                            : "text-white/50 group-active:scale-95"
+                        }`}
+                      >
+                        {getIcon(item.icon)}
+                      </div>
+                      <span
+                        className={`relative z-10 text-[10px] font-semibold transition-all duration-200 ${
+                          isActive ? "text-[#16a34a]" : "text-white/60"
+                        }`}
+                      >
+                        {shortLabel}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {/* Contact Button */}
                 <button
-                  key={item.targetId}
                   type="button"
-                  onClick={() => handleNavClick(item)}
-                  className={`group flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-2 transition-all duration-300 sm:gap-1 sm:px-2 ${
-                    isActive ? "bg-[#15803d]/20" : "hover:bg-white/5"
-                  }`}
-                  aria-label={item.label}
+                  onClick={() => handleNavClick(navItems[5])}
+                  className="group relative flex flex-1 flex-col items-center gap-1 px-1 py-2 transition-all duration-200"
+                  aria-label="Contact"
                 >
+                  {/* Active indicator pill */}
+                  {activeSection === "contact" && (
+                    <div className="absolute inset-1 rounded-xl bg-gradient-to-br from-[#15803d]/20 to-[#16a34a]/10" />
+                  )}
+
                   <div
-                    className={`transition-all duration-300 ${
-                      isActive
-                        ? "scale-110 text-[#15803d]"
-                        : "text-white/60 group-hover:text-white/90"
+                    className={`relative z-10 transition-all duration-200 ${
+                      activeSection === "contact"
+                        ? "scale-110 text-[#16a34a]"
+                        : "text-white/50 group-active:scale-95"
                     }`}
                   >
-                    {getIcon(item.icon)}
+                    {getIcon("contact")}
                   </div>
                   <span
-                    className={`text-[7px] font-bold uppercase leading-tight tracking-wider transition-all duration-300 sm:text-[8px] ${
-                      isActive
-                        ? "text-[#15803d]"
-                        : "text-white/50 group-hover:text-white/70"
+                    className={`relative z-10 text-[10px] font-semibold transition-all duration-200 ${
+                      activeSection === "contact"
+                        ? "text-[#16a34a]"
+                        : "text-white/60"
                     }`}
                   >
-                    {shortLabel}
+                    Contact
                   </span>
                 </button>
-              );
-            })}
-
-            {/* Contact Button */}
-            <button
-              type="button"
-              onClick={() => handleNavClick(navItems[5])}
-              className={`group flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-2 transition-all duration-300 sm:gap-1 sm:px-2 ${
-                activeSection === "contact"
-                  ? "bg-[#15803d]/20"
-                  : "hover:bg-white/5"
-              }`}
-              aria-label="Contact"
-            >
-              <div
-                className={`transition-all duration-300 ${
-                  activeSection === "contact"
-                    ? "scale-110 text-[#15803d]"
-                    : "text-white/60 group-hover:text-white/90"
-                }`}
-              >
-                {getIcon("contact")}
               </div>
-              <span
-                className={`text-[7px] font-bold uppercase leading-tight tracking-wider transition-all duration-300 sm:text-[8px] ${
-                  activeSection === "contact"
-                    ? "text-[#15803d]"
-                    : "text-white/50 group-hover:text-white/70"
-                }`}
-              >
-                Contact
-              </span>
-            </button>
-          </div>
-
-          {/* Active Indicator Line */}
-          <div className="relative h-0.5 w-full bg-transparent">
-            <div
-              className="absolute bottom-0 h-0.5 bg-gradient-to-r from-[#15803d] to-[#16a34a] transition-all duration-300 ease-out"
-              style={{
-                width: `${100 / 6}%`,
-                left: `${
-                  (navItems.findIndex(
-                    (item) => item.targetId === activeSection
-                  ) !== -1
-                    ? navItems.findIndex(
-                        (item) => item.targetId === activeSection
-                      )
-                    : 5) *
-                  (100 / 6)
-                }%`,
-              }}
-            />
+            </div>
           </div>
         </div>
       </nav>
