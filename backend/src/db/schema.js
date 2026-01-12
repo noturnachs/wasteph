@@ -56,10 +56,22 @@ export const priorityLevelEnum = pgEnum("priority_level", [
   "high",
 ]);
 export const proposalStatusEnum = pgEnum("proposal_status", [
-  "pending",
-  "approved",
-  "rejected",
-  "cancelled",
+  "pending",    // Sales created, waiting for admin review
+  "approved",   // Admin approved, waiting for sales to send
+  "rejected",   // Admin rejected, sales can revise
+  "sent",       // Sales sent to client
+  "cancelled",  // Cancelled by sales or admin
+]);
+
+// Proposal Template Types
+export const proposalTemplateTypeEnum = pgEnum("proposal_template_type", [
+  "compactor_hauling",
+  "hazardous_waste",
+  "fixed_monthly",
+  "clearing_project",
+  "one_time_hauling",
+  "long_term",
+  "recyclables_purchase"
 ]);
 
 // Lucia Auth Tables
@@ -100,6 +112,7 @@ export const inquiryTable = pgTable("inquiry", {
   company: text("company"),
   message: text("message").notNull(),
   serviceId: uuid("service_id").references(() => serviceTable.id),
+  serviceType: text("service_type"), // Maps to template types for auto-suggestion
   status: inquiryStatusEnum("status").notNull().default("initial_comms"),
   source: text("source").default("website"),
   assignedTo: text("assigned_to").references(() => userTable.id),
@@ -271,6 +284,9 @@ export const proposalTemplateTable = pgTable("proposal_template", {
   name: text("name").notNull().unique(),
   description: text("description"),
   htmlTemplate: text("html_template").notNull(),
+  templateType: proposalTemplateTypeEnum("template_type"),
+  category: text("category"), // "waste_collection", "hazardous", "recyclables"
+  templateConfig: text("template_config"), // JSON: {hasWasteAllowance, hasEquipment, etc.}
   isActive: boolean("is_active").notNull().default(true),
   isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -282,6 +298,7 @@ export const proposalTemplateTable = pgTable("proposal_template", {
 }, (table) => ({
   nameIdx: index("proposal_template_name_idx").on(table.name),
   isDefaultIdx: index("proposal_template_is_default_idx").on(table.isDefault),
+  templateTypeIdx: index("proposal_template_type_idx").on(table.templateType),
 }));
 
 // Proposals
@@ -305,6 +322,7 @@ export const proposalTable = pgTable("proposal", {
 
   // Workflow Status
   status: proposalStatusEnum("status").notNull().default("pending"),
+  wasTemplateSuggested: boolean("was_template_suggested").default(false),
 
   // Review Details
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
@@ -312,6 +330,8 @@ export const proposalTable = pgTable("proposal", {
   adminNotes: text("admin_notes"),
 
   // Email Tracking
+  sentBy: text("sent_by").references(() => userTable.id), // Sales user who sent to client
+  sentAt: timestamp("sent_at", { withTimezone: true }), // When sent to client
   emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
   emailStatus: text("email_status"), // "sent", "failed"
 

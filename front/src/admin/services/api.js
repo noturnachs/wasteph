@@ -313,8 +313,21 @@ class ApiClient {
     });
   }
 
+  async sendProposal(id, confirm = true) {
+    return this.request(`/proposals/${id}/send`, {
+      method: "POST",
+      body: JSON.stringify({ confirm }),
+    });
+  }
+
   async cancelProposal(id) {
     return this.request(`/proposals/${id}/cancel`, {
+      method: "POST",
+    });
+  }
+
+  async previewProposalPDF(id) {
+    return this.request(`/proposals/${id}/preview-pdf`, {
       method: "POST",
     });
   }
@@ -381,6 +394,18 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ templateHtml, sampleData }),
     });
+  }
+
+  async getTemplatesByCategory() {
+    return this.request("/proposal-templates/by-category");
+  }
+
+  async getTemplateByType(type) {
+    return this.request(`/proposal-templates/type/${type}`);
+  }
+
+  async suggestTemplateForInquiry(inquiryId) {
+    return this.request(`/proposal-templates/suggest/${inquiryId}`);
   }
 }
 
