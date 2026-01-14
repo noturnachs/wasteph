@@ -55,18 +55,10 @@ export function RejectProposalDialog({ open, onOpenChange, proposal, onConfirm }
         <div className="space-y-4">
           {/* Proposal Summary */}
           <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4">
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Client</p>
-                <p className="font-semibold">{proposal.inquiryName}</p>
-                <p className="text-sm text-muted-foreground">{proposal.inquiryEmail}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Requested By</p>
-                <p className="text-sm font-medium">
-                  {proposal.requestedByName || "Unknown User"}
-                </p>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Client</p>
+              <p className="font-semibold">{proposal.inquiryName}</p>
+              <p className="text-sm text-muted-foreground">{proposal.inquiryEmail}</p>
             </div>
           </div>
 

@@ -3,8 +3,11 @@ import { AppError } from "../middleware/errorHandler.js";
 
 /**
  * ProposalTemplateController - Handle HTTP requests for proposal template operations
- * ADMIN-ONLY endpoints for template management
+ * Admin and Sales endpoints for template management
  */
+
+// Allowed roles for template management
+const TEMPLATE_MANAGEMENT_ROLES = ["admin", "master_sales", "sales"];
 
 /**
  * Create a new proposal template
@@ -12,9 +15,9 @@ import { AppError } from "../middleware/errorHandler.js";
  */
 export const createTemplate = async (req, res, next) => {
   try {
-    // Admin-only check
-    if (req.user.role !== "admin") {
-      throw new AppError("Only admins can create proposal templates", 403);
+    // Check if user has permission to manage templates
+    if (!TEMPLATE_MANAGEMENT_ROLES.includes(req.user.role)) {
+      throw new AppError("You don't have permission to create proposal templates", 403);
     }
 
     const metadata = {
@@ -102,9 +105,9 @@ export const getDefaultTemplate = async (req, res, next) => {
  */
 export const updateTemplate = async (req, res, next) => {
   try {
-    // Admin-only check
-    if (req.user.role !== "admin") {
-      throw new AppError("Only admins can update proposal templates", 403);
+    // Check if user has permission to manage templates
+    if (!TEMPLATE_MANAGEMENT_ROLES.includes(req.user.role)) {
+      throw new AppError("You don't have permission to update proposal templates", 403);
     }
 
     const { id } = req.params;
@@ -135,9 +138,9 @@ export const updateTemplate = async (req, res, next) => {
  */
 export const setDefaultTemplate = async (req, res, next) => {
   try {
-    // Admin-only check
-    if (req.user.role !== "admin") {
-      throw new AppError("Only admins can set default templates", 403);
+    // Check if user has permission to manage templates
+    if (!TEMPLATE_MANAGEMENT_ROLES.includes(req.user.role)) {
+      throw new AppError("You don't have permission to set default templates", 403);
     }
 
     const { id } = req.params;
@@ -168,9 +171,9 @@ export const setDefaultTemplate = async (req, res, next) => {
  */
 export const deleteTemplate = async (req, res, next) => {
   try {
-    // Admin-only check
-    if (req.user.role !== "admin") {
-      throw new AppError("Only admins can delete proposal templates", 403);
+    // Check if user has permission to manage templates
+    if (!TEMPLATE_MANAGEMENT_ROLES.includes(req.user.role)) {
+      throw new AppError("You don't have permission to delete proposal templates", 403);
     }
 
     const { id } = req.params;
@@ -212,14 +215,22 @@ export const previewTemplate = async (req, res, next) => {
       );
     }
 
+    // Render HTML with Handlebars
     const renderedHtml = proposalTemplateService.renderTemplate(
       templateHtml,
       sampleData
     );
 
+    // Convert to PDF
+    const pdfService = (await import("../services/pdfService.js")).default;
+    const pdfBuffer = await pdfService.generatePDFFromHTML(renderedHtml);
+
+    // Convert to base64
+    const pdfBase64 = pdfBuffer.toString("base64");
+
     res.status(200).json({
       success: true,
-      data: { renderedHtml },
+      data: pdfBase64,
     });
   } catch (error) {
     next(error);

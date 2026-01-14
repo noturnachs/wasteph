@@ -35,16 +35,6 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
 
   if (!proposal) return null;
 
-  let totalAmount = 0;
-  try {
-    const data = typeof proposal.proposalData === 'string'
-      ? JSON.parse(proposal.proposalData)
-      : proposal.proposalData;
-    totalAmount = data?.pricing?.total || 0;
-  } catch (error) {
-    console.error("Failed to parse proposal data:", error);
-  }
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
@@ -54,28 +44,17 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
             Approve Proposal
           </DialogTitle>
           <DialogDescription>
-            This will approve the proposal and automatically send it to the client via email.
+            This will approve the proposal and allow sales to send it to the client.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Proposal Summary */}
           <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4">
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm text-muted-foreground">Client</p>
-                <p className="font-semibold">{proposal.inquiryName}</p>
-                <p className="text-sm text-muted-foreground">{proposal.inquiryEmail}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="text-lg font-bold text-green-600">
-                  ₱{parseFloat(totalAmount).toLocaleString('en-PH', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
-                </p>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Client</p>
+              <p className="font-semibold">{proposal.inquiryName}</p>
+              <p className="text-sm text-muted-foreground">{proposal.inquiryEmail}</p>
             </div>
           </div>
 
@@ -97,11 +76,10 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
             </p>
           </div>
 
-          {/* Warning */}
-          <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-            <p className="text-sm text-yellow-900 dark:text-yellow-100">
-              <strong>Note:</strong> Once approved, the proposal PDF will be generated and sent
-              to {proposal.inquiryEmail}. This action cannot be undone.
+          {/* Info */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              <strong>Note:</strong> Once approved, sales can send the proposal to the client.
             </p>
           </div>
         </div>
@@ -119,7 +97,7 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700"
           >
-            {isSubmitting ? "Approving..." : "Approve & Send Email"}
+            {isSubmitting ? "Approving..." : "Approve Proposal"}
           </Button>
         </DialogFooter>
       </DialogContent>

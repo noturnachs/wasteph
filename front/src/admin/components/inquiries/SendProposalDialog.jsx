@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Mail, Eye } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "sonner";
+import { PDFViewer } from "../PDFViewer";
 
 export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
   const [isSending, setIsSending] = useState(false);
@@ -117,161 +118,108 @@ export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
     }
   };
 
-  // Calculate total amount from proposal data
-  const totalAmount = proposalData?.pricing?.total
-    ? `₱${parseFloat(proposalData.pricing.total).toLocaleString("en-PH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`
-    : isLoadingData
-    ? "Loading..."
-    : "N/A";
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={showPreview ? "!w-[70vw] !max-w-[70vw] h-[90vh] !max-h-[90vh] overflow-hidden flex flex-col" : "max-w-md"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            Send Proposal to Client
-          </DialogTitle>
-          <DialogDescription>
-            This will send the approved proposal to the client via email
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open && !showPreview} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-blue-600" />
+              Send Proposal to Client
+            </DialogTitle>
+            <DialogDescription>
+              This will send the approved proposal to the client via email
+            </DialogDescription>
+          </DialogHeader>
 
-        {!showPreview ? (
-          <>
-            <div className="space-y-4 py-4">
-              {/* Client Information */}
-              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 space-y-2">
+          <div className="space-y-4 py-4">
+            {/* Client Information */}
+            <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 space-y-2">
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Client Name
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {inquiry.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Email Address
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {inquiry.email}
+                </p>
+              </div>
+              {inquiry.company && (
                 <div>
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Client Name
+                    Company
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    {inquiry.name}
+                    {inquiry.company}
                   </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Email Address
-                  </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    {inquiry.email}
-                  </p>
-                </div>
-                {inquiry.company && (
-                  <div>
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Company
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {inquiry.company}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Total Amount
-                  </p>
-                  <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                    {totalAmount}
-                  </p>
-                </div>
-              </div>
-
-              {/* Confirmation Message */}
-              <div className="flex items-start gap-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                    Confirm before sending
-                  </p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    The client will receive an email with the proposal PDF attached.
-                    This action will update the proposal status to "Sent".
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePreview}
-                disabled={isSending}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Preview PDF
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSend}
-                disabled={isSending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {isSending ? "Sending..." : "Send to Client"}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            {/* PDF Preview */}
-            <div className="flex-1 overflow-hidden">
-              {isLoadingPdf ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center space-y-2">
-                    <p className="text-lg font-medium">Loading PDF preview...</p>
-                    <p className="text-sm text-muted-foreground">Please wait, this may take a moment</p>
-                  </div>
-                </div>
-              ) : pdfPreviewUrl ? (
-                <iframe
-                  src={pdfPreviewUrl}
-                  title="Proposal PDF Preview"
-                  className="w-full h-full border rounded-lg"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-muted-foreground">Failed to load PDF preview</p>
                 </div>
               )}
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowPreview(false)}
-                disabled={isSending}
-              >
-                Back
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSend}
-                disabled={isSending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {isSending ? "Sending..." : "Send to Client"}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+            {/* Confirmation Message */}
+            <div className="flex items-start gap-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                  Confirm before sending
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  The client will receive an email with the proposal PDF attached.
+                  This action will update the proposal status to "Sent".
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePreview}
+              disabled={isSending}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview PDF
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSend}
+              disabled={isSending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {isSending ? "Sending..." : "Send to Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Preview - Uses PDFViewer component */}
+      {showPreview && (
+        <PDFViewer
+          fileUrl={isLoadingPdf ? "" : pdfPreviewUrl}
+          fileName={`${inquiry.name} - Proposal.pdf`}
+          title="Proposal Preview"
+          onClose={() => setShowPreview(false)}
+          isOpen={showPreview}
+        />
+      )}
+    </>
   );
 }
 

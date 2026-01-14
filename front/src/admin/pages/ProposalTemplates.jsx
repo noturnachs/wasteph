@@ -1,53 +1,113 @@
-import { useState, useEffect } from "react";
-import { Plus, FileEdit, Check, X, Trash2, Eye, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal } from "lucide-react";
 import { api } from "../services/api";
-import { useTheme } from "../contexts/ThemeContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { DataTable } from "../components/DataTable";
+import { SearchInput } from "../components/SearchInput";
+import { FacetedFilter } from "../components/FacetedFilter";
+import { TemplatePreviewDialog } from "../components/templates/TemplatePreviewDialog";
+import { TemplateEditorDialog } from "../components/templates/TemplateEditorDialog";
+
+// Service type mapping
+const SERVICE_TYPES = {
+  waste_collection: "Waste Collection (Compactor Hauling)",
+  fixed_monthly: "Fixed Monthly Rate",
+  waste_disposal: "Waste Disposal Services",
+  recycling: "Recycling Services",
+  consultation: "Environmental Consultation",
+  emergency: "Emergency Waste Management",
+};
+
+const SERVICE_TYPE_OPTIONS = [
+  { value: "waste_collection", label: "Waste Collection (Compactor Hauling)" },
+  { value: "fixed_monthly", label: "Fixed Monthly Rate" },
+  { value: "waste_disposal", label: "Waste Disposal Services" },
+  { value: "recycling", label: "Recycling Services" },
+  { value: "consultation", label: "Environmental Consultation" },
+  { value: "emergency", label: "Emergency Waste Management" },
+];
 
 export default function ProposalTemplates() {
-  const { theme } = useTheme();
   const [templates, setTemplates] = useState([]);
+  const [allTemplates, setAllTemplates] = useState([]); // For counting
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    htmlTemplate: "",
-    isDefault: false,
+  const [searchTerm, setSearchTerm] = useState("");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState([]);
+
+  // Column visibility
+  const [columnVisibility, setColumnVisibility] = useState({
+    name: true,
+    serviceType: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
   });
+
+  // Dialog states
+  const [previewDialog, setPreviewDialog] = useState({ open: false, template: null });
+  const [editorDialog, setEditorDialog] = useState({ open: false, template: null });
 
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [serviceTypeFilter, searchTerm]);
 
   const fetchTemplates = async () => {
     try {
       setLoading(true);
       const response = await api.getProposalTemplates({ isActive: true });
       if (response.success) {
-        setTemplates(response.data);
+        // Handle paginated response structure
+        const templatesData = Array.isArray(response.data) 
+          ? response.data 
+          : (response.data?.data || response.data || []);
+        
+        // Debug: Check if htmlTemplate is included
+        if (templatesData.length > 0) {
+          console.log("Template data sample:", {
+            id: templatesData[0].id,
+            name: templatesData[0].name,
+            hasHtmlTemplate: !!templatesData[0].htmlTemplate,
+            htmlTemplateLength: templatesData[0].htmlTemplate?.length || 0,
+            allKeys: Object.keys(templatesData[0])
+          });
+        }
+        setAllTemplates(templatesData);
+
+        // Apply filters
+        let filtered = templatesData;
+
+        // Service type filter
+        if (serviceTypeFilter.length > 0) {
+          filtered = filtered.filter(t =>
+            serviceTypeFilter.includes(t.serviceType || "fixed_monthly")
+          );
+        }
+
+        // Search filter
+        if (searchTerm) {
+          const search = searchTerm.toLowerCase();
+          filtered = filtered.filter(t =>
+            t.name.toLowerCase().includes(search) ||
+            (t.description && t.description.toLowerCase().includes(search))
+          );
+        }
+
+        setTemplates(filtered);
       }
     } catch (error) {
       toast.error("Failed to fetch proposal templates");
@@ -56,315 +116,251 @@ export default function ProposalTemplates() {
     }
   };
 
-  const handleCreate = () => {
-    setEditingTemplate(null);
-    setFormData({
-      name: "",
-      description: "",
-      htmlTemplate: defaultTemplateHTML,
-      isDefault: false,
-    });
-    setIsDialogOpen(true);
+  const handlePreview = (template) => {
+    setPreviewDialog({ open: true, template });
   };
 
   const handleEdit = (template) => {
-    setEditingTemplate(template);
-    setFormData({
-      name: template.name,
-      description: template.description || "",
-      htmlTemplate: template.htmlTemplate,
-      isDefault: template.isDefault,
-    });
-    setIsDialogOpen(true);
+    setEditorDialog({ open: true, template });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleCreateNew = () => {
+    setEditorDialog({ open: true, template: null });
+  };
+
+  const handleSaveTemplate = async (templateData) => {
     try {
-      if (editingTemplate) {
-        await api.updateProposalTemplate(editingTemplate.id, formData);
+      if (editorDialog.template) {
+        await api.updateProposalTemplate(editorDialog.template.id, templateData);
         toast.success("Template updated successfully");
       } else {
-        await api.createProposalTemplate(formData);
+        await api.createProposalTemplate(templateData);
         toast.success("Template created successfully");
       }
-      setIsDialogOpen(false);
+      setEditorDialog({ open: false, template: null });
       fetchTemplates();
     } catch (error) {
       toast.error(error.message || "Failed to save template");
+      throw error;
     }
   };
 
-  const handleSetDefault = async (id) => {
-    try {
-      await api.setDefaultProposalTemplate(id);
-      toast.success("Default template updated");
-      fetchTemplates();
-    } catch (error) {
-      toast.error("Failed to set default template");
-    }
+  // Count function for service type filter
+  const getServiceTypeCount = (value) => {
+    return allTemplates.filter(t =>
+      (t.serviceType || "fixed_monthly") === value
+    ).length;
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
-
-    try {
-      await api.deleteProposalTemplate(id);
-      toast.success("Template deleted successfully");
-      fetchTemplates();
-    } catch (error) {
-      toast.error(error.message || "Failed to delete template");
-    }
-  };
-
-  const filteredTemplates = templates.filter((t) =>
-    t.name.toLowerCase().includes(search.toLowerCase())
+  // Define table columns
+  const allColumns = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Template Name",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.name}</div>
+            {row.original.description && (
+              <div className="text-sm text-muted-foreground mt-0.5">
+                {row.original.description}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "serviceType",
+        header: "Service Type",
+        cell: ({ row }) => {
+          const serviceType = row.original.serviceType || "fixed_monthly";
+          return (
+            <Badge variant="outline">
+              {SERVICE_TYPES[serviceType] || "Unknown Service"}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          row.original.isDefault ? (
+            <Badge className="bg-green-600">Default</Badge>
+          ) : (
+            <Badge variant="secondary">Active</Badge>
+          )
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="text-sm text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString()}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Last Updated",
+        cell: ({ row }) => (
+          <div className="text-sm text-muted-foreground">
+            {new Date(row.original.updatedAt).toLocaleDateString()}
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem 
+                onClick={() => handlePreview(row.original)} 
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                <span>Preview</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleEdit(row.original)} 
+                className="cursor-pointer"
+              >
+                <Code className="h-4 w-4 mr-2" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    []
   );
 
+  // Filter columns based on visibility
+  const columns = allColumns.filter(column => {
+    if (!column.accessorKey) return true; // Always show actions column
+    return columnVisibility[column.accessorKey];
+  });
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1
-            className={`text-3xl font-bold ${
-              theme === "dark" ? "text-white" : "text-slate-900"
-            }`}
-          >
-            Proposal Templates
-          </h1>
-          <p
-            className={`text-sm ${
-              theme === "dark" ? "text-white/60" : "text-slate-600"
-            }`}
-          >
-            Manage proposal templates for your team
+          <h1 className="text-3xl font-bold tracking-tight">Proposal Templates</h1>
+          <p className="text-muted-foreground">
+            Manage proposal templates for different service types
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
+        <Button onClick={handleCreateNew}>
+          <Plus className="mr-2 h-4 w-4" />
           New Template
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Search templates..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filters */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search templates..."
+          />
+
+          <FacetedFilter
+            title="Service Type"
+            options={SERVICE_TYPE_OPTIONS}
+            selectedValues={serviceTypeFilter}
+            onSelectionChange={setServiceTypeFilter}
+            getCount={getServiceTypeCount}
+          />
+
+          {(serviceTypeFilter.length > 0 || searchTerm) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setServiceTypeFilter([]);
+                setSearchTerm("");
+              }}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* View Options */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[180px]">
+            <DropdownMenuLabel className="font-bold">Toggle columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {allColumns
+              .filter((column) => column.accessorKey)
+              .map((column) => {
+                const columnLabels = {
+                  name: "Template Name",
+                  serviceType: "Service Type",
+                  status: "Status",
+                  createdAt: "Created",
+                  updatedAt: "Last Updated",
+                };
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.accessorKey}
+                    checked={columnVisibility[column.accessorKey]}
+                    onCheckedChange={(value) =>
+                      setColumnVisibility({
+                        ...columnVisibility,
+                        [column.accessorKey]: value,
+                      })
+                    }
+                  >
+                    {columnLabels[column.accessorKey]}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Templates Grid */}
-      {loading ? (
-        <div className="text-center py-12">
-          <p className={theme === "dark" ? "text-white/60" : "text-slate-600"}>
-            Loading templates...
-          </p>
-        </div>
-      ) : filteredTemplates.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileEdit className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-            <p className={theme === "dark" ? "text-white/60" : "text-slate-600"}>
-              No templates found
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    <CardDescription className="mt-1">
-                      {template.description || "No description"}
-                    </CardDescription>
-                  </div>
-                  {template.isDefault && (
-                    <Badge variant="default" className="ml-2">
-                      <Check className="h-3 w-3 mr-1" />
-                      Default
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(template)}
-                  >
-                    <FileEdit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  {!template.isDefault && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetDefault(template.id)}
-                      >
-                        <Check className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(template.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  Updated: {new Date(template.updatedAt).toLocaleDateString()}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {/* Data Table */}
+      <DataTable
+        columns={columns}
+        data={templates}
+        isLoading={loading}
+        emptyMessage="No templates found. Create your first template to get started."
+      />
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTemplate ? "Edit Template" : "Create Template"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingTemplate
-                ? "Update the proposal template details"
-                : "Create a new proposal template"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Template Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Professional Proposal Template"
-                required
-              />
-            </div>
+      {/* Preview Dialog */}
+      <TemplatePreviewDialog
+        open={previewDialog.open}
+        onOpenChange={(open) => setPreviewDialog({ open, template: null })}
+        template={previewDialog.template}
+      />
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Template description..."
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="htmlTemplate">HTML Template</Label>
-              <Textarea
-                id="htmlTemplate"
-                value={formData.htmlTemplate}
-                onChange={(e) =>
-                  setFormData({ ...formData, htmlTemplate: e.target.value })
-                }
-                placeholder="HTML template with Handlebars placeholders..."
-                rows={15}
-                className="font-mono text-xs"
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Use Handlebars syntax: &#123;&#123;clientName&#125;&#125;, &#123;&#123;#each services&#125;&#125;, &#123;&#123;currency pricing.total&#125;&#125;
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isDefault"
-                checked={formData.isDefault}
-                onChange={(e) =>
-                  setFormData({ ...formData, isDefault: e.target.checked })
-                }
-                className="rounded"
-              />
-              <Label htmlFor="isDefault">Set as default template</Label>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingTemplate ? "Update" : "Create"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Editor Dialog */}
+      <TemplateEditorDialog
+        open={editorDialog.open}
+        onOpenChange={(open) => setEditorDialog({ open, template: null })}
+        template={editorDialog.template}
+        onSave={handleSaveTemplate}
+      />
     </div>
   );
 }
-
-// Default template HTML for new templates
-const defaultTemplateHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 40px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .services-table { width: 100%; border-collapse: collapse; }
-    .services-table th, .services-table td { padding: 10px; border: 1px solid #ddd; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Business Proposal</h1>
-    <p>{{proposalDate}}</p>
-  </div>
-
-  <h3>Client Information</h3>
-  <p>{{clientName}} - {{clientEmail}}</p>
-
-  <h3>Services</h3>
-  <table class="services-table">
-    <thead>
-      <tr>
-        <th>Service</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Subtotal</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each services}}
-      <tr>
-        <td>{{this.name}}</td>
-        <td>{{this.quantity}}</td>
-        <td>{{currency this.unitPrice}}</td>
-        <td>{{currency this.subtotal}}</td>
-      </tr>
-      {{/each}}
-    </tbody>
-  </table>
-
-  <h3>Total: {{currency pricing.total}}</h3>
-</body>
-</html>`;

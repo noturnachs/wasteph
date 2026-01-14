@@ -46,7 +46,6 @@ export default function Proposals() {
     inquiryCompany: true,
     requestedByName: true,
     status: true,
-    totalAmount: true,
     createdAt: true,
   });
 

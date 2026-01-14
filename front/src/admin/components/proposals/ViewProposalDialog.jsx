@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CheckCircle2, XCircle, Download, FileText, Eye } from "lucide-react";
+import { PDFViewer } from "../PDFViewer";
 
 const getStatusBadge = (status) => {
   const statusConfig = {
@@ -49,6 +50,7 @@ export function ViewProposalDialog({
   const [activeTab, setActiveTab] = useState("details");
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState("");
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   if (!proposal) return null;
 
@@ -66,47 +68,53 @@ export function ViewProposalDialog({
 
   const { services = [], pricing = {}, terms = {} } = proposalData;
 
-  // Load PDF when switching to PDF tab
+  // Load PDF when clicking PDF tab - now opens PDFViewer
   const handleTabChange = (value) => {
     setActiveTab(value);
 
-    if (value === "pdf" && !pdfPreviewUrl && !isLoadingPdf) {
-      setIsLoadingPdf(true);
+    if (value === "pdf") {
+      // Open full-screen PDF viewer
+      setShowPdfViewer(true);
 
-      // Use requestAnimationFrame to ensure loading text renders before PDF loads
-      requestAnimationFrame(() => {
-        requestAnimationFrame(async () => {
-          try {
-            // If PDF already exists, use it
-            if (proposal.pdfUrl) {
-              const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-              setPdfPreviewUrl(`${API_BASE_URL}/proposals/${proposal.id}/pdf`);
-            } else {
-              // Generate preview PDF
-              const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-              const response = await fetch(
-                `${API_BASE_URL}/proposals/${proposal.id}/preview-pdf`,
-                {
-                  method: "POST",
-                  credentials: "include",
+      if (!pdfPreviewUrl && !isLoadingPdf) {
+        setIsLoadingPdf(true);
+
+        // Use requestAnimationFrame to ensure loading text renders before PDF loads
+        requestAnimationFrame(() => {
+          requestAnimationFrame(async () => {
+            try {
+              // If PDF already exists, use it
+              if (proposal.pdfUrl) {
+                const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+                setPdfPreviewUrl(`${API_BASE_URL}/proposals/${proposal.id}/pdf`);
+              } else {
+                // Generate preview PDF
+                const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+                const response = await fetch(
+                  `${API_BASE_URL}/proposals/${proposal.id}/preview-pdf`,
+                  {
+                    method: "POST",
+                    credentials: "include",
+                  }
+                );
+                const data = await response.json();
+                if (data.success) {
+                  setPdfPreviewUrl(`data:application/pdf;base64,${data.data.pdfBase64}`);
                 }
-              );
-              const data = await response.json();
-              if (data.success) {
-                setPdfPreviewUrl(`data:application/pdf;base64,${data.data.pdfBase64}`);
               }
+            } catch (error) {
+              console.error("Failed to load PDF:", error);
+            } finally {
+              setIsLoadingPdf(false);
             }
-          } catch (error) {
-            console.error("Failed to load PDF:", error);
-          } finally {
-            setIsLoadingPdf(false);
-          }
+          });
         });
-      });
+      }
     }
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[70vw] !max-w-[70vw] h-[90vh] !max-h-[90vh] overflow-hidden flex flex-col p-6">
         <DialogHeader>
@@ -295,26 +303,16 @@ export function ViewProposalDialog({
           </div>
           </TabsContent>
 
-          {/* PDF Preview Tab */}
+          {/* PDF Preview Tab - Click to open full-screen viewer */}
           <TabsContent value="pdf" className="flex-1 overflow-hidden mt-4">
-            {isLoadingPdf ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center space-y-2">
-                  <p className="text-lg font-medium">Loading PDF preview...</p>
-                  <p className="text-sm text-muted-foreground">Please wait, this may take a moment</p>
-                </div>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center space-y-4">
+                <Eye className="h-16 w-16 mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  PDF viewer will open in full screen
+                </p>
               </div>
-            ) : pdfPreviewUrl ? (
-              <iframe
-                src={pdfPreviewUrl}
-                title="Proposal PDF Preview"
-                className="w-full h-full border rounded-lg"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-muted-foreground">Click to load PDF preview</p>
-              </div>
-            )}
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -357,5 +355,19 @@ export function ViewProposalDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
+
+    {/* Full-screen PDF Viewer */}
+    {showPdfViewer && (
+      <PDFViewer
+        fileUrl={isLoadingPdf ? "" : pdfPreviewUrl}
+        fileName={`${proposal.inquiryName} - Proposal.pdf`}
+        title="Proposal PDF"
+        onClose={() => {
+          setShowPdfViewer(false);
+          setActiveTab("details"); // Reset to details tab
+        }}
+        isOpen={showPdfViewer}
+      />
+    )}
+  </>
+};

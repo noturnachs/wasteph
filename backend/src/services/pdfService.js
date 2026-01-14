@@ -173,6 +173,64 @@ class PDFService {
   }
 
   /**
+   * Generate PDF from rendered HTML (without Handlebars processing)
+   * Used for template preview when HTML is already rendered
+   * @param {string} html - Fully rendered HTML
+   * @returns {Promise<Buffer>} PDF buffer
+   */
+  async generatePDFFromHTML(html) {
+    let browser;
+
+    try {
+      // Launch browser with timeout
+      const launchPromise = puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+
+      browser = await Promise.race([
+        launchPromise,
+        this.timeout(10000, "Browser launch timeout"),
+      ]);
+
+      const page = await browser.newPage();
+
+      // Set content with timeout
+      await Promise.race([
+        page.setContent(html, { waitUntil: "networkidle0" }),
+        this.timeout(15000, "Page load timeout"),
+      ]);
+
+      // Generate PDF with timeout (30 seconds total)
+      const pdfBuffer = await Promise.race([
+        page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: {
+            top: "20px",
+            bottom: "20px",
+            left: "20px",
+            right: "20px",
+          },
+        }),
+        this.timeout(30000, "PDF generation timeout"),
+      ]);
+
+      await browser.close();
+
+      return pdfBuffer;
+    } catch (error) {
+      if (browser) {
+        await browser.close().catch(() => {});
+      }
+      throw new AppError(
+        `PDF generation failed: ${error.message}`,
+        500
+      );
+    }
+  }
+
+  /**
    * Register custom Handlebars helpers
    */
   registerHandlebarsHelpers() {

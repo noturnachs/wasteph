@@ -118,23 +118,6 @@ export const createColumns = ({ users = [], onReview, onDownload, onDelete }) =>
     },
   },
   {
-    accessorKey: "totalAmount",
-    header: "Total Amount",
-    cell: ({ row }) => {
-      const proposal = row.original;
-      try {
-        const data = typeof proposal.proposalData === 'string'
-          ? JSON.parse(proposal.proposalData)
-          : proposal.proposalData;
-
-        const total = data?.pricing?.total || 0;
-        return `₱${parseFloat(total).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      } catch (error) {
-        return "-";
-      }
-    },
-  },
-  {
     accessorKey: "createdAt",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
