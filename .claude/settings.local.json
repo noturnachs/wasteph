@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cd:*)",
-      "Bash(npx shadcn@latest add label textarea sonner)"
+      "Bash(npx shadcn@latest add label textarea sonner)",
+      "Bash(npm install:*)"
     ]
   }
 }

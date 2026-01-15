@@ -21,6 +21,22 @@ export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState("");
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
+  // Reset PDF state when dialog closes or inquiry changes
+  useEffect(() => {
+    if (!open) {
+      setPdfPreviewUrl("");
+      setIsLoadingPdf(false);
+      setShowPreview(false);
+      setProposalData(null);
+    }
+  }, [open]);
+
+  // Reset PDF when inquiry ID changes
+  useEffect(() => {
+    setPdfPreviewUrl("");
+    setIsLoadingPdf(false);
+  }, [inquiry?.proposalId]);
+
   // Fetch proposal data when dialog opens
   useEffect(() => {
     const fetchProposalData = async () => {
@@ -70,8 +86,23 @@ export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
           const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
           if (proposal.pdfUrl) {
-            // PDF already exists (approved proposal)
-            setPdfPreviewUrl(`${API_BASE_URL}/proposals/${inquiry.proposalId}/pdf`);
+            // PDF already exists - fetch as blob and convert to base64 for viewing
+            const pdfResponse = await fetch(
+              `${API_BASE_URL}/proposals/${inquiry.proposalId}/pdf`,
+              {
+                method: "GET",
+                credentials: "include",
+              }
+            );
+            if (!pdfResponse.ok) throw new Error("Failed to fetch PDF");
+            const blob = await pdfResponse.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setPdfPreviewUrl(reader.result);
+              setIsLoadingPdf(false);
+            };
+            reader.readAsDataURL(blob);
+            return; // Early return since we're using async reader
           } else {
             // Generate preview PDF (for proposals without PDF yet)
             const previewResponse = await fetch(

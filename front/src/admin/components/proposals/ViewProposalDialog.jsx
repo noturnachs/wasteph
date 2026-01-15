@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,23 @@ export function ViewProposalDialog({
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
 
+  // Reset PDF state when proposal changes or dialog closes
+  useEffect(() => {
+    if (!open) {
+      // Reset all state when dialog closes
+      setPdfPreviewUrl("");
+      setIsLoadingPdf(false);
+      setShowPdfViewer(false);
+      setActiveTab("details");
+    }
+  }, [open]);
+
+  // Also reset PDF when proposal ID changes
+  useEffect(() => {
+    setPdfPreviewUrl("");
+    setIsLoadingPdf(false);
+  }, [proposal?.id]);
+
   if (!proposal) return null;
 
   const requestedByUser = users.find(u => u.id === proposal.requestedBy);
@@ -83,13 +100,28 @@ export function ViewProposalDialog({
         requestAnimationFrame(() => {
           requestAnimationFrame(async () => {
             try {
-              // If PDF already exists, use it
+              const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+              // If PDF already exists on disk, fetch it as blob and convert to base64
               if (proposal.pdfUrl) {
-                const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-                setPdfPreviewUrl(`${API_BASE_URL}/proposals/${proposal.id}/pdf`);
+                const response = await fetch(
+                  `${API_BASE_URL}/proposals/${proposal.id}/pdf`,
+                  {
+                    method: "GET",
+                    credentials: "include",
+                  }
+                );
+                if (!response.ok) throw new Error("Failed to fetch PDF");
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setPdfPreviewUrl(reader.result);
+                  setIsLoadingPdf(false);
+                };
+                reader.readAsDataURL(blob);
+                return; // Early return since we're using async reader
               } else {
-                // Generate preview PDF
-                const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+                // Generate preview PDF (for proposals without saved PDF)
                 const response = await fetch(
                   `${API_BASE_URL}/proposals/${proposal.id}/preview-pdf`,
                   {

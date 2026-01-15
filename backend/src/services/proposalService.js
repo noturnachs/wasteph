@@ -324,30 +324,48 @@ class ProposalService {
       throw new AppError("Only the requesting sales person can send this proposal", 403);
     }
 
-    // Step 3: Get inquiry and template
+    // Step 3: Get inquiry
     const inquiry = await inquiryService.getInquiryById(proposal.inquiryId);
-    const template = await proposalTemplateService.getTemplateById(
-      proposal.templateId
-    );
+    const proposalData = JSON.parse(proposal.proposalData);
 
     // Step 4: Generate PDF
     let pdfBuffer, pdfUrl;
     try {
-      pdfBuffer = await pdfService.generateProposalPDF(
-        JSON.parse(proposal.proposalData),
-        inquiry,
-        template.htmlTemplate
-      );
+      // Check if this is the new editable format (has editedHtmlContent)
+      if (proposalData.editedHtmlContent) {
+        // New format: use the already-rendered HTML directly
+        pdfBuffer = await pdfService.generatePDFFromHTML(
+          proposalData.editedHtmlContent
+        );
+      } else {
+        // Legacy format: use template rendering
+        const template = await proposalTemplateService.getTemplateById(
+          proposal.templateId
+        );
+        pdfBuffer = await pdfService.generateProposalPDF(
+          proposalData,
+          inquiry,
+          template.htmlTemplate
+        );
+      }
       pdfUrl = await this.savePDF(pdfBuffer, proposalId);
     } catch (error) {
       throw new AppError("PDF generation failed: " + error.message, 500);
     }
 
     // Step 5: Send email to client
+    // Use clientEmail from proposal data if available (new format), otherwise fall back to inquiry email
+    const recipientEmail = proposalData.clientEmail || inquiry.email;
+
+    console.log("📧 Email recipient debug:");
+    console.log("   proposalData.clientEmail:", proposalData.clientEmail);
+    console.log("   inquiry.email:", inquiry.email);
+    console.log("   Using recipient:", recipientEmail);
+
     try {
       const emailResult = await emailService.sendProposalEmail(
-        inquiry.email,
-        JSON.parse(proposal.proposalData),
+        recipientEmail,
+        proposalData,
         inquiry,
         pdfBuffer
       );
@@ -632,6 +650,18 @@ class ProposalService {
    */
   async generatePreviewPDF(proposalId) {
     const proposal = await this.getProposalById(proposalId);
+    const proposalData = JSON.parse(proposal.proposalData);
+
+    // Check if this is the new editable format (has editedHtmlContent)
+    if (proposalData.editedHtmlContent) {
+      // New format: use the already-rendered HTML directly
+      const pdfBuffer = await pdfService.generatePDFFromHTML(
+        proposalData.editedHtmlContent
+      );
+      return pdfBuffer;
+    }
+
+    // Legacy format: use template rendering
     const inquiry = await inquiryService.getInquiryById(proposal.inquiryId);
     const template = await proposalTemplateService.getTemplateById(
       proposal.templateId
@@ -639,7 +669,7 @@ class ProposalService {
 
     // Generate PDF (don't save)
     const pdfBuffer = await pdfService.generateProposalPDF(
-      JSON.parse(proposal.proposalData),
+      proposalData,
       inquiry,
       template.htmlTemplate
     );

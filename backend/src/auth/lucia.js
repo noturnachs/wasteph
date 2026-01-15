@@ -1,4 +1,4 @@
-import { Lucia } from "lucia";
+import { Lucia, TimeSpan } from "lucia";
 import { PostgresJsAdapter } from "@lucia-auth/adapter-postgresql";
 import { client } from "../db/index.js";
 
@@ -10,7 +10,10 @@ const adapter = new PostgresJsAdapter(client, {
 
 // Initialize Lucia
 export const lucia = new Lucia(adapter, {
+  sessionExpiresIn: new TimeSpan(30, "d"), // 30 days
   sessionCookie: {
+    name: "auth_session",
+    expires: false, // Session cookie (persists until browser closes) - set to true for persistent
     attributes: {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",

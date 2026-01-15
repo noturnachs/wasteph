@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Eye, Send, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "sonner";
+import TiptapEditor from "@/components/common/TiptapEditor";
 
 // Service Type Options
 const SERVICE_TYPE_OPTIONS = [
@@ -47,13 +48,17 @@ const SERVICE_TO_TEMPLATE_MAP = {
 export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState("");
+  const [isLoadingEditor, setIsLoadingEditor] = useState(false);
   const [template, setTemplate] = useState(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState("");
 
-  // Client info form state - matches our simplified placeholders
+  // Editor content state - track saved vs current
+  const [editorInitialContent, setEditorInitialContent] = useState("");
+  const [savedEditorContent, setSavedEditorContent] = useState({ html: "", json: null });
+  const [hasUnsavedEditorChanges, setHasUnsavedEditorChanges] = useState(false);
+
+  // Client info form state
   const [formData, setFormData] = useState({
     clientName: "",
     clientEmail: "",
@@ -66,30 +71,91 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     notes: "",
   });
 
-  // Pre-populate from inquiry and load template if service type is available
+  // Pre-populate from inquiry and load existing proposal data if revising
   useEffect(() => {
     const initialize = async () => {
       if (!open) return;
 
-      // Pre-populate form from inquiry
-      if (inquiry) {
-        setFormData({
-          clientName: inquiry.name || "",
-          clientEmail: inquiry.email || "",
-          clientPhone: inquiry.phone || "",
-          clientCompany: inquiry.company || "",
-          clientPosition: inquiry.position || "",
-          clientAddress: inquiry.address || "",
-          proposalDate: new Date().toISOString().split("T")[0],
-          validityDays: 30,
-          notes: "",
-        });
+      // Check if this is a revision of a rejected proposal
+      const isRevision = inquiry?.proposalId && inquiry?.proposalStatus === "rejected";
 
-        // Pre-select service type if available from inquiry
-        if (inquiry.serviceType) {
-          setSelectedServiceType(inquiry.serviceType);
-          // Load template for this service type
-          await loadTemplateForServiceType(inquiry.serviceType);
+      if (isRevision) {
+        // Load existing proposal data for editing
+        try {
+          const response = await api.getProposalById(inquiry.proposalId);
+          const proposal = response.data || response;
+          const existingData = typeof proposal.proposalData === "string"
+            ? JSON.parse(proposal.proposalData)
+            : proposal.proposalData;
+
+          // Pre-populate form with existing proposal data
+          setFormData({
+            clientName: existingData.clientName || inquiry.name || "",
+            clientEmail: existingData.clientEmail || inquiry.email || "",
+            clientPhone: existingData.clientPhone || inquiry.phone || "",
+            clientCompany: existingData.clientCompany || inquiry.company || "",
+            clientPosition: existingData.clientPosition || inquiry.position || "",
+            clientAddress: existingData.clientAddress || inquiry.address || "",
+            proposalDate: existingData.proposalDate || new Date().toISOString().split("T")[0],
+            validityDays: existingData.validityDays || 30,
+            notes: existingData.notes || "",
+          });
+
+          // Set service type
+          const serviceType = existingData.serviceType || inquiry.serviceType;
+          if (serviceType) {
+            setSelectedServiceType(serviceType);
+            await loadTemplateForServiceType(serviceType);
+          }
+
+          // If we have edited content, load directly into editor (skip to step 3)
+          if (existingData.editedHtmlContent) {
+            setEditorInitialContent(existingData.editedHtmlContent);
+            setSavedEditorContent({
+              html: existingData.editedHtmlContent,
+              json: existingData.editedJsonContent || null,
+            });
+            setHasUnsavedEditorChanges(false);
+            // Go directly to editor step
+            setCurrentStep(3);
+          }
+        } catch (error) {
+          console.error("Failed to load existing proposal:", error);
+          // Fall back to normal flow
+          if (inquiry) {
+            setFormData({
+              clientName: inquiry.name || "",
+              clientEmail: inquiry.email || "",
+              clientPhone: inquiry.phone || "",
+              clientCompany: inquiry.company || "",
+              clientPosition: inquiry.position || "",
+              clientAddress: inquiry.address || "",
+              proposalDate: new Date().toISOString().split("T")[0],
+              validityDays: 30,
+              notes: "",
+            });
+          }
+        }
+      } else {
+        // Normal new proposal flow - pre-populate from inquiry
+        if (inquiry) {
+          setFormData({
+            clientName: inquiry.name || "",
+            clientEmail: inquiry.email || "",
+            clientPhone: inquiry.phone || "",
+            clientCompany: inquiry.company || "",
+            clientPosition: inquiry.position || "",
+            clientAddress: inquiry.address || "",
+            proposalDate: new Date().toISOString().split("T")[0],
+            validityDays: 30,
+            notes: "",
+          });
+
+          // Pre-select service type if available from inquiry
+          if (inquiry.serviceType) {
+            setSelectedServiceType(inquiry.serviceType);
+            await loadTemplateForServiceType(inquiry.serviceType);
+          }
         }
       }
     };
@@ -101,7 +167,9 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
   useEffect(() => {
     if (!open) {
       setCurrentStep(1);
-      setPreviewHtml("");
+      setEditorInitialContent("");
+      setSavedEditorContent({ html: "", json: null });
+      setHasUnsavedEditorChanges(false);
     }
   }, [open]);
 
@@ -128,7 +196,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     } catch (error) {
       console.error("Failed to load template for service type:", error);
       toast.error("Could not load template for this service type");
-      
+
       // Fallback to default template
       try {
         const response = await api.getDefaultProposalTemplate();
@@ -148,13 +216,14 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     await loadTemplateForServiceType(serviceType);
   };
 
-  const generatePreview = async () => {
+  // Render template with client data and load into editor
+  const prepareEditorContent = async () => {
     if (!template?.htmlTemplate) {
       toast.error("Template not loaded");
       return;
     }
 
-    setIsLoadingPreview(true);
+    setIsLoadingEditor(true);
     try {
       // Calculate validity date
       const validUntilDate = new Date();
@@ -183,14 +252,11 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
       let rendered = template.htmlTemplate;
 
       // Handle {{#if fieldName}} ... {{/if}} conditionals
-      // Remove the block if field is empty, keep content if field has value
       Object.keys(templateData).forEach((key) => {
         const ifRegex = new RegExp(`\\{\\{#if ${key}\\}\\}([\\s\\S]*?)\\{\\{/if\\}\\}`, "g");
         if (templateData[key]) {
-          // Keep the content, remove the if/endif tags
           rendered = rendered.replace(ifRegex, "$1");
         } else {
-          // Remove the entire block
           rendered = rendered.replace(ifRegex, "");
         }
       });
@@ -201,64 +267,73 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
         rendered = rendered.replace(regex, templateData[key] || "");
       });
 
-      // Handle {{#each services}} blocks - remove for now since we don't have services yet
+      // Handle {{#each services}} blocks - remove for now
       rendered = rendered.replace(/\{\{#each\s+[\w.]+\}\}[\s\S]*?\{\{\/each\}\}/g, "");
 
       // Strip any remaining Handlebars syntax
       rendered = rendered.replace(/\{\{[^{}]*\}\}/g, "");
-      setPreviewHtml(rendered);
+
+      setEditorInitialContent(rendered);
+      setSavedEditorContent({ html: rendered, json: null });
+      setHasUnsavedEditorChanges(false);
       setCurrentStep(3);
     } catch (error) {
-      console.error("❌ Preview error:", error);
-      toast.error("Failed to generate preview");
+      console.error("Failed to prepare editor content:", error);
+      toast.error("Failed to load editor");
     } finally {
-      setIsLoadingPreview(false);
+      setIsLoadingEditor(false);
     }
   };
 
+  // Handle editor save callback
+  const handleEditorSave = ({ html, json }) => {
+    setSavedEditorContent({ html, json });
+    setHasUnsavedEditorChanges(false);
+    toast.success("Changes saved");
+  };
+
+  // Handle unsaved changes notification from editor
+  const handleUnsavedChange = (hasChanges) => {
+    setHasUnsavedEditorChanges(hasChanges);
+  };
+
+  // Handle submit
   const handleSubmit = async () => {
+    // Check if there are unsaved changes
+    if (hasUnsavedEditorChanges) {
+      toast.error("Please save your changes before submitting");
+      return;
+    }
+
+    if (!savedEditorContent.html) {
+      toast.error("No proposal content to submit");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const validUntilDate = new Date();
       validUntilDate.setDate(validUntilDate.getDate() + (parseInt(formData.validityDays) || 30));
 
-      // Prepare proposal data in the format backend expects
+      // Prepare proposal data with structured format + edited HTML
       const proposalData = {
-        // Required: Services array (using placeholder service for now)
-        services: [
-          {
-            name: "Waste Collection Service",
-            description: "Standard waste collection service",
-            quantity: 1,
-            unitPrice: 0,
-            subtotal: 0,
-          },
-        ],
-
-        // Required: Pricing object
-        pricing: {
-          subtotal: 0,
-          tax: 0,
-          discount: 0,
-          total: 0,
-          taxRate: 12,
-        },
-
-        // Required: Terms object
-        terms: {
-          paymentTerms: "Net 30",
-          validityDays: parseInt(formData.validityDays) || 30,
-          notes: formData.notes || "",
-        },
-
-        // Additional client information (stored but not validated)
+        // Client info
         clientName: formData.clientName,
         clientEmail: formData.clientEmail,
         clientPhone: formData.clientPhone,
         clientCompany: formData.clientCompany,
         clientPosition: formData.clientPosition,
         clientAddress: formData.clientAddress,
+
+        // Proposal metadata
         proposalDate: formData.proposalDate,
+        validityDays: parseInt(formData.validityDays) || 30,
+        serviceType: selectedServiceType,
+        notes: formData.notes || "",
+
+        // The actual proposal content (edited HTML and JSON for re-editing)
+        editedHtmlContent: savedEditorContent.html,
+        editedJsonContent: savedEditorContent.json,
       };
 
       // Check if revising a rejected proposal
@@ -290,10 +365,11 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
   };
 
   const isFormValid = formData.clientName && formData.clientCompany;
+  const canSubmit = savedEditorContent.html && !hasUnsavedEditorChanges && !isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[800px]! max-w-[90vw]! h-[85vh]! max-h-[85vh]! flex flex-col p-0">
+      <DialogContent className="w-[900px]! max-w-[95vw]! h-[90vh]! max-h-[90vh]! flex flex-col p-0">
         {/* Header */}
         <div className="px-6 py-4 border-b shrink-0">
           <DialogHeader>
@@ -311,6 +387,8 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
                 currentStep === 1
                   ? "bg-[#106934] text-white"
+                  : currentStep > 1
+                  ? "bg-green-100 text-green-800"
                   : "bg-gray-100 text-gray-500"
               }`}
             >
@@ -319,11 +397,13 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               </span>
               Service Type
             </div>
-            <div className="w-8 h-0.5 bg-gray-200" />
+            <div className={`w-8 h-0.5 ${currentStep > 1 ? "bg-green-400" : "bg-gray-200"}`} />
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
                 currentStep === 2
                   ? "bg-[#106934] text-white"
+                  : currentStep > 2
+                  ? "bg-green-100 text-green-800"
                   : "bg-gray-100 text-gray-500"
               }`}
             >
@@ -332,7 +412,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               </span>
               Client Info
             </div>
-            <div className="w-8 h-0.5 bg-gray-200" />
+            <div className={`w-8 h-0.5 ${currentStep > 2 ? "bg-green-400" : "bg-gray-200"}`} />
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
                 currentStep === 3
@@ -343,13 +423,13 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
                 3
               </span>
-              Preview & Submit
+              Edit & Submit
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+        <div className={`flex-1 px-6 py-4 min-h-0 ${currentStep === 3 ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
           {/* Rejection Banner */}
           {inquiry?.proposalStatus === "rejected" && inquiry?.proposalRejectionReason && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -530,31 +610,51 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               )}
             </div>
           ) : (
-            /* STEP 3: Preview */
-            <div className="space-y-4 h-full flex flex-col">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm shrink-0">
-                <p className="text-green-800 dark:text-green-100">
-                  Preview of the proposal that will be sent to <strong>{formData.clientName}</strong>
-                </p>
+            /* STEP 3: Edit & Submit */
+            <div className="flex flex-col h-full min-h-0 gap-4">
+              {/* Instructions */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm shrink-0">
+                <div className="flex items-start gap-2">
+                  <Edit3 className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-blue-800 dark:text-blue-100 font-medium">
+                      Edit your proposal content below
+                    </p>
+                    <p className="text-blue-600 dark:text-blue-300 mt-1">
+                      Use the toolbar to format text. Click "Save Changes" before submitting.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex-1 border rounded-lg overflow-auto bg-white dark:bg-slate-950 min-h-0">
-                {isLoadingPreview ? (
-                  <div className="flex items-center justify-center h-full py-24">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#106934]" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full overflow-auto">
-                    <iframe
-                      srcDoc={previewHtml}
-                      title="Proposal Preview"
-                      className="w-full min-h-[600px] border-0"
-                      sandbox="allow-same-origin"
-                      style={{ height: "100%", minHeight: "600px" }}
-                    />
-                  </div>
-                )}
+              {/* Unsaved Changes Warning - uses visibility to prevent layout shift */}
+              <div
+                className={`bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm shrink-0 transition-all duration-200 ${
+                  hasUnsavedEditorChanges ? 'visible opacity-100' : 'invisible opacity-0'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-amber-800">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>You have unsaved changes. Save before submitting.</span>
+                </div>
               </div>
+
+              {/* Editor */}
+              {isLoadingEditor ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#106934]" />
+                  <span className="ml-3 text-gray-600">Loading editor...</span>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0">
+                  <TiptapEditor
+                    content={editorInitialContent}
+                    onChange={handleEditorSave}
+                    onUnsavedChange={handleUnsavedChange}
+                    className="h-full"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -586,15 +686,15 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                   Back
                 </Button>
                 <Button
-                  onClick={generatePreview}
-                  disabled={!isFormValid || isLoadingPreview || isLoadingTemplate}
+                  onClick={prepareEditorContent}
+                  disabled={!isFormValid || isLoadingEditor || isLoadingTemplate}
                 >
-                  {isLoadingPreview ? (
+                  {isLoadingEditor ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Edit3 className="h-4 w-4 mr-2" />
                   )}
-                  Preview
+                  Edit Proposal
                 </Button>
               </>
             ) : (
@@ -603,7 +703,11 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit}
+                  className={!canSubmit ? "opacity-50" : ""}
+                >
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (

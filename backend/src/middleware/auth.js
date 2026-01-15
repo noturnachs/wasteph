@@ -20,6 +20,13 @@ export const requireAuth = async (req, res, next) => {
     });
   }
 
+  // Refresh session cookie if it was extended by Lucia
+  if (session && session.fresh) {
+    const { lucia } = await import("../auth/lucia.js");
+    const sessionCookie = lucia.createSessionCookie(session.id);
+    res.cookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+  }
+
   if (!user.isActive) {
     return res.status(403).json({
       success: false,

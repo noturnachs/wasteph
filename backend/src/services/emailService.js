@@ -14,6 +14,18 @@ class EmailService {
    * Initialize Nodemailer transporter
    */
   initializeTransporter() {
+    // Log SMTP configuration (without password)
+    console.log("📧 Initializing Email Service...");
+    console.log(`   SMTP_HOST: ${process.env.SMTP_HOST || "NOT SET"}`);
+    console.log(`   SMTP_PORT: ${process.env.SMTP_PORT || "587 (default)"}`);
+    console.log(`   SMTP_SECURE: ${process.env.SMTP_SECURE || "false (default)"}`);
+    console.log(`   SMTP_USER: ${process.env.SMTP_USER || "NOT SET"}`);
+    console.log(`   SMTP_PASSWORD: ${process.env.SMTP_PASSWORD ? "****" : "NOT SET"}`);
+
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.warn("⚠️  Warning: SMTP credentials not fully configured. Emails will fail.");
+    }
+
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || "587"),
@@ -23,6 +35,9 @@ class EmailService {
         pass: process.env.SMTP_PASSWORD,
       },
     });
+
+    // Verify connection on startup
+    this.verifyConnection();
   }
 
   /**
@@ -35,23 +50,47 @@ class EmailService {
    */
   async sendProposalEmail(to, proposalData, inquiryData, pdfBuffer) {
     try {
-      const { pricing, terms } = proposalData;
-      const clientName = inquiryData.name;
+      // Handle both old format (pricing/terms objects) and new format (flat structure with editedHtmlContent)
+      const isNewFormat = !!proposalData.editedHtmlContent;
+
+      let clientName, total, validityDays;
+
+      if (isNewFormat) {
+        // New simplified format
+        clientName = proposalData.clientName || inquiryData.name;
+        total = null; // New format doesn't have a computed total
+        validityDays = proposalData.validityDays || 30;
+      } else {
+        // Legacy format with pricing/terms objects
+        const { pricing, terms } = proposalData;
+        clientName = inquiryData.name;
+        total = pricing?.total;
+        validityDays = terms?.validityDays || 30;
+      }
 
       // Calculate validity date
       const validityDate = new Date();
-      validityDate.setDate(validityDate.getDate() + (terms.validityDays || 30));
+      validityDate.setDate(validityDate.getDate() + validityDays);
 
       // Generate email HTML
-      const htmlContent = this.generateProposalEmailHTML(
-        clientName,
-        pricing.total,
-        validityDate.toLocaleDateString("en-PH")
-      );
+      const htmlContent = isNewFormat
+        ? this.generateSimpleProposalEmailHTML(
+            clientName,
+            validityDate.toLocaleDateString("en-PH")
+          )
+        : this.generateProposalEmailHTML(
+            clientName,
+            total,
+            validityDate.toLocaleDateString("en-PH")
+          );
 
       // Send email with PDF attachment
+      console.log(`📤 Sending proposal email to: ${to}`);
+      console.log(`   From: ${process.env.SMTP_USER}`);
+      console.log(`   PDF attached: ${pdfBuffer ? `Yes (${pdfBuffer.length} bytes)` : "No"}`);
+
       const info = await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"WastePH" <noreply@wasteph.com>',
+        from: process.env.SMTP_USER,
         to,
         subject: "Proposal from WastePH",
         html: htmlContent,
@@ -64,12 +103,16 @@ class EmailService {
         ],
       });
 
+      console.log(`✅ Email sent successfully!`);
+      console.log(`   Message ID: ${info.messageId}`);
+
       return {
         success: true,
         messageId: info.messageId,
       };
     } catch (error) {
-      console.error("Email send error:", error);
+      console.error("❌ Email send error:", error.message);
+      console.error("   Full error:", error);
       return {
         success: false,
         error: error.message,
@@ -89,7 +132,7 @@ class EmailService {
       const htmlContent = this.generateNotificationEmailHTML(subject, body);
 
       const info = await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"WastePH" <noreply@wasteph.com>',
+        from: process.env.SMTP_USER,
         to,
         subject,
         html: htmlContent,
@@ -106,6 +149,134 @@ class EmailService {
         error: error.message,
       };
     }
+  }
+
+  /**
+   * Generate simple proposal email HTML for new format (without total)
+   * @param {string} clientName - Client name
+   * @param {string} validityDate - Validity date string
+   * @returns {string} HTML content
+   */
+  generateSimpleProposalEmailHTML(clientName, validityDate) {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #106934;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #106934;
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+    .header p {
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+    }
+    .content {
+      margin-bottom: 30px;
+    }
+    .content p {
+      margin: 15px 0;
+    }
+    .validity-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .validity-box p {
+      margin: 0;
+      color: #166534;
+    }
+    .validity-box strong {
+      font-size: 18px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ddd;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .footer strong {
+      color: #106934;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Business Proposal</h1>
+      <p>Thank you for considering WastePH for your waste management needs</p>
+    </div>
+
+    <div class="content">
+      <p>Dear <strong>${clientName}</strong>,</p>
+
+      <p>Thank you for your interest in our waste management services. We are pleased to submit our proposal for your review.</p>
+
+      <p>Please find attached our detailed proposal outlining the services we can provide, pricing structure, and terms and conditions.</p>
+
+      <div class="validity-box">
+        <p>This proposal is valid until</p>
+        <p><strong>${validityDate}</strong></p>
+      </div>
+
+      <p>The attached PDF contains complete details including:</p>
+      <ul style="margin: 15px 0; padding-left: 20px;">
+        <li>Service breakdown and specifications</li>
+        <li>Detailed pricing structure</li>
+        <li>Terms and conditions</li>
+        <li>Payment terms</li>
+      </ul>
+
+      <p>Should you have any questions or require clarification on any aspect of this proposal, please do not hesitate to contact us.</p>
+
+      <p>We look forward to the opportunity to serve you.</p>
+    </div>
+
+    <div class="footer">
+      <p><strong>WastePH - Professional Waste Management Solutions</strong></p>
+      <p>Email: info@wasteph.com | Phone: +639562461503</p>
+      <p style="margin-top: 15px; font-size: 11px; color: #999;">
+        This is an automated email. Please do not reply directly to this message.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
   }
 
   /**

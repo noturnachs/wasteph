@@ -8,7 +8,8 @@ import { AppError } from "./errorHandler.js";
 
 // ===== PROPOSAL VALIDATIONS =====
 
-const proposalDataSchema = z.object({
+// Legacy format with services/pricing/terms structure
+const legacyProposalDataSchema = z.object({
   services: z
     .array(
       z.object({
@@ -17,7 +18,7 @@ const proposalDataSchema = z.object({
         quantity: z.number().min(1, "Quantity must be at least 1"),
         unitPrice: z.number().min(0, "Unit price must be non-negative"),
         subtotal: z.number().min(0, "Subtotal must be non-negative"),
-        wasteAllowance: z.number().min(0).optional(), // Template-specific
+        wasteAllowance: z.number().min(0).optional(),
       })
     )
     .min(1, "At least one service is required"),
@@ -36,7 +37,6 @@ const proposalDataSchema = z.object({
     notes: z.string().optional(),
   }),
 
-  // Template-specific optional fields
   wasteAllowance: z.number().min(0).optional(),
   excessRate: z.number().min(0).optional(),
   equipment: z
@@ -51,6 +51,30 @@ const proposalDataSchema = z.object({
     )
     .optional(),
 });
+
+// New simplified format with editable HTML content
+const editableProposalDataSchema = z.object({
+  // Client info
+  clientName: z.string().min(1, "Client name is required"),
+  clientEmail: z.string().email().optional().or(z.literal("")),
+  clientPhone: z.string().optional(),
+  clientCompany: z.string().min(1, "Company name is required"),
+  clientPosition: z.string().optional(),
+  clientAddress: z.string().optional(),
+
+  // Proposal metadata
+  proposalDate: z.string().optional(),
+  validityDays: z.number().int().min(1).max(365).optional(),
+  serviceType: z.string().optional(),
+  notes: z.string().optional(),
+
+  // The actual proposal content (edited HTML from Tiptap editor)
+  editedHtmlContent: z.string().min(1, "Proposal content is required"),
+  editedJsonContent: z.any().optional(), // Tiptap JSON for re-editing
+});
+
+// Accept either format
+const proposalDataSchema = z.union([legacyProposalDataSchema, editableProposalDataSchema]);
 
 const createProposalSchema = z.object({
   inquiryId: z.string().uuid("Invalid inquiry ID format"),
