@@ -76,6 +76,7 @@ export default function Leads() {
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [claimSource, setClaimSource] = useState("");
 
   useEffect(() => {
     fetchAllLeads();
@@ -158,14 +159,17 @@ export default function Leads() {
 
   const handleClaimLead = (lead) => {
     setSelectedLead(lead);
+    setClaimSource(""); // Reset source when opening dialog
     setIsClaimDialogOpen(true);
   };
 
   const confirmClaim = async () => {
     try {
-      await api.claimLead(selectedLead.id);
+      // Pass source only if user selected one
+      await api.claimLead(selectedLead.id, claimSource || undefined);
       toast.success("Lead claimed successfully! Check Inquiries page to manage it.");
       setIsClaimDialogOpen(false);
+      setClaimSource("");
       fetchAllLeads();
       fetchLeads();
     } catch (error) {
@@ -394,12 +398,38 @@ export default function Leads() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Claim this lead?</AlertDialogTitle>
-            <AlertDialogDescription>
-              By claiming this lead, it will be converted to an inquiry and assigned to you.
-              You'll be able to manage it in the Inquiries page. This action cannot be undone.
-              <div className="mt-4 p-3 bg-muted rounded-md">
-                <p className="font-semibold">{selectedLead?.clientName}</p>
-                <p className="text-sm text-muted-foreground">{selectedLead?.contactPerson}</p>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  By claiming this lead, it will be converted to an inquiry and assigned to you.
+                  You'll be able to manage it in the Inquiries page. This action cannot be undone.
+                </p>
+                <div className="mt-4 p-3 bg-muted rounded-md">
+                  <p className="font-semibold">{selectedLead?.clientName}</p>
+                  <p className="text-sm text-muted-foreground">{selectedLead?.company}</p>
+                </div>
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-foreground">
+                    Source (optional)
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    How did this lead reach out?
+                  </p>
+                  <Select value={claimSource} onValueChange={setClaimSource}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select source (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="facebook">Facebook</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="walk-in">Walk-in</SelectItem>
+                      <SelectItem value="cold-approach">Cold Approach</SelectItem>
+                      <SelectItem value="referral">Referral</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

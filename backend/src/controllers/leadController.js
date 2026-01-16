@@ -110,9 +110,10 @@ export const updateLead = async (req, res, next) => {
 export const claimLead = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { source } = req.body;
     const userId = req.user.id;
 
-    const lead = await leadService.claimLead(id, userId, {
+    const lead = await leadService.claimLead(id, userId, source, {
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
     });

@@ -162,9 +162,10 @@ class ApiClient {
     });
   }
 
-  async claimLead(id) {
+  async claimLead(id, source) {
     return this.request(`/leads/${id}/claim`, {
       method: "POST",
+      body: JSON.stringify({ source }),
     });
   }
 

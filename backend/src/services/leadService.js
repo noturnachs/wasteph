@@ -202,11 +202,12 @@ class LeadService {
    * Claim a lead and convert to inquiry
    * @param {string} leadId - Lead UUID
    * @param {string} userId - User claiming the lead
+   * @param {string} source - Optional source (how the lead reached out)
    * @param {Object} metadata - Request metadata (ip, userAgent)
    * @returns {Promise<Object>} Created inquiry
    * @throws {AppError} If lead not found or already claimed
    */
-  async claimLead(leadId, userId, metadata = {}) {
+  async claimLead(leadId, userId, source, metadata = {}) {
     // First check if lead exists and is not claimed
     const existingLead = await this.getLeadById(leadId);
 
@@ -215,6 +216,7 @@ class LeadService {
     }
 
     // Create inquiry from lead data
+    // Use provided source if available, otherwise leave as null (can be set later)
     const [inquiry] = await db
       .insert(inquiryTable)
       .values({
@@ -224,7 +226,7 @@ class LeadService {
         company: existingLead.company,
         message: existingLead.notes || `Lead from pool: ${existingLead.clientName}`,
         status: "initial_comms",
-        source: "lead_pool",
+        source: source || null,
         assignedTo: userId,
         notes: existingLead.location ? `Location: ${existingLead.location}` : null,
       })
@@ -262,7 +264,7 @@ class LeadService {
       action: "inquiry_created",
       entityType: "inquiry",
       entityId: inquiry.id,
-      details: { source: "lead_pool", leadId: lead.id },
+      details: { source: source || null, fromLeadPool: true, leadId: lead.id },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
