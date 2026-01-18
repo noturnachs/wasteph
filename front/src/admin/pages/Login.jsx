@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { toast } from "../utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,12 +30,19 @@ const Login = () => {
       const result = await login(email, password);
 
       if (result.success) {
-        navigate("/admin/dashboard");
+        toast.success("Login successful! Welcome back.");
+        setTimeout(() => {
+          navigate("/admin/dashboard");
+        }, 500);
       } else {
-        setError(result.message || "Invalid credentials");
+        const errorMsg = result.message || "Invalid credentials";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
-      setError(error.message || "An error occurred. Please try again.");
+      const errorMsg = error.message || "An error occurred. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
