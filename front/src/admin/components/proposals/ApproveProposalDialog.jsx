@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm }) {
   const [adminNotes, setAdminNotes] = useState("");
@@ -97,6 +97,7 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700"
           >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? "Approving..." : "Approve Proposal"}
           </Button>
         </DialogFooter>

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { XCircle } from "lucide-react";
+import { XCircle, Loader2 } from "lucide-react";
 
 export function RejectProposalDialog({ open, onOpenChange, proposal, onConfirm }) {
   const [rejectionReason, setRejectionReason] = useState("");
@@ -103,6 +103,7 @@ export function RejectProposalDialog({ open, onOpenChange, proposal, onConfirm }
             onClick={handleSubmit}
             disabled={isSubmitting || !rejectionReason.trim()}
           >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? "Rejecting..." : "Reject Proposal"}
           </Button>
         </DialogFooter>

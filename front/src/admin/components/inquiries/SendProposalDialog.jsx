@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Mail, Eye } from "lucide-react";
+import { AlertCircle, Mail, Eye, Loader2 } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 import { PDFViewer } from "../PDFViewer";
@@ -233,7 +233,11 @@ export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
               disabled={isSending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              <Mail className="h-4 w-4 mr-2" />
+              {isSending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
               {isSending ? "Sending..." : "Send to Client"}
             </Button>
           </DialogFooter>
