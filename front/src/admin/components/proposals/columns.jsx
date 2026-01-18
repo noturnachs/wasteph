@@ -11,7 +11,6 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
-  Download,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -45,7 +44,7 @@ const getStatusBadge = (status) => {
   );
 };
 
-export const createColumns = ({ users = [], onReview, onDownload, onDelete }) => [
+export const createColumns = ({ users = [], onReview, onDelete }) => [
   {
     accessorKey: "inquiryName",
     header: ({ column }) => {
@@ -159,20 +158,18 @@ export const createColumns = ({ users = [], onReview, onDownload, onDelete }) =>
 
       return (
         <div className="flex items-center gap-2">
-          {/* Review/View Button - shown for all proposals */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onReview(proposal)}
-            className={
-              proposal.status === "pending"
-                ? "h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium"
-                : "h-8 px-3"
-            }
-          >
-            <FileSearch className="h-4 w-4 mr-1" />
-            {proposal.status === "pending" ? "Review" : "View"}
-          </Button>
+          {/* Review Button - only show for pending proposals */}
+          {proposal.status === "pending" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onReview(proposal)}
+              className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium"
+            >
+              <FileSearch className="h-4 w-4 mr-1" />
+              Review
+            </Button>
+          )}
 
           {/* Dropdown Menu (Three Dots) */}
           <DropdownMenu>
@@ -183,24 +180,21 @@ export const createColumns = ({ users = [], onReview, onDownload, onDelete }) =>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onReview(proposal)} className="cursor-pointer">
-                <span className="flex-1">{proposal.status === "pending" ? "Review" : "View Detail"}</span>
-                <Eye className="h-4 w-4" />
-              </DropdownMenuItem>
-
-              {proposal.pdfUrl && (
-                <DropdownMenuItem onClick={() => onDownload(proposal)} className="cursor-pointer">
-                  <span className="flex-1">Download PDF</span>
-                  <Download className="h-4 w-4" />
-                </DropdownMenuItem>
+              {/* View option for non-pending proposals */}
+              {proposal.status !== "pending" && (
+                <>
+                  <DropdownMenuItem onClick={() => onReview(proposal)} className="cursor-pointer">
+                    <span className="flex-1">View Detail</span>
+                    <Eye className="h-4 w-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
               )}
-
-              <DropdownMenuSeparator />
 
               {/* Delete option */}
               {onDelete && (
-                <DropdownMenuItem 
-                  onClick={() => onDelete(proposal)} 
+                <DropdownMenuItem
+                  onClick={() => onDelete(proposal)}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <span className="flex-1">Delete Proposal</span>

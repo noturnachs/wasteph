@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Download, Eye } from "lucide-react";
+import { CheckCircle2, XCircle, Eye } from "lucide-react";
 import { PDFViewer } from "../PDFViewer";
 
 const getStatusBadge = (status) => {
@@ -42,8 +42,7 @@ export function ReviewProposalDialog({
   proposal,
   users = [],
   onApprove,
-  onReject,
-  onDownload
+  onReject
 }) {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState("");
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
@@ -193,16 +192,15 @@ export function ReviewProposalDialog({
 
             {/* Services */}
             <div className="border rounded-lg p-4">
-              <h3 className="text-sm font-semibold mb-3">Services</h3>
+              <h3 className="text-sm font-semibold mb-3">Service Type</h3>
               <div className="space-y-2">
-                {services.map((service, index) => (
-                  <div key={index} className="border-b pb-2 last:border-b-0 last:pb-0">
-                    <p className="font-medium text-sm">{service.name}</p>
-                    {service.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{service.description}</p>
-                    )}
-                  </div>
-                ))}
+                {proposal.inquiryServiceType ? (
+                  <p className="text-sm capitalize">
+                    {proposal.inquiryServiceType.replace(/_/g, ' ')}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No service type specified</p>
+                )}
               </div>
             </div>
 
@@ -250,13 +248,6 @@ export function ReviewProposalDialog({
           >
             Close
           </Button>
-
-          {proposal.pdfUrl && (
-            <Button variant="outline" onClick={() => onDownload(proposal)}>
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
-            </Button>
-          )}
 
           {proposal.status === "pending" && (
             <>

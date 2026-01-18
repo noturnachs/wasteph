@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
-import { SlidersHorizontal, X, Download } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -123,17 +123,6 @@ export default function Proposals() {
     setIsRejectDialogOpen(true);
   };
 
-  const handleDownload = async (proposal) => {
-    try {
-      toast.info("Downloading PDF...");
-      // We'll implement PDF download via API
-      window.open(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/proposals/${proposal.id}/pdf`, "_blank");
-    } catch (error) {
-      toast.error("Failed to download PDF");
-      console.error("Download error:", error);
-    }
-  };
-
   const confirmApprove = async (adminNotes = "") => {
     try {
       await api.approveProposal(selectedProposal.id, adminNotes);
@@ -186,7 +175,6 @@ export default function Proposals() {
   const allColumns = createColumns({
     users,
     onReview: handleReview,
-    onDownload: handleDownload,
     onDelete: handleDelete,
   });
 
@@ -291,7 +279,6 @@ export default function Proposals() {
         users={users}
         onApprove={handleApprove}
         onReject={handleReject}
-        onDownload={handleDownload}
       />
 
       <ApproveProposalDialog
