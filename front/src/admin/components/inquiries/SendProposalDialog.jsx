@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Mail, Eye } from "lucide-react";
 import { api } from "../../services/api";
-import { toast } from "sonner";
+import { toast } from "../../utils/toast";
 import { PDFViewer } from "../PDFViewer";
 
 export function SendProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {

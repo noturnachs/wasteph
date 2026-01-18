@@ -240,7 +240,8 @@ div {
 }
 
 /* Performance: Contain layout/paint for better rendering */
-section {
+/* Exclude Sonner toaster container from containment - it needs fixed positioning */
+section:not([aria-label="Notifications alt+T"]):not([aria-label*="Notifications"]) {
   contain: layout style paint;
 }
 

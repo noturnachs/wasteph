@@ -366,4 +366,17 @@
   [disabled] {
     cursor: not-allowed !important;
   }
+
+  /* Sonner toast notifications - ensure visibility */
+  [data-sonner-toaster] {
+    position: fixed !important;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+  }
+
+  [data-sonner-toast] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
 }

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "../../services/api";
-import { toast } from "sonner";
+import { toast } from "../../utils/toast";
 import { PDFViewer } from "../PDFViewer";
 import { HTMLTemplateEditor } from "./HTMLTemplateEditor";
 import { TemplatePreviewModal } from "./TemplatePreviewModal";

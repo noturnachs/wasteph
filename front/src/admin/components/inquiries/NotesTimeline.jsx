@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { api } from "../../services/api";
-import { toast } from "sonner";
+import { toast } from "../../utils/toast";
 
 const getInitials = (firstName, lastName) => {
   return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
