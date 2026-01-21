@@ -3,6 +3,13 @@ import SectionShell from "../common/SectionShell";
 import RevealOnScroll from "../common/RevealOnScroll";
 import FadeInUp from "../common/FadeInUp";
 import { fetchShowcases } from "../../services/showcaseService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 // Fallback showcase events (used if API fails)
 import img1 from "../../assets/showcase/img1.jpeg";
@@ -60,10 +67,12 @@ const fallbackEvents = [
   },
 ];
 
+// No parsing needed - HTML comes from rich text editor
+
 // Event Card Component
-const EventCard = ({ event, index, isActive, onClick }) => {
+const EventCard = ({ event, index, isActive, onClick, onViewDetails }) => {
   const handleCardClick = () => {
-    onClick(index);
+    onViewDetails(event);
   };
 
   const handleKeyDown = (e) => {
@@ -86,22 +95,15 @@ const EventCard = ({ event, index, isActive, onClick }) => {
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
-      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-xl border text-left transition-all duration-500 ${
-        isActive
-          ? "border-[#15803d] bg-[#15803d]/10 shadow-lg shadow-[#15803d]/20"
-          : "border-white/5 bg-white/2 hover:border-[#15803d]/30 hover:bg-[#15803d]/5"
-      }`}
-      aria-label={`${isActive ? "Collapse" : "Expand"} ${event.title}`}
-      aria-expanded={isActive}
+      className="group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-white/5 bg-white/2 text-left transition-all duration-300 hover:border-[#15803d]/50 hover:bg-[#15803d]/5 hover:shadow-lg hover:shadow-[#15803d]/10"
+      aria-label={`View details for ${event.title}`}
     >
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
         <img
           src={event.image}
           alt={event.title}
-          className={`h-full w-full object-cover transition-all duration-700 ${
-            isActive ? "scale-100 opacity-100" : "scale-105 opacity-90"
-          }`}
+          className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
           loading="lazy"
         />
 
@@ -133,82 +135,34 @@ const EventCard = ({ event, index, isActive, onClick }) => {
 
       {/* Content */}
       <div className="flex flex-1 flex-col p-5">
-        <h3
-          className={`mb-2 line-clamp-2 text-lg font-bold leading-tight transition-colors ${
-            isActive ? "text-white" : "text-white/80"
-          }`}
-        >
+        <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-tight text-white/90 transition-colors group-hover:text-white">
           {event.title}
         </h3>
 
         {event.tagline && (
-          <p
-            className={`mb-3 line-clamp-2 text-sm italic leading-relaxed transition-colors ${
-              isActive ? "text-[#16a34a]" : "text-white/50"
-            }`}
-          >
+          <p className="mb-3 line-clamp-2 text-sm italic leading-relaxed text-white/50 transition-colors group-hover:text-[#16a34a]">
             {event.tagline}
           </p>
         )}
 
-        <div
-          className={`mb-4 overflow-hidden transition-all duration-500 ${
-            isActive ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <p className="line-clamp-4 text-sm leading-relaxed text-white/70">
-            {event.description}
-          </p>
-        </div>
-
-        {/* Read More Link (only shown when expanded) */}
-        {isActive && event.link && (
-          <button
-            type="button"
-            onClick={handleReadMoreClick}
-            className="mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#16a34a] transition-all hover:gap-3 hover:text-[#16a34a]/80"
-            aria-label={`Read more about ${event.title}`}
+        {/* Click to view indicator */}
+        <div className="mt-auto flex items-center gap-2 text-xs font-medium text-white/40 transition-colors group-hover:text-[#16a34a]/60">
+          <span>Click to view details</span>
+          <svg
+            className="h-3 w-3 transition-transform group-hover:translate-x-1"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
           >
-            <span>Read More</span>
-            <svg
-              className="h-3 w-3"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </button>
-        )}
-
-        {/* Click to Expand Indicator (only shown when collapsed) */}
-        {!isActive && (
-          <div className="mt-auto flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-white/40 transition-all">
-            <span>Click to expand</span>
-            <svg
-              className="h-3 w-3"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        )}
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
       </div>
 
       {/* Bottom Border Accent */}
-      <div
-        className={`h-0.5 w-full bg-linear-to-r from-transparent via-[#15803d] to-transparent transition-opacity ${
-          isActive ? "opacity-100" : "opacity-0"
-        }`}
-      />
+      <div className="h-0.5 w-full bg-linear-to-r from-transparent via-[#15803d] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
     </button>
   );
 };
@@ -218,6 +172,7 @@ const ServicesSlideshow = () => {
   const [showcaseEvents, setShowcaseEvents] = useState(fallbackEvents);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Fetch showcases on mount
   useEffect(() => {
@@ -274,6 +229,14 @@ const ServicesSlideshow = () => {
     setActiveIndex(index);
   };
 
+  const handleViewDetails = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedEvent(null);
+  };
+
   const handleRetry = () => {
     loadShowcases();
   };
@@ -317,6 +280,7 @@ const ServicesSlideshow = () => {
                   index={index}
                   isActive={activeIndex === index}
                   onClick={handleCardClick}
+                  onViewDetails={handleViewDetails}
                 />
               </RevealOnScroll>
             ))}
@@ -342,6 +306,93 @@ const ServicesSlideshow = () => {
           </div>
         )}
       </div>
+
+      {/* Showcase Detail Dialog */}
+      <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && handleCloseDialog()}>
+        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-hidden !border-[#16a34a]/40 !bg-[#0a2818] !text-white">
+          {selectedEvent && (
+            <>
+              <DialogHeader className="border-b border-[#15803d]/20 pb-4">
+                <div className="flex w-full flex-col gap-3">
+                  <DialogTitle className="!text-2xl !font-bold !text-white">
+                    {selectedEvent.title}
+                  </DialogTitle>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 rounded-full border border-[#15803d]/40 bg-[#15803d]/10 px-3 py-1">
+                      <svg
+                        className="h-4 w-4 text-[#16a34a]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      <span className="text-sm font-medium text-white">{selectedEvent.date}</span>
+                    </div>
+                    
+                    {selectedEvent.tagline && (
+                      <DialogDescription className="!text-base !italic !text-[#16a34a]">
+                        {selectedEvent.tagline}
+                      </DialogDescription>
+                    )}
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 200px)" }}>
+                {/* Image */}
+                {selectedEvent.image && (
+                  <div className="mb-6 overflow-hidden rounded-lg border border-[#15803d]/20">
+                    <img
+                      src={selectedEvent.image}
+                      alt={selectedEvent.title}
+                      className="h-auto w-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Description */}
+                <div 
+                  className="prose max-w-none prose-headings:text-white prose-p:text-white/90 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-em:text-[#16a34a] prose-em:italic prose-ul:text-white/90 prose-ol:text-white/90 prose-li:text-white/90 [&>*]:text-white/90"
+                  dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
+                />
+
+                {/* External Link Button */}
+                {selectedEvent.link && (
+                  <div className="mt-8 flex justify-center border-t border-[#15803d]/20 pt-6">
+                    <a
+                      href={selectedEvent.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#15803d] to-[#16a34a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#15803d]/20 transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#15803d]/40"
+                    >
+                      <span>Read Full Article</span>
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </SectionShell>
   );
 };

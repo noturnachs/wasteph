@@ -10,9 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { updateShowcase } from "../../../services/showcaseService";
+import { RichTextEditor } from "./RichTextEditor";
 
 export function EditShowcaseDialog({ isOpen, onClose, onSuccess, showcase }) {
   const [formData, setFormData] = useState({
@@ -84,7 +84,7 @@ export function EditShowcaseDialog({ isOpen, onClose, onSuccess, showcase }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[95vh] max-w-7xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Edit Showcase</DialogTitle>
           <DialogDescription>
@@ -92,8 +92,8 @@ export function EditShowcaseDialog({ isOpen, onClose, onSuccess, showcase }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+          <div className="space-y-4 overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 180px)" }}>
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">
@@ -124,22 +124,30 @@ export function EditShowcaseDialog({ isOpen, onClose, onSuccess, showcase }) {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">
-                Description <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                id="description"
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  {formData.description.replace(/<[^>]*>/g, '').length} characters
+                </span>
+              </div>
+              
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Enter description"
-                rows={4}
+                onChange={(value) => handleChange("description", value)}
+                placeholder="Enter full description of the showcase event or initiative. Use the toolbar to format text with bold, italic, lists, and more."
                 className={formErrors.description ? "border-destructive" : ""}
               />
+              
               {formErrors.description && (
                 <p className="text-sm text-destructive">
                   {formErrors.description}
                 </p>
               )}
+              <p className="text-xs text-muted-foreground">
+                Use the toolbar buttons to format text. Keyboard shortcuts: Ctrl+B (bold), Ctrl+I (italic), Ctrl+Z (undo), Ctrl+Y (redo)
+              </p>
             </div>
 
             {/* Image URL */}
@@ -194,7 +202,7 @@ export function EditShowcaseDialog({ isOpen, onClose, onSuccess, showcase }) {
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 border-t bg-background pt-4">
             <Button
               type="button"
               variant="outline"
