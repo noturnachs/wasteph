@@ -399,6 +399,44 @@ export const showcaseTable = pgTable("showcase", {
   isActiveIdx: index("showcase_is_active_idx").on(table.isActive),
 }));
 
+// Blog Post Status Enum
+export const blogPostStatusEnum = pgEnum("blog_post_status", [
+  "draft",
+  "published",
+  "archived",
+]);
+
+// Blog Posts
+export const blogPostTable = pgTable("blog_post", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  excerpt: text("excerpt").notNull(),
+  content: text("content").notNull(),
+  coverImage: text("cover_image"),
+  category: text("category").notNull(),
+  tags: text("tags").array(),
+  status: blogPostStatusEnum("status").notNull().default("draft"),
+  author: text("author").notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  views: integer("views").default(0),
+  readTime: text("read_time"),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => userTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => ({
+  slugIdx: index("blog_post_slug_idx").on(table.slug),
+  statusIdx: index("blog_post_status_idx").on(table.status),
+  categoryIdx: index("blog_post_category_idx").on(table.category),
+  publishedAtIdx: index("blog_post_published_at_idx").on(table.publishedAt),
+}));
+
 // Activity Log
 export const activityLogTable = pgTable("activity_log", {
   id: uuid("id").primaryKey().defaultRandom(),

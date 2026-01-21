@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import FadeInUp from "../components/common/FadeInUp";
 import RevealOnScroll from "../components/common/RevealOnScroll";
+import { fetchPostBySlug } from "../services/blogService";
 
-// Mock data - will be replaced with API calls later
-const MOCK_POSTS = {
+// Fallback data
+const FALLBACK_POSTS = {
   1: {
     id: "1",
     title: "The Future of Waste Management in the Philippines",
@@ -69,13 +70,73 @@ const RELATED_POSTS = [
 ];
 
 const BlogPost = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const post = MOCK_POSTS[id];
+  const [post, setPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [id]);
+    loadPost();
+  }, [slug]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = window.location.href;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy");
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const loadPost = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchPostBySlug(slug);
+      setPost(data);
+    } catch (err) {
+      console.error("Failed to load blog post:", err);
+      setError(err.message);
+      // Try to use fallback data
+      const fallbackPost = Object.values(FALLBACK_POSTS).find(
+        (p) => p.id === slug || p.title.toLowerCase().replace(/\s+/g, "-") === slug
+      );
+      setPost(fallbackPost || null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="pointer-events-none relative flex min-h-screen items-center justify-center px-4">
+        <div className="pointer-events-auto text-center">
+          <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-[#16a34a]" />
+          <p className="text-white/60">Loading article...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -113,34 +174,34 @@ const BlogPost = () => {
 
   return (
     <div className="pointer-events-none relative min-h-screen">
-      {/* Back Button */}
-      <div className="fixed left-4 top-24 z-40 sm:left-6 lg:left-12">
-        <button
-          type="button"
-          onClick={() => navigate("/blog")}
-          className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-xl transition-all duration-300 hover:border-[#15803d]/50 hover:bg-black/60"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="hidden sm:inline">Back to Blog</span>
-        </button>
-      </div>
-
       {/* Article Header */}
       <article className="relative px-4 pb-20 pt-32 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-4xl">
           <FadeInUp>
+            {/* Back Button */}
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => navigate("/blog")}
+                className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-xl transition-all duration-300 hover:border-[#15803d]/50 hover:bg-black/60"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span>Back to Blog</span>
+              </button>
+            </div>
+
             {/* Category Badge */}
             <div className="mb-6">
               <span className="inline-block rounded-full bg-linear-to-r from-[#15803d] to-[#16a34a] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white">
@@ -185,7 +246,7 @@ const BlogPost = () => {
 
             {/* Tags */}
             <div className="mb-10 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
+              {(Array.isArray(post.tags) ? post.tags : []).map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70 transition-colors duration-300 hover:bg-[#15803d]/20 hover:text-[#16a34a]"
@@ -197,28 +258,26 @@ const BlogPost = () => {
           </FadeInUp>
 
           {/* Cover Image */}
-          <RevealOnScroll>
-            <div className="mb-12 overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-[#15803d]/20 to-[#16a34a]/20">
-              <div className="aspect-video" />
-            </div>
-          </RevealOnScroll>
+          {post.coverImage && (
+            <RevealOnScroll>
+              <div className="mb-12 overflow-hidden rounded-2xl border border-white/10">
+                <img
+                  src={post.coverImage}
+                  alt={post.title}
+                  className="h-auto w-full object-cover"
+                />
+              </div>
+            </RevealOnScroll>
+          )}
 
           {/* Article Content */}
           <RevealOnScroll delay={0.2}>
             <div
-              className="prose prose-invert prose-lg max-w-none"
-              style={{
-                "--tw-prose-body": "rgba(255, 255, 255, 0.8)",
-                "--tw-prose-headings": "rgba(255, 255, 255, 1)",
-                "--tw-prose-links": "#16a34a",
-                "--tw-prose-bold": "rgba(255, 255, 255, 1)",
-                "--tw-prose-bullets": "#16a34a",
-                "--tw-prose-quotes": "rgba(255, 255, 255, 0.9)",
-              }}
+              className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-white/80 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-ul:text-white/80 prose-ol:text-white/80 prose-li:text-white/80 prose-a:text-[#16a34a] prose-a:no-underline hover:prose-a:underline"
             >
               <div
                 dangerouslySetInnerHTML={{ __html: post.content }}
-                className="[&>h2]:mb-4 [&>h2]:mt-12 [&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-white [&>p]:mb-6 [&>p]:leading-relaxed [&>p]:text-white/80 [&>ul]:mb-6 [&>ul]:space-y-2 [&>ul>li]:text-white/80 [&>ul>li>strong]:text-white"
+                className="[&>h2]:mb-4 [&>h2]:mt-12 [&>h2]:text-3xl [&>h2]:font-bold [&>p]:mb-6 [&>ul]:mb-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:space-y-2 [&>ol]:mb-6 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:space-y-2 [&>li]:leading-relaxed [&>li]:list-item [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:list-item [&_strong]:font-bold [&_strong]:text-white"
               />
             </div>
           </RevealOnScroll>
@@ -231,69 +290,55 @@ const BlogPost = () => {
                   Share this article
                 </h3>
                 <p className="text-sm text-white/60">
-                  Help others discover valuable insights
+                  Copy the link to share with others
                 </p>
               </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white transition-all duration-300 hover:bg-[#15803d] hover:scale-110"
-                  aria-label="Share on Facebook"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white transition-all duration-300 hover:bg-[#15803d] hover:scale-110"
-                  aria-label="Share on Twitter"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white transition-all duration-300 hover:bg-[#15803d] hover:scale-110"
-                  aria-label="Share on LinkedIn"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white transition-all duration-300 hover:bg-[#15803d] hover:scale-110"
-                  aria-label="Copy link"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className={`flex items-center gap-2 rounded-full px-5 py-2.5 font-semibold transition-all duration-300 ${
+                  isCopied
+                    ? "bg-[#15803d] text-white"
+                    : "bg-white/5 text-white hover:bg-[#15803d] hover:scale-105"
+                }`}
+                aria-label="Copy link"
+              >
+                {isCopied ? (
+                  <>
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span>Copy URL</span>
+                  </>
+                )}
+              </button>
             </div>
           </RevealOnScroll>
         </div>
@@ -312,7 +357,7 @@ const BlogPost = () => {
             {RELATED_POSTS.map((relatedPost, index) => (
               <RevealOnScroll key={relatedPost.id} delay={index * 0.1}>
                 <Link
-                  to={`/blog/${relatedPost.id}`}
+                  to={`/blog/${relatedPost.slug || relatedPost.id}`}
                   className="pointer-events-auto group block overflow-hidden rounded-xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 p-6 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-[#15803d]/50 hover:shadow-lg hover:shadow-[#15803d]/20"
                 >
                   <span className="mb-3 inline-block rounded-full bg-[#15803d]/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#16a34a]">

@@ -56,9 +56,9 @@ const ServicesSlideshow = lazy(() =>
 );
 const CTASection = lazy(() => import("./components/sections/CTASection"));
 
-// Lazy load blog pages (Currently redirected to Coming Soon)
-// const Blog = lazy(() => import("./pages/Blog"));
-// const BlogPost = lazy(() => import("./pages/BlogPost"));
+// Lazy load blog pages
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 // Lazy load clients page (Currently redirected to Coming Soon)
 // const Clients = lazy(() => import("./pages/Clients"));
@@ -267,14 +267,8 @@ const PublicApp = () => {
               <Suspense fallback={<div className="min-h-screen" />}>
                 <Routes>
                   <Route path="/" element={<HomeContent />} />
-                  <Route
-                    path="/blog"
-                    element={<ComingSoon pageName="Blog" />}
-                  />
-                  <Route
-                    path="/blog/:id"
-                    element={<ComingSoon pageName="Blog" />}
-                  />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route
                     path="/clients"
                     element={<ComingSoon pageName="Our Clients" />}

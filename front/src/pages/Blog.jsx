@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import FadeInUp from "../components/common/FadeInUp";
 import RevealOnScroll from "../components/common/RevealOnScroll";
+import { fetchPublishedPosts } from "../services/blogService";
 
-// Mock data - will be replaced with API calls later
-const MOCK_POSTS = [
+// Fallback data if API fails
+const FALLBACK_POSTS = [
   {
     id: "1",
     title: "The Future of Waste Management in the Philippines",
@@ -98,11 +99,19 @@ const CATEGORIES = [
 const BlogCard = ({ post }) => {
   return (
     <Link
-      to={`/blog/${post.id}`}
+      to={`/blog/${post.slug}`}
       className="pointer-events-auto group block overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]"
     >
       {/* Cover Image */}
       <div className="relative aspect-video overflow-hidden bg-linear-to-br from-[#15803d]/20 to-[#16a34a]/20">
+        {post.coverImage ? (
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-4 left-4 right-4">
           <span className="inline-block rounded-full bg-[#15803d] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
@@ -138,7 +147,7 @@ const BlogCard = ({ post }) => {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {post.tags.slice(0, 3).map((tag) => (
+          {(Array.isArray(post.tags) ? post.tags : []).slice(0, 3).map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors duration-300 group-hover:bg-[#15803d]/20 group-hover:text-[#16a34a]"
@@ -173,15 +182,40 @@ const BlogCard = ({ post }) => {
 const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredPosts = MOCK_POSTS.filter((post) => {
+  // Fetch posts on mount
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchPublishedPosts(50);
+      setPosts(data);
+    } catch (err) {
+      console.error("Failed to load blog posts:", err);
+      setError(err.message);
+      setPosts(FALLBACK_POSTS);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       selectedCategory === "All" || post.category === selectedCategory;
+    const tags = Array.isArray(post.tags) ? post.tags : [];
     const matchesSearch =
       searchQuery === "" ||
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags.some((tag) =>
+      tags.some((tag) =>
         tag.toLowerCase().includes(searchQuery.toLowerCase())
       );
     return matchesCategory && matchesSearch;
@@ -259,7 +293,23 @@ const Blog = () => {
       {/* Blog Posts Grid */}
       <section className="relative px-4 pb-32 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          {filteredPosts.length > 0 ? (
+          {isLoading ? (
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl"
+                >
+                  <div className="aspect-video animate-pulse bg-white/5" />
+                  <div className="space-y-3 p-6">
+                    <div className="h-6 w-3/4 animate-pulse rounded bg-white/5" />
+                    <div className="h-4 w-full animate-pulse rounded bg-white/5" />
+                    <div className="h-4 w-5/6 animate-pulse rounded bg-white/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredPosts.length > 0 ? (
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {filteredPosts.map((post, index) => (
                 <RevealOnScroll key={post.id} delay={index * 0.1}>

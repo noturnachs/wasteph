@@ -1,8 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, Eye, Calendar, Tag } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import { toast } from "../utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RichTextEditor } from "../components/showcase/RichTextEditor";
+import {
+  fetchAllPosts,
+  createPost,
+  updatePost,
+  deletePost,
+  fetchBlogStats,
+} from "../../services/blogService";
 import {
   Card,
   CardContent,
@@ -79,7 +88,9 @@ const CATEGORIES = [
 
 const BlogPosts = () => {
   const { theme } = useTheme();
-  const [posts, setPosts] = useState(MOCK_POSTS);
+  const [posts, setPosts] = useState([]);
+  const [stats, setStats] = useState({ total: 0, published: 0, draft: 0, archived: 0 });
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -95,7 +106,41 @@ const BlogPosts = () => {
     category: "",
     status: "draft",
     tags: "",
+    coverImage: "",
+    author: "WastePH Team",
   });
+
+  // Load posts and stats on mount
+  useEffect(() => {
+    loadPosts();
+    loadStats();
+  }, [statusFilter]);
+
+  const loadPosts = async () => {
+    setIsLoading(true);
+    try {
+      const filters = {};
+      if (statusFilter !== "all") filters.status = statusFilter;
+      if (searchQuery) filters.search = searchQuery;
+
+      const data = await fetchAllPosts(filters);
+      setPosts(data);
+    } catch (error) {
+      console.error("Failed to load posts:", error);
+      toast.error("Failed to load blog posts. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const data = await fetchBlogStats();
+      setStats(data);
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    }
+  };
 
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
@@ -107,33 +152,65 @@ const BlogPosts = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreatePost = () => {
-    // TODO: API call to create post
-    console.log("Creating post:", formData);
-    setIsCreateDialogOpen(false);
-    setFormData({
-      title: "",
-      excerpt: "",
-      content: "",
-      category: "",
-      status: "draft",
-      tags: "",
-    });
+  const handleCreatePost = async () => {
+    try {
+      const postData = {
+        ...formData,
+        tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
+      };
+
+      await createPost(postData);
+      toast.success("Blog post created successfully");
+      setIsCreateDialogOpen(false);
+      setFormData({
+        title: "",
+        excerpt: "",
+        content: "",
+        category: "",
+        status: "draft",
+        tags: "",
+        coverImage: "",
+        author: "WastePH Team",
+      });
+      loadPosts();
+      loadStats();
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      toast.error(error.message || "Failed to create blog post");
+    }
   };
 
-  const handleEditPost = () => {
-    // TODO: API call to update post
-    console.log("Updating post:", selectedPost?.id, formData);
-    setIsEditDialogOpen(false);
-    setSelectedPost(null);
+  const handleEditPost = async () => {
+    try {
+      const postData = {
+        ...formData,
+        tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
+      };
+
+      await updatePost(selectedPost.id, postData);
+      toast.success("Blog post updated successfully");
+      setIsEditDialogOpen(false);
+      setSelectedPost(null);
+      loadPosts();
+      loadStats();
+    } catch (error) {
+      console.error("Failed to update post:", error);
+      toast.error(error.message || "Failed to update blog post");
+    }
   };
 
-  const handleDeletePost = () => {
-    // TODO: API call to delete post
-    console.log("Deleting post:", selectedPost?.id);
-    setPosts(posts.filter((p) => p.id !== selectedPost?.id));
-    setIsDeleteDialogOpen(false);
-    setSelectedPost(null);
+  const handleDeletePost = async () => {
+    try {
+      await deletePost(selectedPost.id);
+      toast.success("Blog post deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setSelectedPost(null);
+      loadPosts();
+      loadStats();
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      toast.error(error.message || "Failed to delete blog post");
+    }
   };
 
   const openEditDialog = (post) => {
@@ -144,7 +221,9 @@ const BlogPosts = () => {
       content: post.content || "",
       category: post.category,
       status: post.status,
-      tags: post.tags.join(", "),
+      tags: Array.isArray(post.tags) ? post.tags.join(", ") : "",
+      coverImage: post.coverImage || "",
+      author: post.author || "WastePH Team",
     });
     setIsEditDialogOpen(true);
   };
@@ -167,12 +246,15 @@ const BlogPosts = () => {
     }
   };
 
-  const stats = {
-    total: posts.length,
-    published: posts.filter((p) => p.status === "published").length,
-    draft: posts.filter((p) => p.status === "draft").length,
-    archived: posts.filter((p) => p.status === "archived").length,
-  };
+  // Apply search filter
+  useEffect(() => {
+    if (searchQuery) {
+      const timer = setTimeout(() => {
+        loadPosts();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -264,7 +346,12 @@ const BlogPosts = () => {
 
           {/* Posts List */}
           <div className="space-y-4">
-            {filteredPosts.length > 0 ? (
+            {isLoading ? (
+              <div className="py-12 text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#15803d]" />
+                <p className="text-muted-foreground">Loading posts...</p>
+              </div>
+            ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
                 <div
                   key={post.id}
@@ -312,7 +399,7 @@ const BlogPosts = () => {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {post.tags.map((tag) => (
+                        {(Array.isArray(post.tags) ? post.tags : []).map((tag) => (
                           <Badge
                             key={tag}
                             variant="outline"
@@ -405,13 +492,22 @@ const BlogPosts = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Content</label>
-              <textarea
-                placeholder="Write your post content here..."
+              <RichTextEditor
                 value={formData.content}
-                onChange={(e) =>
-                  setFormData({ ...formData, content: e.target.value })
+                onChange={(value) =>
+                  setFormData({ ...formData, content: value })
                 }
-                className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Write your post content here. Use the toolbar for formatting..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cover Image URL</label>
+              <Input
+                placeholder="https://example.com/image.jpg"
+                value={formData.coverImage}
+                onChange={(e) =>
+                  setFormData({ ...formData, coverImage: e.target.value })
+                }
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

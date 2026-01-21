@@ -18,6 +18,7 @@ import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import proposalRoutes from "./routes/proposalRoutes.js";
 import proposalTemplateRoutes from "./routes/proposalTemplateRoutes.js";
 import showcaseRoutes from "./routes/showcaseRoutes.js";
+import blogRoutes from "./routes/blogRoutes.js";
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use("/api/service-requests", serviceRequestRoutes);
 app.use("/api/proposals", proposalRoutes);
 app.use("/api/proposal-templates", proposalTemplateRoutes);
 app.use("/api/showcases", showcaseRoutes);
+app.use("/api/blog", blogRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

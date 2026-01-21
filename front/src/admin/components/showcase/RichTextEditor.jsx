@@ -144,11 +144,18 @@ export function RichTextEditor({ value, onChange, placeholder, className }) {
         [contentEditable] em {
           font-style: italic;
         }
-        [contentEditable] ul, [contentEditable] ol {
+        [contentEditable] ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin: 0.5rem 0;
+        }
+        [contentEditable] ol {
+          list-style-type: decimal;
           padding-left: 1.5rem;
           margin: 0.5rem 0;
         }
         [contentEditable] li {
+          display: list-item;
           margin: 0.25rem 0;
         }
         [contentEditable] p {
