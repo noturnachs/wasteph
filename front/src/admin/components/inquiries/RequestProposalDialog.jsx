@@ -18,63 +18,15 @@ import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 import TiptapEditor from "@/components/common/TiptapEditor";
 
-// Service Type Options with Icons
-const SERVICE_TYPE_OPTIONS = [
-  {
-    value: "fixed_monthly",
-    label: "Fixed Monthly Rate",
-    subtitle: "Regular monthly service contract",
-    icon: Calendar
-  },
-  {
-    value: "hazardous",
-    label: "Hazardous Waste",
-    subtitle: "Safe disposal of hazardous materials",
-    icon: Skull
-  },
-  {
-    value: "clearing",
-    label: "Clearing Project",
-    subtitle: "One-time clearing and cleanup",
-    icon: Building2
-  },
-  {
-    value: "long_term",
-    label: "Long Term Garbage",
-    subtitle: "Per-kg weight-based pricing",
-    icon: Scale
-  },
-  {
-    value: "one_time",
-    label: "One-time Hauling",
-    subtitle: "Single trip waste hauling and removal",
-    icon: PackageCheck
-  },
-  {
-    value: "recyclables",
-    label: "Purchase of Recyclables",
-    subtitle: "Recyclable materials buyback",
-    icon: Recycle
-  },
-];
-
-// Service Type to Template Type Mapping
-const SERVICE_TO_TEMPLATE_MAP = {
-  fixed_monthly: "fixed_monthly",
-  hazardous: "hazardous_waste",
-  clearing: "clearing_project",
-  long_term: "long_term",
-  one_time: "one_time_hauling",
-  recyclables: "recyclables_purchase",
-};
-
 export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingEditor, setIsLoadingEditor] = useState(false);
   const [template, setTemplate] = useState(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
-  const [selectedServiceType, setSelectedServiceType] = useState("");
+  const [services, setServices] = useState([]);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [selectedServiceName, setSelectedServiceName] = useState("");
 
   // Editor content state - track saved vs current
   const [editorInitialContent, setEditorInitialContent] = useState("");
@@ -103,10 +55,18 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     proposalDate: "",
   });
 
-  // Pre-populate from inquiry and load existing proposal data if revising
+  // Load services and pre-populate from inquiry
   useEffect(() => {
     const initialize = async () => {
       if (!open) return;
+
+      // Load services from database
+      try {
+        const response = await api.getServices();
+        setServices(response.data || []);
+      } catch (error) {
+        console.error("Failed to load services:", error);
+      }
 
       // Check if this is a revision of a rejected proposal
       const isRevision = inquiry?.proposalId && inquiry?.proposalStatus === "rejected";
@@ -132,11 +92,10 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             notes: existingData.notes || "",
           });
 
-          // Set service type
-          const serviceType = existingData.serviceType || inquiry.serviceType;
-          if (serviceType) {
-            setSelectedServiceType(serviceType);
-            await loadTemplateForServiceType(serviceType);
+          // Load template from inquiry's service
+          if (inquiry.serviceId) {
+            setSelectedServiceId(inquiry.serviceId);
+            await loadTemplateFromService(inquiry.serviceId);
           }
 
           // If we have edited content, load directly into editor (skip to step 3)
@@ -162,7 +121,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
               clientPosition: inquiry.position || "",
               clientAddress: inquiry.location || "",
               proposalDate: new Date().toISOString().split("T")[0],
-                            notes: "",
+              notes: "",
             });
           }
         }
@@ -177,13 +136,13 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
             clientPosition: inquiry.position || "",
             clientAddress: inquiry.location || "",
             proposalDate: new Date().toISOString().split("T")[0],
-                        notes: "",
+            notes: "",
           });
 
-          // Pre-select service type if available from inquiry
-          if (inquiry.serviceType) {
-            setSelectedServiceType(inquiry.serviceType);
-            await loadTemplateForServiceType(inquiry.serviceType);
+          // Pre-select service if available from inquiry
+          if (inquiry.serviceId) {
+            setSelectedServiceId(inquiry.serviceId);
+            await loadTemplateFromService(inquiry.serviceId);
           }
         }
       }
@@ -272,54 +231,43 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     setValidationErrors((prev) => ({ ...prev, [field]: error }));
   };
 
-  // Load template based on selected service type
-  const loadTemplateForServiceType = async (serviceType) => {
-    if (!serviceType) return;
+  // Load template from service (using database relationship service -> template)
+  const loadTemplateFromService = async (serviceId) => {
+    if (!serviceId) {
+      toast.error("No service selected for this inquiry");
+      return;
+    }
 
     setIsLoadingTemplate(true);
     try {
-      const templateType = SERVICE_TO_TEMPLATE_MAP[serviceType];
-      if (!templateType) {
-        toast.error("Invalid service type selected");
-        return;
-      }
+      // Fetch service with its linked template
+      const response = await api.getServiceById(serviceId);
+      const service = response.data || response;
 
-      // Fetch template by type
-      const response = await api.getTemplateByType(templateType);
-      const fetchedTemplate = response.data || response;
-      setTemplate(fetchedTemplate);
+      // Store service name for display
+      setSelectedServiceName(service.name || "");
+
+      if (service.template && service.template.id) {
+        setTemplate(service.template);
+        toast.success(`Loaded template: ${service.template.name}`);
+      } else {
+        // Service has no template linked
+        toast.warning(`No template configured for ${service.name}`);
+        setTemplate(null);
+      }
     } catch (error) {
-      console.error("Failed to load template for service type:", error);
-      toast.error("Could not load template for this service type");
-
-      // Fallback to default template
-      try {
-        const response = await api.getDefaultProposalTemplate();
-        const defaultTemplate = response.data || response;
-        setTemplate(defaultTemplate);
-      } catch (fallbackError) {
-        console.error("Failed to load default template:", fallbackError);
-      }
+      console.error("Failed to load template from service:", error);
+      toast.error("Could not load template for this service");
+      setTemplate(null);
     } finally {
       setIsLoadingTemplate(false);
     }
   };
 
-  // Handle service type selection
-  const handleServiceTypeChange = async (serviceType) => {
-    setSelectedServiceType(serviceType);
-    await loadTemplateForServiceType(serviceType);
-
-    // Update the inquiry with the selected service type
-    if (inquiry?.id) {
-      try {
-        await api.updateInquiry(inquiry.id, { serviceType });
-        console.log("Inquiry updated with service type:", serviceType);
-      } catch (error) {
-        console.error("Failed to update inquiry service type:", error);
-        // Don't show error to user as this is a background operation
-      }
-    }
+  // Handle service selection
+  const handleServiceChange = async (serviceId) => {
+    setSelectedServiceId(serviceId);
+    await loadTemplateFromService(serviceId);
   };
 
   // Render template with client data and load into editor
@@ -421,7 +369,6 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
         // Proposal metadata
         proposalDate: formData.proposalDate,
-        serviceType: selectedServiceType,
         notes: formData.notes || "",
 
         // The actual proposal content (edited HTML and JSON for re-editing)
@@ -635,8 +582,8 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                 </p>
               </div>
 
-              {/* Template Auto-Selected Indicator - Moved to top */}
-              {selectedServiceType && template && !isLoadingTemplate && (
+              {/* Template Auto-Selected Indicator */}
+              {selectedServiceId && template && !isLoadingTemplate && (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 max-w-3xl">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
@@ -652,24 +599,32 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                 </div>
               )}
 
-              {/* Service Type Cards Grid */}
+              {/* Service Cards Grid */}
               <div className="grid grid-cols-2 gap-4 max-w-3xl">
-                {SERVICE_TYPE_OPTIONS.map((option) => {
-                  const Icon = option.icon;
-                  const isSelected = selectedServiceType === option.value;
-                  const isDisabled = option.value !== "fixed_monthly";
+                {services.map((service) => {
+                  const isSelected = selectedServiceId === service.id;
+                  // Map service names to icons
+                  const iconMap = {
+                    "Fixed Monthly Rate": Calendar,
+                    "Hazardous Waste": Skull,
+                    "Clearing Project": Building2,
+                    "Long Term Garbage": Scale,
+                    "One-time Hauling": PackageCheck,
+                    "Purchase of Recyclables": Recycle,
+                  };
+                  const Icon = iconMap[service.name] || Building2;
 
                   return (
                     <button
-                      key={option.value}
+                      key={service.id}
                       type="button"
-                      onClick={() => handleServiceTypeChange(option.value)}
-                      disabled={isLoadingTemplate || isDisabled}
+                      onClick={() => handleServiceChange(service.id)}
+                      disabled={isLoadingTemplate}
                       className={`relative flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all text-center min-h-[140px] bg-white dark:bg-gray-800 ${
                         isSelected
                           ? "border-[#15803d]"
                           : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                      } ${isLoadingTemplate || isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                      } ${isLoadingTemplate ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       {/* Checkbox Circle - Top Right Inside */}
                       <div className="absolute top-3 right-3">
@@ -693,7 +648,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                           ? "text-gray-900 dark:text-white"
                           : "text-gray-900 dark:text-white"
                       }`}>
-                        {option.label}
+                        {service.name}
                       </h3>
 
                       {/* Subtitle */}
@@ -702,7 +657,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                           ? "text-gray-600 dark:text-gray-400"
                           : "text-gray-500 dark:text-gray-500"
                       }`}>
-                        {option.subtitle}
+                        {service.description}
                       </p>
                     </button>
                   );
@@ -854,13 +809,32 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                     />
                   </div>
 
-                  {/* Template Info */}
-                  {template && (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Using template: </span>
-                      <span className="font-medium text-gray-900 dark:text-white">{template.name}</span>
+                  {/* Service & Template Info */}
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                      <p className="text-xs font-medium text-green-900 dark:text-green-100">
+                        Proposal Configuration
+                      </p>
                     </div>
-                  )}
+                    {selectedServiceName && (
+                      <div className="text-sm mb-1">
+                        <span className="text-gray-600 dark:text-gray-400">Service: </span>
+                        <span className="font-medium text-gray-900 dark:text-white">{selectedServiceName}</span>
+                      </div>
+                    )}
+                    {template && (
+                      <div className="text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Template: </span>
+                        <span className="font-medium text-gray-900 dark:text-white">{template.name}</span>
+                      </div>
+                    )}
+                    {!template && (
+                      <div className="text-sm text-amber-700 dark:text-amber-400">
+                        No template configured for this service
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -932,7 +906,7 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                     </Button>
                     <Button
                       onClick={() => setCurrentStep(2)}
-                      disabled={!selectedServiceType || isLoadingTemplate}
+                      disabled={!selectedServiceId || isLoadingTemplate}
                       className="min-w-[120px]"
                     >
                       {isLoadingTemplate ? (

@@ -253,23 +253,6 @@ export function TemplateEditorDialog({ open, onOpenChange, template, onSave }) {
               />
             </div>
 
-            {/* Default Status */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="isDefault">Set as Default</Label>
-                <p className="text-xs text-gray-500">
-                  Default templates will be automatically selected for new proposals
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="isDefault"
-                checked={formData.isDefault}
-                onChange={(e) => handleInputChange("isDefault", e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-            </div>
-
             {/* Template Content */}
             <div className="space-y-2">
               <Label>

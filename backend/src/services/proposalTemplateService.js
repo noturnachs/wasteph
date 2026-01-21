@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { proposalTemplateTable, activityLogTable } from "../db/schema.js";
+import { proposalTemplateTable, activityLogTable, serviceTable } from "../db/schema.js";
 import { eq, desc, and, or, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import Handlebars from "handlebars";
@@ -160,7 +160,7 @@ class ProposalTemplateService {
    * @returns {Promise<Object>} Updated template
    */
   async updateTemplate(templateId, updateData, userId, metadata = {}) {
-    const { name, description, htmlTemplate, isDefault, isActive } = updateData;
+    const { name, description, htmlTemplate, isDefault, isActive, templateType } = updateData;
 
     // If setting as default, unset other defaults first
     if (isDefault === true) {
@@ -176,6 +176,7 @@ class ProposalTemplateService {
         ...(name && { name }),
         ...(description !== undefined && { description }),
         ...(htmlTemplate && { htmlTemplate }),
+        ...(templateType && { templateType }),
         ...(isDefault !== undefined && { isDefault }),
         ...(isActive !== undefined && { isActive }),
         updatedAt: new Date(),
@@ -185,6 +186,28 @@ class ProposalTemplateService {
 
     if (!template) {
       throw new AppError("Proposal template not found", 404);
+    }
+
+    // If has templateType, automatically link to service (regardless of isDefault)
+    if (template.templateType) {
+      // Map template types to service names
+      const templateTypeToServiceName = {
+        fixed_monthly: "Fixed Monthly Rate",
+        hazardous_waste: "Hazardous Waste",
+        clearing_project: "Clearing Project",
+        long_term: "Long Term Garbage",
+        one_time_hauling: "One-time Hauling",
+        recyclables_purchase: "Purchase of Recyclables",
+      };
+
+      const serviceName = templateTypeToServiceName[template.templateType];
+      if (serviceName) {
+        // Find the service and update its defaultTemplateId
+        await db
+          .update(serviceTable)
+          .set({ defaultTemplateId: template.id })
+          .where(eq(serviceTable.name, serviceName));
+      }
     }
 
     // Log activity
