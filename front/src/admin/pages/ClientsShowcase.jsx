@@ -214,127 +214,147 @@ const ClientsShowcase = () => {
                 </p>
               </div>
             ) : (
-              currentClients.map((client) => (
-                <div
-                  key={client.id}
-                  className={`group overflow-hidden rounded-lg border transition-all hover:shadow-lg ${
-                    theme === "dark"
-                      ? "border-white/10 bg-white/5 hover:border-[#15803d]/50"
-                      : "border-slate-200 bg-white hover:border-[#15803d]/50"
-                  }`}
-                >
-                  {/* Logo Header */}
-                  {client.logo ? (
-                    <div className="h-32 w-full overflow-hidden bg-white">
-                      <img
-                        src={client.logo}
-                        alt={client.company}
-                        className="block h-full w-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          const parent = e.target.parentElement;
-                          parent.innerHTML = '<div class="flex h-full w-full items-center justify-center"><svg class="h-12 w-12 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></div>';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex h-32 w-full items-center justify-center bg-white">
-                      <Building2 className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
+              currentClients.map((client) => {
+                const ClientCard = () => {
+                  const [imageLoaded, setImageLoaded] = useState(false);
+                  const [imageError, setImageError] = useState(false);
 
-                  {/* Content Section */}
-                  <div className="p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      {/* Left Section: Content */}
-                      <div className="flex-1 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3
-                            className={`text-lg font-bold ${
-                              theme === "dark" ? "text-white" : "text-slate-900"
-                            }`}
-                          >
-                            {client.company}
-                          </h3>
-                          <Badge
-                            className={
-                              client.isActive
-                                ? "bg-green-500/10 text-green-600 border-green-500/20"
-                                : "bg-slate-500/10 text-slate-600 border-slate-500/20"
-                            }
-                          >
-                            {client.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        {client.industry && (
-                          <p
-                            className={`text-sm ${
-                              theme === "dark" ? "text-white/60" : "text-slate-600"
-                            }`}
-                          >
-                            {client.industry} • {client.location}
-                          </p>
-                        )}
-                        {client.wasteReduction && (
-                          <p className="text-sm font-semibold text-[#16a34a]">
-                            {client.wasteReduction} waste reduction
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>Created {formatDate(client.createdAt)}</span>
-                        </div>
-                      </div>
-
-                      {/* Right Section: Actions */}
-                      <div className="flex gap-2 sm:flex-col lg:flex-row">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleStatus(client)}
-                          disabled={togglingId === client.id}
-                          className="flex-1 hover:bg-[#15803d]/10 hover:text-[#15803d] sm:flex-none"
-                        >
-                          {togglingId === client.id ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              {client.isActive ? "Deactivating..." : "Activating..."}
-                            </>
-                          ) : client.isActive ? (
-                            <>
-                              <EyeOff className="mr-2 h-4 w-4" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Activate
-                            </>
+                  return (
+                    <div
+                      className={`group overflow-hidden rounded-lg border transition-all hover:shadow-lg ${
+                        theme === "dark"
+                          ? "border-white/10 bg-white/5 hover:border-[#15803d]/50"
+                          : "border-slate-200 bg-white hover:border-[#15803d]/50"
+                      }`}
+                    >
+                      {/* Logo Header */}
+                      {client.logo && !imageError ? (
+                        <div className="relative h-32 w-full overflow-hidden bg-white">
+                          {/* Loading Skeleton */}
+                          {!imageLoaded && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse">
+                              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-[#15803d]" />
+                            </div>
                           )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setEditingClient(client)}
-                          disabled={togglingId === client.id}
-                          className="hover:bg-[#15803d]/10 hover:text-[#15803d]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setDeletingClient(client)}
-                          disabled={togglingId === client.id}
-                          className="hover:bg-red-500/10 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          
+                          <img
+                            src={client.logo}
+                            alt={client.company}
+                            loading="lazy"
+                            decoding="async"
+                            className={`block h-full w-full object-cover transition-opacity duration-300 ${
+                              imageLoaded ? 'opacity-100' : 'opacity-0'
+                            }`}
+                            style={{ contentVisibility: 'auto' }}
+                            onLoad={() => setImageLoaded(true)}
+                            onError={() => {
+                              setImageError(true);
+                              setImageLoaded(true);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-32 w-full items-center justify-center bg-white">
+                          <Building2 className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+
+                      {/* Content Section */}
+                      <div className="p-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          {/* Left Section: Content */}
+                          <div className="flex-1 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3
+                                className={`text-lg font-bold ${
+                                  theme === "dark" ? "text-white" : "text-slate-900"
+                                }`}
+                              >
+                                {client.company}
+                              </h3>
+                              <Badge
+                                className={
+                                  client.isActive
+                                    ? "bg-green-500/10 text-green-600 border-green-500/20"
+                                    : "bg-slate-500/10 text-slate-600 border-slate-500/20"
+                                }
+                              >
+                                {client.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            {client.industry && (
+                              <p
+                                className={`text-sm ${
+                                  theme === "dark" ? "text-white/60" : "text-slate-600"
+                                }`}
+                              >
+                                {client.industry} • {client.location}
+                              </p>
+                            )}
+                            {client.wasteReduction && (
+                              <p className="text-sm font-semibold text-[#16a34a]">
+                                {client.wasteReduction} waste reduction
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              <span>Created {formatDate(client.createdAt)}</span>
+                            </div>
+                          </div>
+
+                          {/* Right Section: Actions */}
+                          <div className="flex gap-2 sm:flex-col lg:flex-row">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleStatus(client)}
+                              disabled={togglingId === client.id}
+                              className="flex-1 hover:bg-[#15803d]/10 hover:text-[#15803d] sm:flex-none"
+                            >
+                              {togglingId === client.id ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  {client.isActive ? "Deactivating..." : "Activating..."}
+                                </>
+                              ) : client.isActive ? (
+                                <>
+                                  <EyeOff className="mr-2 h-4 w-4" />
+                                  Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Activate
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setEditingClient(client)}
+                              disabled={togglingId === client.id}
+                              className="hover:bg-[#15803d]/10 hover:text-[#15803d]"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setDeletingClient(client)}
+                              disabled={togglingId === client.id}
+                              className="hover:bg-red-500/10 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))
+                  );
+                };
+
+                return <ClientCard key={client.id} />;
+              })
             )}
           </div>
 

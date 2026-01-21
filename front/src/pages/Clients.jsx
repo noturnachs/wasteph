@@ -122,19 +122,34 @@ const FALLBACK_CLIENT_STORIES = [
 ];
 
 const ClientStoryCard = ({ story }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   return (
     <div className="group overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
       {/* Logo Header - Full Width Banner */}
-      {story.logo ? (
-        <div className="h-32 w-full overflow-hidden bg-white/90 sm:h-40">
+      {story.logo && !imageError ? (
+        <div className="relative h-32 w-full overflow-hidden bg-white/90 sm:h-40">
+          {/* Loading Skeleton */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-[#15803d]" />
+            </div>
+          )}
+          
           <img
             src={story.logo}
             alt={`${story.company} logo`}
-            className="block h-full w-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              const parent = e.target.parentElement;
-              parent.innerHTML = '<div class="flex h-full w-full items-center justify-center"><svg class="h-16 w-16 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></div>';
+            loading="lazy"
+            decoding="async"
+            className={`block h-full w-full object-cover transition-opacity duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ contentVisibility: 'auto' }}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(true);
             }}
           />
         </div>
@@ -257,7 +272,7 @@ const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(1); // Show 1 client at a time for carousel
 
   useEffect(() => {
     const loadClients = async () => {
@@ -294,6 +309,22 @@ const Clients = () => {
     // Scroll to top of the page
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Keyboard navigation for carousel
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        handlePageChange(currentPage - 1);
+      } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+        handlePageChange(currentPage + 1);
+      }
+    };
+
+    if (clientStories.length > 1) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [currentPage, totalPages, clientStories.length]);
 
   return (
     <div className="relative min-h-screen">
@@ -337,71 +368,74 @@ const Clients = () => {
             </div>
           )}
 
-          {/* Client Stories */}
+          {/* Client Stories Carousel */}
           {!loading && clientStories.length > 0 && (
             <>
-              <div className="space-y-8">
-                {currentStories.map((story, index) => (
-                  <RevealOnScroll key={story.id} delay={index * 0.1}>
-                    <ClientStoryCard story={story} />
-                  </RevealOnScroll>
-                ))}
+              <div className="relative px-8 sm:px-12 md:px-16 lg:px-24">
+                {/* Navigation Arrows */}
+                {clientStories.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="absolute left-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-4 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
+                      aria-label="Previous client"
+                    >
+                      <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m15 18-6-6 6-6"/>
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-4 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
+                      aria-label="Next client"
+                    >
+                      <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m9 18 6-6-6-6"/>
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Carousel Container */}
+                <div className="relative overflow-hidden">
+                  {/* Carousel Track */}
+                  <div 
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${(currentPage - 1) * 100}%)` }}
+                  >
+                    {clientStories.map((story, index) => (
+                      <div 
+                        key={story.id} 
+                        className="w-full flex-shrink-0 px-2"
+                      >
+                        <ClientStoryCard story={story} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Pagination */}
-              {clientStories.length > itemsPerPage && (
-                <div className="mt-12 flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  
-                  <div className="flex gap-2">
-                    {[...Array(totalPages)].map((_, index) => {
-                      const pageNumber = index + 1;
-                      // Show first page, last page, current page, and pages around current
-                      if (
-                        pageNumber === 1 ||
-                        pageNumber === totalPages ||
-                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                      ) {
-                        return (
-                          <button
-                            key={pageNumber}
-                            onClick={() => handlePageChange(pageNumber)}
-                            className={`rounded-lg px-4 py-2 font-semibold transition-all ${
-                              currentPage === pageNumber
-                                ? "bg-gradient-to-r from-[#15803d] to-[#16a34a] text-white shadow-lg"
-                                : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
-                            }`}
-                          >
-                            {pageNumber}
-                          </button>
-                        );
-                      } else if (
-                        pageNumber === currentPage - 2 ||
-                        pageNumber === currentPage + 2
-                      ) {
-                        return (
-                          <span key={pageNumber} className="px-2 text-white/40">
-                            ...
-                          </span>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
+              {/* Page Indicator Dots */}
+              {clientStories.length > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                        className={`h-2.5 rounded-full transition-all ${
+                          currentPage === pageNumber
+                            ? "w-10 bg-[#15803d]"
+                            : "w-2.5 bg-white/30 hover:bg-white/50"
+                        }`}
+                        aria-label={`Go to client ${pageNumber}`}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </>
