@@ -78,14 +78,14 @@ export async function fetchAllPosts(filters = {}) {
   
   // Check if there's already a pending request
   if (pendingRequests.has(cacheKey)) {
-    console.log('🔄 Deduplicating blog request - returning existing promise');
+    // console.log('🔄 Deduplicating blog request - returning existing promise');
     return pendingRequests.get(cacheKey);
   }
 
   // Create new request
   const requestPromise = (async () => {
     try {
-      console.log('🚀 Making API call to /blog/admin/all');
+      // console.log('🚀 Making API call to /blog/admin/all');
       const response = await fetch(
         `${API_BASE_URL}/blog/admin/all?${params.toString()}`,
         {
@@ -224,14 +224,14 @@ export async function fetchBlogStats() {
   
   // Check if there's already a pending request
   if (pendingRequests.has(cacheKey)) {
-    console.log('🔄 Deduplicating blog stats request - returning existing promise');
+    // console.log('🔄 Deduplicating blog stats request - returning existing promise');
     return pendingRequests.get(cacheKey);
   }
 
   // Create new request
   const requestPromise = (async () => {
     try {
-      console.log('🚀 Making API call to /blog/admin/stats');
+      // console.log('🚀 Making API call to /blog/admin/stats');
       const response = await fetch(`${API_BASE_URL}/blog/admin/stats`, {
         credentials: "include",
       });

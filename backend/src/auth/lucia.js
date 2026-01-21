@@ -8,15 +8,18 @@ const adapter = new PostgresJsAdapter(client, {
   session: "session",
 });
 
-// Initialize Lucia
+// Initialize Lucia with enhanced cookie settings for cross-origin support
 export const lucia = new Lucia(adapter, {
   sessionExpiresIn: new TimeSpan(30, "d"), // 30 days
   sessionCookie: {
     name: "auth_session",
     expires: false, // Session cookie (persists until browser closes) - set to true for persistent
     attributes: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" required for cross-origin
+      domain: process.env.COOKIE_DOMAIN || undefined, // Set in production for subdomain support
+      path: "/", // Cookie available on all paths
+      httpOnly: true, // Prevent XSS attacks
     },
   },
   getUserAttributes: (attributes) => {
