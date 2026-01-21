@@ -21,21 +21,21 @@ import { TemplateEditorDialog } from "../components/templates/TemplateEditorDial
 
 // Service type mapping
 const SERVICE_TYPES = {
-  waste_collection: "Waste Collection (Compactor Hauling)",
   fixed_monthly: "Fixed Monthly Rate",
-  waste_disposal: "Waste Disposal Services",
-  recycling: "Recycling Services",
-  consultation: "Environmental Consultation",
-  emergency: "Emergency Waste Management",
+  hazardous_waste: "Hazardous Waste",
+  clearing_project: "Clearing Project",
+  long_term: "Long Term Garbage",
+  one_time_hauling: "One-time Hauling",
+  recyclables_purchase: "Purchase of Recyclables",
 };
 
 const SERVICE_TYPE_OPTIONS = [
-  { value: "waste_collection", label: "Waste Collection (Compactor Hauling)" },
   { value: "fixed_monthly", label: "Fixed Monthly Rate" },
-  { value: "waste_disposal", label: "Waste Disposal Services" },
-  { value: "recycling", label: "Recycling Services" },
-  { value: "consultation", label: "Environmental Consultation" },
-  { value: "emergency", label: "Emergency Waste Management" },
+  { value: "hazardous_waste", label: "Hazardous Waste" },
+  { value: "clearing_project", label: "Clearing Project" },
+  { value: "long_term", label: "Long Term Garbage" },
+  { value: "one_time_hauling", label: "One-time Hauling" },
+  { value: "recyclables_purchase", label: "Purchase of Recyclables" },
 ];
 
 export default function ProposalTemplates() {

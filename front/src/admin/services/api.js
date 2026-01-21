@@ -253,6 +253,19 @@ class ApiClient {
     return this.request(`/users${queryString ? `?${queryString}` : ""}`);
   }
 
+  // Service endpoints
+  async getServices() {
+    return this.request("/services");
+  }
+
+  async getServiceById(id) {
+    return this.request(`/services/${id}`);
+  }
+
+  async getTemplateForService(serviceId) {
+    return this.request(`/services/${serviceId}/template`);
+  }
+
   // Service Request endpoints
   async getServiceRequestsByLeadId(leadId) {
     return this.request(`/service-requests/lead/${leadId}`);

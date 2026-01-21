@@ -7,20 +7,28 @@ const seedServices = async () => {
 
     const services = [
       {
-        name: "Garbage Collection",
-        description: "Regular waste collection and disposal services",
-      },
-      {
-        name: "Septic Siphoning",
-        description: "Septic tank cleaning and maintenance services",
+        name: "Fixed Monthly Rate",
+        description: "Regular monthly service contract",
       },
       {
         name: "Hazardous Waste",
         description: "Safe disposal of hazardous materials",
       },
       {
+        name: "Clearing Project",
+        description: "One-time clearing and cleanup",
+      },
+      {
+        name: "Long Term Garbage",
+        description: "Per-kg weight-based pricing",
+      },
+      {
         name: "One-time Hauling",
         description: "Single trip waste hauling and removal",
+      },
+      {
+        name: "Purchase of Recyclables",
+        description: "Recyclable materials buyback",
       },
     ];
 

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle, Truck, Skull, Calendar, Building2, PackageCheck, Scale, Recycle, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle, Skull, Calendar, Building2, PackageCheck, Scale, Recycle, Check } from "lucide-react";
 import { format } from "date-fns";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
@@ -21,22 +21,16 @@ import TiptapEditor from "@/components/common/TiptapEditor";
 // Service Type Options with Icons
 const SERVICE_TYPE_OPTIONS = [
   {
-    value: "waste_collection",
-    label: "Waste Collection",
-    subtitle: "Compactor hauling services",
-    icon: Truck
-  },
-  {
-    value: "hazardous",
-    label: "Hazardous Waste",
-    subtitle: "Specialized hazardous waste handling",
-    icon: Skull
-  },
-  {
     value: "fixed_monthly",
     label: "Fixed Monthly Rate",
     subtitle: "Regular monthly service contract",
     icon: Calendar
+  },
+  {
+    value: "hazardous",
+    label: "Hazardous Waste",
+    subtitle: "Safe disposal of hazardous materials",
+    icon: Skull
   },
   {
     value: "clearing",
@@ -45,16 +39,16 @@ const SERVICE_TYPE_OPTIONS = [
     icon: Building2
   },
   {
-    value: "one_time",
-    label: "One Time Hauling",
-    subtitle: "Single pickup service",
-    icon: PackageCheck
-  },
-  {
     value: "long_term",
     label: "Long Term Garbage",
     subtitle: "Per-kg weight-based pricing",
     icon: Scale
+  },
+  {
+    value: "one_time",
+    label: "One-time Hauling",
+    subtitle: "Single trip waste hauling and removal",
+    icon: PackageCheck
   },
   {
     value: "recyclables",
@@ -66,12 +60,11 @@ const SERVICE_TYPE_OPTIONS = [
 
 // Service Type to Template Type Mapping
 const SERVICE_TO_TEMPLATE_MAP = {
-  waste_collection: "compactor_hauling",
-  hazardous: "hazardous_waste",
   fixed_monthly: "fixed_monthly",
+  hazardous: "hazardous_waste",
   clearing: "clearing_project",
-  one_time: "one_time_hauling",
   long_term: "long_term",
+  one_time: "one_time_hauling",
   recyclables: "recyclables_purchase",
 };
 

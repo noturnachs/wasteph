@@ -382,10 +382,12 @@ export default function Inquiries() {
           <FacetedFilter
             title="Service Type"
             options={[
-              { value: "garbage_collection", label: "Garbage Collection" },
-              { value: "septic_siphoning", label: "Septic Siphoning" },
+              { value: "fixed_monthly_rate", label: "Fixed Monthly Rate" },
               { value: "hazardous_waste", label: "Hazardous Waste" },
+              { value: "clearing_project", label: "Clearing Project" },
+              { value: "long_term_garbage", label: "Long Term Garbage" },
               { value: "onetime_hauling", label: "One-time Hauling" },
+              { value: "purchase_of_recyclables", label: "Purchase of Recyclables" },
             ]}
             selectedValues={serviceTypeFilter}
             onSelectionChange={setServiceTypeFilter}
