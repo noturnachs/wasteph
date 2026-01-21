@@ -126,14 +126,14 @@ const ClientStoryCard = ({ story }) => {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)]">
+    <div className="group overflow-hidden rounded-xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)] sm:rounded-2xl">
       {/* Logo Header - Full Width Banner */}
       {story.logo && !imageError ? (
-        <div className="relative h-32 w-full overflow-hidden bg-white/90 sm:h-40">
+        <div className="relative h-28 w-full overflow-hidden bg-white/90 sm:h-32 md:h-40">
           {/* Loading Skeleton */}
           {!imageLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-[#15803d]" />
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-[#15803d] sm:h-12 sm:w-12" />
             </div>
           )}
           
@@ -154,38 +154,38 @@ const ClientStoryCard = ({ story }) => {
           />
         </div>
       ) : (
-        <div className="flex h-32 w-full items-center justify-center bg-white/90 sm:h-40">
-          <Building2 className="h-16 w-16 text-slate-400" />
+        <div className="flex h-28 w-full items-center justify-center bg-white/90 sm:h-32 md:h-40">
+          <Building2 className="h-12 w-12 text-slate-400 sm:h-16 sm:w-16" />
         </div>
       )}
 
       {/* Header Info */}
-      <div className="border-b border-white/10 bg-[#15803d]/5 p-6 sm:p-8">
-        <div className="flex items-start justify-between gap-4">
+      <div className="border-b border-white/10 bg-[#15803d]/5 p-4 sm:p-6 md:p-8">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
           {/* Company Info */}
           <div className="flex-1">
-            <h3 className="mb-2 text-2xl font-bold text-white sm:text-3xl">
+            <h3 className="mb-1.5 text-lg font-bold text-white sm:mb-2 sm:text-xl md:text-2xl lg:text-3xl">
               {story.company}
             </h3>
-            <p className="mb-3 text-sm text-white/60">{story.industry}</p>
+            <p className="mb-2 text-[10px] text-white/60 sm:mb-3 sm:text-xs md:text-sm">{story.industry}</p>
 
             {/* Stats */}
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-wrap gap-2 text-[10px] sm:gap-3 sm:text-xs md:gap-4 md:text-sm">
               {story.location && (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="h-1 w-1 rounded-full bg-[#16a34a] sm:h-1.5 sm:w-1.5" />
                   <span className="text-white/70">{story.location}</span>
                 </div>
               )}
               {story.employees && (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="h-1 w-1 rounded-full bg-[#16a34a] sm:h-1.5 sm:w-1.5" />
                   <span className="text-white/70">{story.employees} employees</span>
                 </div>
               )}
               {story.partnership && (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <div className="h-1 w-1 rounded-full bg-[#16a34a] sm:h-1.5 sm:w-1.5" />
                   <span className="text-white/70">{story.partnership}</span>
                 </div>
               )}
@@ -198,7 +198,7 @@ const ClientStoryCard = ({ story }) => {
               {[...Array(story.rating)].map((_, i) => (
                 <svg
                   key={i}
-                  className="h-5 w-5 text-[#15803d]"
+                  className="h-4 w-4 text-[#15803d] md:h-5 md:w-5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -211,42 +211,42 @@ const ClientStoryCard = ({ story }) => {
       </div>
 
       {/* Content */}
-      <div className="p-6 sm:p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Background */}
-        <div className="mb-6">
-          <p className="leading-relaxed text-white/70">{story.background}</p>
+        <div className="mb-4 sm:mb-6">
+          <p className="text-xs leading-relaxed text-white/70 sm:text-sm md:text-base">{story.background}</p>
         </div>
 
         {/* Testimonial */}
-        <div className="mb-6 rounded-xl border border-[#15803d]/20 bg-[#15803d]/5 p-6">
-          <blockquote className="mb-4 text-lg leading-relaxed text-white/90">
+        <div className="mb-4 rounded-lg border border-[#15803d]/20 bg-[#15803d]/5 p-4 sm:mb-6 sm:rounded-xl sm:p-6">
+          <blockquote className="mb-3 text-sm leading-relaxed text-white/90 sm:mb-4 sm:text-base md:text-lg">
             "{story.testimonial}"
           </blockquote>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#15803d]/30 text-sm font-bold text-[#16a34a]">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#15803d]/30 text-xs font-bold text-[#16a34a] sm:h-10 sm:w-10 sm:text-sm">
               {story.author
                 .split(" ")
                 .map((n) => n[0])
                 .join("")}
             </div>
             <div>
-              <p className="font-bold text-white">{story.author}</p>
-              <p className="text-sm text-white/60">{story.position}</p>
+              <p className="text-xs font-bold text-white sm:text-sm md:text-base">{story.author}</p>
+              <p className="text-[10px] text-white/60 sm:text-xs md:text-sm">{story.position}</p>
             </div>
           </div>
         </div>
 
         {/* Results */}
         {story.achievements && story.achievements.length > 0 && (
-          <div className="rounded-xl bg-white/5 p-6">
-            <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-[#16a34a]">
+          <div className="rounded-lg bg-white/5 p-4 sm:rounded-xl sm:p-6">
+            <h4 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[#16a34a] sm:mb-4 sm:text-xs md:text-sm">
               Results Achieved
             </h4>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
               {story.achievements.map((achievement, index) => (
-                <div key={index} className="flex items-start gap-2">
+                <div key={index} className="flex items-start gap-1.5 sm:gap-2">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-[#16a34a]"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16a34a] sm:h-4 sm:w-4 md:h-5 md:w-5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -256,7 +256,7 @@ const ClientStoryCard = ({ story }) => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-sm text-white/80">{achievement}</span>
+                  <span className="text-[10px] text-white/80 sm:text-xs md:text-sm">{achievement}</span>
                 </div>
               ))}
             </div>
@@ -371,17 +371,17 @@ const Clients = () => {
           {/* Client Stories Carousel */}
           {!loading && clientStories.length > 0 && (
             <>
-              <div className="relative px-8 sm:px-12 md:px-16 lg:px-24">
+              <div className="relative px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24">
                 {/* Navigation Arrows */}
                 {clientStories.length > 1 && (
                   <>
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="absolute left-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-4 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
+                      className="absolute left-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-2 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100 sm:p-3 md:p-4"
                       aria-label="Previous client"
                     >
-                      <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m15 18-6-6 6-6"/>
                       </svg>
                     </button>
@@ -389,10 +389,10 @@ const Clients = () => {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-4 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
+                      className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/80 p-2 text-white backdrop-blur-xl transition-all hover:border-[#15803d]/50 hover:bg-[#15803d]/20 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100 sm:p-3 md:p-4"
                       aria-label="Next client"
                     >
-                      <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m9 18 6-6-6-6"/>
                       </svg>
                     </button>
@@ -409,7 +409,7 @@ const Clients = () => {
                     {clientStories.map((story, index) => (
                       <div 
                         key={story.id} 
-                        className="w-full flex-shrink-0 px-2"
+                        className="w-full flex-shrink-0"
                       >
                         <ClientStoryCard story={story} />
                       </div>
@@ -420,17 +420,17 @@ const Clients = () => {
 
               {/* Page Indicator Dots */}
               {clientStories.length > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
+                <div className="mt-6 flex items-center justify-center gap-1.5 sm:mt-8 sm:gap-2">
                   {[...Array(totalPages)].map((_, index) => {
                     const pageNumber = index + 1;
                     return (
                       <button
                         key={pageNumber}
                         onClick={() => handlePageChange(pageNumber)}
-                        className={`h-2.5 rounded-full transition-all ${
+                        className={`h-2 rounded-full transition-all sm:h-2.5 ${
                           currentPage === pageNumber
-                            ? "w-10 bg-[#15803d]"
-                            : "w-2.5 bg-white/30 hover:bg-white/50"
+                            ? "w-8 bg-[#15803d] sm:w-10"
+                            : "w-2 bg-white/30 hover:bg-white/50 sm:w-2.5"
                         }`}
                         aria-label={`Go to client ${pageNumber}`}
                       />
