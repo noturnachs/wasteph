@@ -113,7 +113,6 @@ export const inquiryTable = pgTable("inquiry", {
   location: text("location"),
   message: text("message").notNull(),
   serviceId: uuid("service_id").references(() => serviceTable.id),
-  serviceType: text("service_type"), // Maps to template types for auto-suggestion
   status: inquiryStatusEnum("status").notNull().default("initial_comms"),
   source: text("source").default("website"),
   assignedTo: text("assigned_to").references(() => userTable.id),
@@ -270,6 +269,7 @@ export const serviceTable = pgTable("service", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  defaultTemplateId: uuid("default_template_id").references(() => proposalTemplateTable.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

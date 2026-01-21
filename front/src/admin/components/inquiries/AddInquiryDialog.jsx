@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { api } from "../../services/api";
 
 export function AddInquiryDialog({ open, onOpenChange, onSubmit, isSubmitting }) {
   const [formData, setFormData] = useState({
@@ -28,7 +29,30 @@ export function AddInquiryDialog({ open, onOpenChange, onSubmit, isSubmitting })
     company: "",
     message: "",
     source: "phone",
+    serviceId: "",
   });
+
+  const [services, setServices] = useState([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
+
+  // Load services when dialog opens
+  useEffect(() => {
+    const loadServices = async () => {
+      if (!open) return;
+
+      setIsLoadingServices(true);
+      try {
+        const response = await api.getServices();
+        setServices(response.data || []);
+      } catch (error) {
+        console.error("Failed to load services:", error);
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+
+    loadServices();
+  }, [open]);
 
   const [formErrors, setFormErrors] = useState({});
 
@@ -59,6 +83,7 @@ export function AddInquiryDialog({ open, onOpenChange, onSubmit, isSubmitting })
       company: "",
       message: "",
       source: "phone",
+      serviceId: "",
     });
     setFormErrors({});
   };
@@ -137,6 +162,28 @@ export function AddInquiryDialog({ open, onOpenChange, onSubmit, isSubmitting })
                 setFormData({ ...formData, company: e.target.value })
               }
             />
+          </div>
+
+          <div>
+            <Label htmlFor="serviceId">Service Type</Label>
+            <Select
+              value={formData.serviceId}
+              onValueChange={(val) =>
+                setFormData({ ...formData, serviceId: val })
+              }
+              disabled={isLoadingServices}
+            >
+              <SelectTrigger id="serviceId">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    {service.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

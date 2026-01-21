@@ -90,15 +90,14 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// Service type options - matches RequestProposalDialog
+// Service type options - template types matching services
 const SERVICE_TYPES = [
-  { value: "waste_collection", label: "Waste Collection (Compactor Hauling)" },
-  { value: "hazardous", label: "Hazardous Waste" },
   { value: "fixed_monthly", label: "Fixed Monthly Rate" },
-  { value: "clearing", label: "Clearing Project" },
-  { value: "one_time", label: "One Time Hauling" },
-  { value: "long_term", label: "Long Term Garbage (Per-kg)" },
-  { value: "recyclables", label: "Purchase of Recyclables" },
+  { value: "hazardous_waste", label: "Hazardous Waste" },
+  { value: "clearing_project", label: "Clearing Project" },
+  { value: "long_term", label: "Long Term Garbage" },
+  { value: "one_time_hauling", label: "One-time Hauling" },
+  { value: "recyclables_purchase", label: "Purchase of Recyclables" },
 ];
 
 export function TemplateEditorDialog({ open, onOpenChange, template, onSave }) {
@@ -125,7 +124,8 @@ export function TemplateEditorDialog({ open, onOpenChange, template, onSave }) {
         setFormData({
           name: template.name || "",
           description: template.description || "",
-          serviceType: template.serviceType || "fixed_monthly",
+          // Backend sends templateType, frontend uses serviceType
+          serviceType: template.templateType || template.serviceType || "fixed_monthly",
           htmlTemplate: template.htmlTemplate || DEFAULT_TEMPLATE_HTML,
           isDefault: template.isDefault || false,
         });
@@ -170,7 +170,14 @@ export function TemplateEditorDialog({ open, onOpenChange, template, onSave }) {
 
     setIsSaving(true);
     try {
-      await onSave(formData);
+      // Map serviceType to templateType for backend
+      const dataToSave = {
+        ...formData,
+        templateType: formData.serviceType, // Backend expects 'templateType'
+      };
+      delete dataToSave.serviceType; // Remove serviceType field
+
+      await onSave(dataToSave);
     } catch (error) {
       // Error handled by parent
     } finally {
@@ -243,23 +250,6 @@ export function TemplateEditorDialog({ open, onOpenChange, template, onSave }) {
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 rows={2}
-              />
-            </div>
-
-            {/* Default Status */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="isDefault">Set as Default</Label>
-                <p className="text-xs text-gray-500">
-                  Default templates will be automatically selected for new proposals
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="isDefault"
-                checked={formData.isDefault}
-                onChange={(e) => handleInputChange("isDefault", e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
               />
             </div>
 
