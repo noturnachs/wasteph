@@ -1,4 +1,8 @@
 import showcaseService from "../services/showcaseService.js";
+import {
+  createShowcaseSchema,
+  updateShowcaseSchema,
+} from "../validation/showcaseSchema.js";
 
 /**
  * Showcase Controller
@@ -77,7 +81,22 @@ export const getShowcaseById = async (req, res, next) => {
  */
 export const createShowcase = async (req, res, next) => {
   try {
-    const showcaseData = req.body;
+    // Validate and sanitize input
+    const validationResult = createShowcaseSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationResult.error.errors.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        })),
+      });
+    }
+
+    // Use validated and sanitized data
+    const showcaseData = validationResult.data;
     const userId = req.user.id;
 
     const showcase = await showcaseService.createShowcase(showcaseData, userId);
@@ -100,7 +119,23 @@ export const createShowcase = async (req, res, next) => {
 export const updateShowcase = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const showcaseData = req.body;
+
+    // Validate and sanitize input
+    const validationResult = updateShowcaseSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationResult.error.errors.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        })),
+      });
+    }
+
+    // Use validated and sanitized data
+    const showcaseData = validationResult.data;
 
     const showcase = await showcaseService.updateShowcase(id, showcaseData);
 

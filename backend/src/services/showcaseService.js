@@ -51,12 +51,21 @@ class ShowcaseService {
    * Create new showcase
    */
   async createShowcase(showcaseData, userId) {
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedData = {
+      title: showcaseData.title,
+      tagline: showcaseData.tagline || null,
+      description: showcaseData.description,
+      image: showcaseData.image || null,
+      link: showcaseData.link || null,
+      displayOrder: showcaseData.displayOrder !== undefined ? showcaseData.displayOrder : 0,
+      isActive: showcaseData.isActive !== undefined ? showcaseData.isActive : true,
+      createdBy: userId, // Server-controlled field
+    };
+
     const [showcase] = await db
       .insert(showcaseTable)
-      .values({
-        ...showcaseData,
-        createdBy: userId,
-      })
+      .values(allowedData)
       .returning();
 
     return showcase;
@@ -66,12 +75,24 @@ class ShowcaseService {
    * Update showcase
    */
   async updateShowcase(id, showcaseData) {
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedData = {};
+
+    // Only include fields that are present in showcaseData
+    if (showcaseData.title !== undefined) allowedData.title = showcaseData.title;
+    if (showcaseData.tagline !== undefined) allowedData.tagline = showcaseData.tagline;
+    if (showcaseData.description !== undefined) allowedData.description = showcaseData.description;
+    if (showcaseData.image !== undefined) allowedData.image = showcaseData.image;
+    if (showcaseData.link !== undefined) allowedData.link = showcaseData.link;
+    if (showcaseData.displayOrder !== undefined) allowedData.displayOrder = showcaseData.displayOrder;
+    if (showcaseData.isActive !== undefined) allowedData.isActive = showcaseData.isActive;
+
+    // Server-controlled field
+    allowedData.updatedAt = new Date();
+
     const [updated] = await db
       .update(showcaseTable)
-      .set({
-        ...showcaseData,
-        updatedAt: new Date(),
-      })
+      .set(allowedData)
       .where(eq(showcaseTable.id, id))
       .returning();
 
