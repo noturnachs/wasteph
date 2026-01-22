@@ -255,3 +255,23 @@ export const getInquiryNotes = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Controller: Get unified timeline for an inquiry (notes + activity logs)
+ * Route: GET /api/inquiries/:id/timeline
+ * Access: Protected (authenticated users)
+ */
+export const getInquiryTimeline = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const timeline = await inquiryNotesService.getInquiryTimeline(id);
+
+    res.json({
+      success: true,
+      data: timeline,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

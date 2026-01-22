@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Loader2, Send, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Send, MessageSquare, ChevronDown, ChevronUp, Activity, Edit, UserPlus, Trash2, FileText, ArrowRightLeft, CheckCircle, XCircle, Mail, FilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 
@@ -24,8 +25,58 @@ const getAvatarColor = (userId) => {
   return colors[index];
 };
 
+const formatFieldChange = (field, change) => {
+  const fieldLabels = {
+    name: "Name",
+    email: "Email",
+    phone: "Phone",
+    company: "Company",
+    location: "Location",
+    source: "Source",
+    status: "Status",
+    assignedTo: "Assigned To",
+    serviceId: "Service",
+  };
+
+  const statusLabels = {
+    submitted_proposal: "Submitted Proposal",
+    initial_comms: "Initial Comms",
+    negotiating: "Negotiating",
+    to_call: "To Call",
+    submitted_company_profile: "Submitted Company Profile",
+    na: "N/A",
+    waiting_for_feedback: "Waiting for Feedback",
+    declined: "Declined",
+    on_boarded: "On Boarded",
+  };
+
+  const label = fieldLabels[field] || field;
+  let from = change.from || "(empty)";
+  let to = change.to || "(empty)";
+
+  // Format status values
+  if (field === "status") {
+    from = statusLabels[change.from] || change.from || "(empty)";
+    to = statusLabels[change.to] || change.to || "(empty)";
+  }
+
+  // Format source values
+  if (field === "source") {
+    from = change.from?.replace("-", " ") || "(empty)";
+    to = change.to?.replace("-", " ") || "(empty)";
+  }
+
+  // Format service values (use service name if available)
+  if (field === "serviceId") {
+    from = change.fromName || change.from || "(empty)";
+    to = change.toName || change.to || "(empty)";
+  }
+
+  return { label, from, to };
+};
+
 export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
-  const [notes, setNotes] = useState(initialNotes);
+  const [timeline, setTimeline] = useState(initialNotes);
   const [newNote, setNewNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,18 +84,18 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    // Load notes on mount
-    handleLoadNotes();
+    // Load timeline on mount
+    handleLoadTimeline();
   }, [inquiryId]);
 
-  const handleLoadNotes = async () => {
+  const handleLoadTimeline = async () => {
     try {
       setIsLoading(true);
-      const response = await api.getInquiryNotes(inquiryId);
-      setNotes(response.data || []);
+      const response = await api.getInquiryTimeline(inquiryId);
+      setTimeline(response.data || []);
     } catch (error) {
-      console.error("Error loading notes:", error);
-      toast.error("Failed to load notes");
+      console.error("Error loading timeline:", error);
+      toast.error("Failed to load activity timeline");
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +103,7 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
 
   const handleAddNote = async (e) => {
     e.preventDefault();
-    
+
     if (!newNote.trim()) {
       toast.error("Note cannot be empty");
       return;
@@ -62,8 +113,8 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
       setIsSubmitting(true);
       const response = await api.addInquiryNote(inquiryId, newNote.trim());
 
-      const createdNote = response.data;
-      setNotes([createdNote, ...notes]);
+      // Reload timeline to get both the note and the activity log
+      await handleLoadTimeline();
       setNewNote("");
       setIsAddingNote(false);
       toast.success("Note added successfully");
@@ -84,9 +135,187 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
     }
   };
 
+  const getActivityInfo = (action, details = {}) => {
+    const activityTypes = {
+      inquiry_created_manual: {
+        label: "Created",
+        description: "Created inquiry manually",
+        icon: UserPlus,
+        badgeBg: "bg-green-50",
+        badgeText: "text-green-700",
+        badgeBorder: "border-green-200",
+      },
+      inquiry_created: {
+        label: details.fromLeadPool ? "Claimed from Lead Pool" : "Created",
+        description: details.fromLeadPool ? "Claimed lead and converted to inquiry" : "Created inquiry",
+        icon: details.fromLeadPool ? FileText : UserPlus,
+        badgeBg: details.fromLeadPool ? "bg-indigo-50" : "bg-green-50",
+        badgeText: details.fromLeadPool ? "text-indigo-700" : "text-green-700",
+        badgeBorder: details.fromLeadPool ? "border-indigo-200" : "border-green-200",
+      },
+      inquiry_updated: {
+        label: "Updated",
+        description: null, // Will show field changes instead
+        icon: Edit,
+        badgeBg: "bg-gray-50",
+        badgeText: "text-gray-700",
+        badgeBorder: "border-gray-200",
+      },
+      inquiry_deleted: {
+        label: "Deleted",
+        description: "Deleted this inquiry",
+        icon: Trash2,
+        badgeBg: "bg-red-50",
+        badgeText: "text-red-700",
+        badgeBorder: "border-red-200",
+      },
+      proposal_created: {
+        label: "Proposal Created",
+        description: "Created a proposal for this inquiry",
+        icon: FilePlus,
+        badgeBg: "bg-blue-50",
+        badgeText: "text-blue-700",
+        badgeBorder: "border-blue-200",
+      },
+      proposal_approved: {
+        label: "Proposal Approved",
+        description: "Proposal was approved by admin",
+        icon: CheckCircle,
+        badgeBg: "bg-green-50",
+        badgeText: "text-green-700",
+        badgeBorder: "border-green-200",
+      },
+      proposal_sent: {
+        label: "Proposal Sent",
+        description: "Proposal was sent to client via email",
+        icon: Mail,
+        badgeBg: "bg-purple-50",
+        badgeText: "text-purple-700",
+        badgeBorder: "border-purple-200",
+      },
+      proposal_rejected: {
+        label: "Proposal Rejected",
+        description: details.rejectionReason ? `Rejected: ${details.rejectionReason}` : "Proposal was rejected by admin",
+        icon: XCircle,
+        badgeBg: "bg-red-50",
+        badgeText: "text-red-700",
+        badgeBorder: "border-red-200",
+      },
+      proposal_revised: {
+        label: "Proposal Revised",
+        description: "Revised rejected proposal and resubmitted",
+        icon: Edit,
+        badgeBg: "bg-orange-50",
+        badgeText: "text-orange-700",
+        badgeBorder: "border-orange-200",
+      },
+      proposal_cancelled: {
+        label: "Proposal Cancelled",
+        description: "Proposal was cancelled",
+        icon: XCircle,
+        badgeBg: "bg-gray-50",
+        badgeText: "text-gray-700",
+        badgeBorder: "border-gray-200",
+      },
+    };
+
+    return activityTypes[action] || {
+      label: "Activity",
+      description: "Performed an action",
+      icon: Activity,
+      badgeBg: "bg-gray-50",
+      badgeText: "text-gray-700",
+      badgeBorder: "border-gray-200",
+    };
+  };
+
+  const renderTimelineEntry = (entry) => {
+    if (entry.type === "note") {
+      // Manual note
+      return (
+        <div key={entry.id} className="flex gap-3 py-3 border-b border-gray-100 last:border-0">
+          <Edit className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
+
+          <div className="flex-1 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {entry.createdBy?.firstName} {entry.createdBy?.lastName}
+              </span>
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Note
+              </Badge>
+              <span className="text-xs text-gray-500">
+                {format(new Date(entry.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+              {entry.content}
+            </p>
+          </div>
+        </div>
+      );
+    } else if (entry.type === "activity") {
+      // System activity log
+      const changes = entry.details?.changes || {};
+      const changeCount = Object.keys(changes).length;
+      const activityInfo = getActivityInfo(entry.action, entry.details || {});
+
+      return (
+        <div key={entry.id} className="flex gap-3 py-3 border-b border-gray-100 last:border-0">
+          <Edit className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
+
+          <div className="flex-1 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {entry.createdBy?.firstName} {entry.createdBy?.lastName}
+              </span>
+              <Badge variant="outline" className={`text-xs ${activityInfo.badgeBg} ${activityInfo.badgeText} ${activityInfo.badgeBorder}`}>
+                {activityInfo.label}
+              </Badge>
+              <span className="text-xs text-gray-500">
+                {format(new Date(entry.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+              </span>
+            </div>
+
+            {/* Show description for non-update activities or when there are no field changes */}
+            {activityInfo.description && changeCount === 0 && (
+              <p className="text-sm text-gray-600">
+                {activityInfo.description}
+              </p>
+            )}
+
+            {/* Show field changes for update activities */}
+            {changeCount > 0 && (
+              <div className="text-sm space-y-1">
+                {Object.entries(changes).map(([field, change]) => {
+                  const { label, from, to } = formatFieldChange(field, change);
+                  return (
+                    <div key={field} className="flex items-start gap-1.5 text-gray-600">
+                      <ArrowRightLeft className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>
+                        Changed <span className="font-medium text-gray-900">{label}</span>
+                        {" from "}
+                        <span className="font-medium text-red-600">{from}</span>
+                        {" to "}
+                        <span className="font-medium text-green-600">{to}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="space-y-4">
-      {/* Notes Timeline */}
+      {/* Timeline */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <button
@@ -96,11 +325,11 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
             aria-label={isExpanded ? "Collapse activity timeline" : "Expand activity timeline"}
           >
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
+              <Activity className="h-4 w-4" />
               Activity Timeline
-              {notes.length > 0 && (
+              {timeline.length > 0 && (
                 <span className="text-xs text-muted-foreground font-normal">
-                  ({notes.length})
+                  ({timeline.length})
                 </span>
               )}
             </h3>
@@ -181,37 +410,15 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : notes.length === 0 ? (
+          ) : timeline.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
-              <p className="text-sm">No notes yet</p>
+              <Activity className="h-12 w-12 mx-auto mb-2 opacity-20" />
+              <p className="text-sm">No activity yet</p>
               <p className="text-xs">Add the first note to start tracking activity</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {notes.map((note) => (
-                <div key={note.id} className="flex gap-3">
-                  <Avatar className={`h-8 w-8 flex-shrink-0 ${getAvatarColor(note.createdBy?.id)}`}>
-                    <AvatarFallback className="text-white text-xs">
-                      {getInitials(note.createdBy?.firstName, note.createdBy?.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-sm font-medium">
-                        {note.createdBy?.firstName} {note.createdBy?.lastName}
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(note.createdAt), "MMM dd, yyyy 'at' h:mm a")}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {note.content}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {timeline.map((entry) => renderTimelineEntry(entry))}
             </div>
           )}
         </div>
@@ -221,4 +428,3 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
     </div>
   );
 };
-

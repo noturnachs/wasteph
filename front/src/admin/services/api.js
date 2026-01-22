@@ -110,20 +110,6 @@ class ApiClient {
     });
   }
 
-  async assignInquiry(inquiryId, assignedTo) {
-    return this.request(`/inquiries/${inquiryId}/assign`, {
-      method: "POST",
-      body: JSON.stringify({ assignedTo }),
-    });
-  }
-
-  async convertInquiryToLead(inquiryId, serviceDetails = {}) {
-    return this.request(`/inquiries/${inquiryId}/convert-to-lead`, {
-      method: "POST",
-      body: JSON.stringify(serviceDetails),
-    });
-  }
-
   async deleteInquiry(id) {
     return this.request(`/inquiries/${id}`, {
       method: "DELETE",
@@ -139,6 +125,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ content }),
     });
+  }
+
+  async getInquiryTimeline(inquiryId) {
+    return this.request(`/inquiries/${inquiryId}/timeline`);
   }
 
   // Lead endpoints
