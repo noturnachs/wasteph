@@ -3,6 +3,10 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
 import DOMPurify from "dompurify";
 import {
   Bold,
@@ -240,14 +244,33 @@ const TiptapEditor = ({ content, onChange, onUnsavedChange, className = "" }) =>
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Don't strip out HTML attributes
+        paragraph: {
+          HTMLAttributes: {
+            class: null,
+          },
+        },
+      }),
       Underline,
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          class: 'pricing-table',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: content || "",
     immediatelyRender: false, // Prevents scroll jump on first render
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
     onUpdate: ({ editor }) => {
       const currentHtml = editor.getHTML();
       const hasChanges = currentHtml !== savedContentRef.current;
@@ -271,17 +294,19 @@ const TiptapEditor = ({ content, onChange, onUnsavedChange, className = "" }) =>
     const html = editor.getHTML();
     const json = editor.getJSON();
 
-    // Sanitize HTML before saving
+    // Sanitize HTML before saving (preserve all formatting and structure)
     const sanitizedHtml = DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        "p", "br", "strong", "em", "u", "s",
+        "p", "br", "strong", "em", "u", "s", "b", "i",
         "h1", "h2", "h3", "h4", "h5", "h6",
         "ul", "ol", "li",
         "blockquote", "pre", "code",
-        "table", "thead", "tbody", "tr", "th", "td",
-        "a", "span", "div",
+        "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+        "a", "span", "div", "section", "article", "header", "footer",
+        "img", "hr",
       ],
-      ALLOWED_ATTR: ["href", "target", "style", "class"],
+      ALLOWED_ATTR: ["href", "target", "style", "class", "id", "src", "alt", "title", "width", "height"],
+      ALLOW_DATA_ATTR: true,
     });
 
     savedContentRef.current = sanitizedHtml;
@@ -350,6 +375,61 @@ const TiptapEditor = ({ content, onChange, onUnsavedChange, className = "" }) =>
 
   return (
     <div className={`border border-gray-200 rounded-lg overflow-hidden flex flex-col ${className}`}>
+      <style>{`
+        /* Preserve table styling from templates */
+        .ProseMirror table,
+        .ProseMirror .pricing-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 15px 0 !important;
+          display: table !important;
+        }
+
+        .ProseMirror table thead,
+        .ProseMirror .pricing-table thead {
+          background-color: #003333 !important;
+          color: white !important;
+          display: table-header-group !important;
+        }
+
+        .ProseMirror table tbody,
+        .ProseMirror .pricing-table tbody {
+          display: table-row-group !important;
+        }
+
+        .ProseMirror table tr,
+        .ProseMirror .pricing-table tr {
+          display: table-row !important;
+        }
+
+        .ProseMirror table th,
+        .ProseMirror table td,
+        .ProseMirror .pricing-table th,
+        .ProseMirror .pricing-table td {
+          border: 1px solid #000 !important;
+          padding: 10px !important;
+          text-align: left !important;
+          display: table-cell !important;
+        }
+
+        .ProseMirror table th,
+        .ProseMirror .pricing-table th {
+          font-weight: bold !important;
+        }
+
+        /* Override prose styles that might interfere */
+        .prose table {
+          font-size: 1em;
+        }
+
+        .prose thead th {
+          padding: 10px;
+        }
+
+        .prose tbody td {
+          padding: 10px;
+        }
+      `}</style>
       <MenuBar
         editor={editor}
         onSave={handleSave}

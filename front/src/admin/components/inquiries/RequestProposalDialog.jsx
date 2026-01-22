@@ -16,7 +16,7 @@ import { ArrowLeft, ArrowRight, Edit3, Loader2, Sparkles, Send, AlertCircle, Sku
 import { format } from "date-fns";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
-import TiptapEditor from "@/components/common/TiptapEditor";
+import ProposalHtmlEditor from "@/components/common/ProposalHtmlEditor";
 
 export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -32,6 +32,9 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
   const [editorInitialContent, setEditorInitialContent] = useState("");
   const [savedEditorContent, setSavedEditorContent] = useState({ html: "", json: null });
   const [hasUnsavedEditorChanges, setHasUnsavedEditorChanges] = useState(false);
+
+  // Store template structure (head + styles) separately
+  const templateStructureRef = useRef({ head: "", bodyTag: "", styles: "" });
 
   // Client info form state
   const [formData, setFormData] = useState({
@@ -280,18 +283,30 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
     setIsLoadingEditor(true);
     try {
       // Prepare data for template
+      const formattedDate = new Date(formData.proposalDate).toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
       const templateData = {
+        // Main fields
         clientName: formData.clientName || "Client Name",
         clientEmail: formData.clientEmail || "",
         clientPhone: formData.clientPhone || "",
         clientCompany: formData.clientCompany || "",
         clientPosition: formData.clientPosition || "",
         clientAddress: formData.clientAddress || "",
-        proposalDate: new Date(formData.proposalDate).toLocaleDateString("en-PH", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
+        proposalDate: formattedDate,
+
+        // Aliases for common template variations
+        name: formData.clientName || "Client Name",
+        email: formData.clientEmail || "",
+        phone: formData.clientPhone || "",
+        company: formData.clientCompany || "",
+        position: formData.clientPosition || "",
+        address: formData.clientAddress || "",
+        date: formattedDate,
       };
 
       let rendered = template.htmlTemplate;
@@ -318,8 +333,34 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
       // Strip any remaining Handlebars syntax
       rendered = rendered.replace(/\{\{[^{}]*\}\}/g, "");
 
-      setEditorInitialContent(rendered);
-      setSavedEditorContent({ html: rendered, json: null });
+      // Extract template structure (head with styles)
+      const headMatch = rendered.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+      const bodyTagMatch = rendered.match(/<body[^>]*>/i);
+      const bodyMatch = rendered.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+
+      if (headMatch && bodyMatch) {
+        // Extract inline styles from head
+        const styleMatch = headMatch[0].match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+        const inlineStyles = styleMatch ? styleMatch.map(s => s.replace(/<\/?style[^>]*>/gi, '')).join('\n') : '';
+
+        // Store template structure for later reconstruction
+        templateStructureRef.current = {
+          head: headMatch[0],
+          bodyTag: bodyTagMatch ? bodyTagMatch[0] : '<body>',
+          styles: inlineStyles,
+        };
+
+        // Extract only body content for editor
+        const bodyContent = bodyMatch[1];
+
+        setEditorInitialContent(bodyContent);
+        setSavedEditorContent({ html: rendered, json: null }); // Store full HTML initially
+      } else {
+        // Fallback: no proper HTML structure, use as-is
+        setEditorInitialContent(rendered);
+        setSavedEditorContent({ html: rendered, json: null });
+      }
+
       setHasUnsavedEditorChanges(false);
       setCurrentStep(3);
     } catch (error) {
@@ -332,7 +373,22 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
 
   // Handle editor save callback
   const handleEditorSave = ({ html, json }) => {
-    setSavedEditorContent({ html, json });
+    // Reconstruct full HTML with template structure (head + styles)
+    const { head, bodyTag } = templateStructureRef.current;
+
+    let fullHtml = html;
+    if (head && bodyTag) {
+      // Build complete HTML document
+      fullHtml = `<!DOCTYPE html>
+<html>
+${head}
+${bodyTag}
+  ${html}
+</body>
+</html>`;
+    }
+
+    setSavedEditorContent({ html: fullHtml, json });
     setHasUnsavedEditorChanges(false);
     toast.success("Changes saved");
   };
@@ -884,8 +940,9 @@ export function RequestProposalDialog({ open, onOpenChange, inquiry, onSuccess }
                 </div>
               ) : (
                 <div className="flex-1 min-h-0">
-                  <TiptapEditor
+                  <ProposalHtmlEditor
                     content={editorInitialContent}
+                    templateStyles={templateStructureRef.current.styles}
                     onChange={handleEditorSave}
                     onUnsavedChange={handleUnsavedChange}
                     className="h-full"
