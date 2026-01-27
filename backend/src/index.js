@@ -108,8 +108,8 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`\n🚀 Server is running on port ${PORT}`);
       console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔗 API Base URL: http://localhost:${PORT}/api\n`);
+      console.log(`🔗 Health check: ${process.env.FRONTEND_URL}/health`);
+      console.log(`🔗 API Base URL: ${process.env.FRONTEND_URL}/api\n`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
