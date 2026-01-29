@@ -51,12 +51,23 @@ export const inquiryValidation = [
 
 // Lead validation
 export const leadValidation = [
-  body("clientName").trim().notEmpty().withMessage("Client name is required"),
+  body("clientName").optional().trim(),
   body("company").optional().trim(),
-  body("email").optional().isEmail().normalizeEmail().withMessage("Valid email is required"),
-  body("phone").optional().trim(),
-  body("location").optional().trim(),
-  body("notes").optional().trim(),
+  body("email")
+    .optional({ values: "falsy" })
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Valid email is required"),
+  body("phone").optional({ values: "falsy" }).trim(),
+  body("location").optional({ values: "falsy" }).trim(),
+  body("notes").optional({ values: "falsy" }).trim(),
+  // Custom validation: either clientName or company must be provided
+  body().custom((value, { req }) => {
+    if (!req.body.clientName?.trim() && !req.body.company?.trim()) {
+      throw new Error("Either client name or company is required");
+    }
+    return true;
+  }),
 ];
 
 // Client validation

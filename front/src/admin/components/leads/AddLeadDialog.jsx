@@ -40,7 +40,18 @@ export function AddLeadDialog({ open, onOpenChange, onSubmit, isSubmitting }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    onSubmit(formData);
+
+    // Clean up form data - remove empty strings for optional fields
+    const cleanedData = {
+      clientName: formData.clientName?.trim() || undefined,
+      company: formData.company?.trim() || undefined,
+      email: formData.email?.trim() || undefined,
+      phone: formData.phone?.trim() || undefined,
+      location: formData.location?.trim() || undefined,
+      notes: formData.notes?.trim() || undefined,
+    };
+
+    onSubmit(cleanedData);
   };
 
   const resetForm = () => {
