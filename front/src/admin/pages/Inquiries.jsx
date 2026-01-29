@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
-import { Plus, SlidersHorizontal, X, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  SlidersHorizontal,
+  X,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -40,8 +47,18 @@ import { createColumns } from "../components/inquiries/columns";
 
 // Month names for the picker
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // Month Picker Content Component
@@ -91,7 +108,8 @@ function MonthPickerContent({ value, onChange }) {
       {/* Month Grid */}
       <div className="grid grid-cols-3 gap-2">
         {MONTHS.map((month, index) => {
-          const isSelected = selectedMonth === index && selectedYear === displayYear;
+          const isSelected =
+            selectedMonth === index && selectedYear === displayYear;
           return (
             <Button
               key={month}
@@ -164,8 +182,10 @@ export default function Inquiries() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] = useState(false);
-  const [isSendProposalDialogOpen, setIsSendProposalDialogOpen] = useState(false);
+  const [isRequestProposalDialogOpen, setIsRequestProposalDialogOpen] =
+    useState(false);
+  const [isSendProposalDialogOpen, setIsSendProposalDialogOpen] =
+    useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   // Submission states
@@ -179,7 +199,7 @@ export default function Inquiries() {
 
   // Fetch filtered inquiries
   useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
+    setPagination((prev) => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
     fetchInquiries(1);
   }, [statusFilter, sourceFilter, serviceTypeFilter, monthFilter, searchTerm]);
 
@@ -208,13 +228,19 @@ export default function Inquiries() {
     }
   };
 
-  const fetchInquiries = async (page = pagination.page, limit = pagination.limit) => {
+  const fetchInquiries = async (
+    page = pagination.page,
+    limit = pagination.limit,
+  ) => {
     try {
       setIsLoading(true);
       const filters = {
         status: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
         source: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
-        serviceType: serviceTypeFilter.length > 0 ? serviceTypeFilter.join(",") : undefined,
+        serviceType:
+          serviceTypeFilter.length > 0
+            ? serviceTypeFilter.join(",")
+            : undefined,
         month: monthFilter || undefined,
         search: searchTerm || undefined,
         page,
@@ -230,7 +256,9 @@ export default function Inquiries() {
 
       // Backend now returns { data, pagination }
       setInquiries(response.data || []);
-      setPagination(response.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 });
+      setPagination(
+        response.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 },
+      );
     } catch (error) {
       toast.error(error.message || "Failed to fetch inquiries");
     } finally {
@@ -250,7 +278,8 @@ export default function Inquiries() {
 
   // Get count for each service type from all inquiries
   const getServiceTypeCount = (serviceType) => {
-    return allInquiries.filter((inquiry) => inquiry.serviceType === serviceType).length;
+    return allInquiries.filter((inquiry) => inquiry.serviceType === serviceType)
+      .length;
   };
 
   // CRUD Handlers
@@ -325,7 +354,7 @@ export default function Inquiries() {
   });
 
   // Filter columns based on visibility
-  const columns = allColumns.filter(column => {
+  const columns = allColumns.filter((column) => {
     if (!column.accessorKey) return true; // Always show actions column
     return columnVisibility[column.accessorKey];
   });
@@ -360,7 +389,10 @@ export default function Inquiries() {
               { value: "initial_comms", label: "Initial Comms" },
               { value: "negotiating", label: "Negotiating" },
               { value: "to_call", label: "To Call" },
-              { value: "submitted_company_profile", label: "Submitted Company Profile" },
+              {
+                value: "submitted_company_profile",
+                label: "Submitted Company Profile",
+              },
               { value: "na", label: "N/A" },
               { value: "waiting_for_feedback", label: "Waiting for Feedback" },
               { value: "declined", label: "Declined" },
@@ -373,7 +405,14 @@ export default function Inquiries() {
 
           <FacetedFilter
             title="Source"
-            options={["website", "facebook", "email", "phone", "walk-in", "cold-approach"]}
+            options={[
+              "website",
+              "facebook",
+              "email",
+              "phone",
+              "walk-in",
+              "cold-approach",
+            ]}
             selectedValues={sourceFilter}
             onSelectionChange={setSourceFilter}
             getCount={getSourceCount}
@@ -387,7 +426,10 @@ export default function Inquiries() {
               { value: "clearing_project", label: "Clearing Project" },
               { value: "long_term_garbage", label: "Long Term Garbage" },
               { value: "onetime_hauling", label: "One-time Hauling" },
-              { value: "purchase_of_recyclables", label: "Purchase of Recyclables" },
+              {
+                value: "purchase_of_recyclables",
+                label: "Purchase of Recyclables",
+              },
             ]}
             selectedValues={serviceTypeFilter}
             onSelectionChange={setServiceTypeFilter}
@@ -416,7 +458,11 @@ export default function Inquiries() {
             </PopoverContent>
           </Popover>
 
-          {(statusFilter.length > 0 || sourceFilter.length > 0 || serviceTypeFilter.length > 0 || monthFilter || searchTerm) && (
+          {(statusFilter.length > 0 ||
+            sourceFilter.length > 0 ||
+            serviceTypeFilter.length > 0 ||
+            monthFilter ||
+            searchTerm) && (
             <Button
               variant="ghost"
               size="sm"
@@ -444,7 +490,9 @@ export default function Inquiries() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[180px]">
-            <DropdownMenuLabel className="font-bold">Toggle columns</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-bold">
+              Toggle columns
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {allColumns
               .filter((column) => column.accessorKey)
@@ -496,7 +544,7 @@ export default function Inquiries() {
             value={pagination.limit.toString()}
             onValueChange={(value) => {
               const newLimit = parseInt(value);
-              setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
               fetchInquiries(1, newLimit);
             }}
           >
@@ -668,7 +716,7 @@ export default function Inquiries() {
         actionsList={[
           "Permanently delete this inquiry",
           "Remove all associated data",
-          "This cannot be undone"
+          "This cannot be undone",
         ]}
         warningMessage="This action cannot be undone."
       />

@@ -34,10 +34,14 @@ export const createInquiryManual = async (req, res, next) => {
     const inquiryData = req.body;
     const userId = req.user.id;
 
-    const inquiry = await inquiryService.createInquiryManual(inquiryData, userId, {
-      ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
-    });
+    const inquiry = await inquiryService.createInquiryManual(
+      inquiryData,
+      userId,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      },
+    );
 
     res.status(201).json({
       success: true,
@@ -56,7 +60,16 @@ export const createInquiryManual = async (req, res, next) => {
  */
 export const getAllInquiries = async (req, res, next) => {
   try {
-    const { status, assignedTo, search, source, serviceType, month, page, limit } = req.query;
+    const {
+      status,
+      assignedTo,
+      search,
+      source,
+      serviceType,
+      month,
+      page,
+      limit,
+    } = req.query;
 
     const result = await inquiryService.getAllInquiries({
       status,
@@ -162,15 +175,10 @@ export const convertInquiryToLead = async (req, res, next) => {
     const userId = req.user.id;
     const data = req.body; // { serviceRequests: [] }
 
-    const lead = await inquiryService.convertInquiryToLead(
-      id,
-      userId,
-      data,
-      {
-        ipAddress: req.ip,
-        userAgent: req.get("user-agent"),
-      }
-    );
+    const lead = await inquiryService.convertInquiryToLead(id, userId, data, {
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     res.status(201).json({
       success: true,
