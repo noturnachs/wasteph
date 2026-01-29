@@ -2,8 +2,30 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay, isToday, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  addMonths,
+  subMonths,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  parseISO,
+} from "date-fns";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScheduleEventDialog } from "../components/calendar/ScheduleEventDialog";
@@ -191,8 +213,8 @@ export default function Calendar() {
                       isDayToday
                         ? "inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground"
                         : isCurrentMonth
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {format(day, "d")}
@@ -205,12 +227,14 @@ export default function Calendar() {
                         key={event.id}
                         onClick={() => handleEventClick(event)}
                         className={`w-full text-left p-1.5 rounded text-xs ${getStatusColor(
-                          event.status
+                          event.status,
                         )} hover:opacity-80 transition-opacity`}
                       >
                         <div className="flex items-center gap-1">
                           {getStatusIcon(event.status)}
-                          <span className="truncate font-medium">{event.title}</span>
+                          <span className="truncate font-medium">
+                            {event.title}
+                          </span>
                         </div>
                         {event.startTime && (
                           <div className="text-xs opacity-75 mt-0.5">
