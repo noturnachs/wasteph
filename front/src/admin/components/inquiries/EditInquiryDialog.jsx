@@ -125,7 +125,7 @@ export function EditInquiryDialog({
             Update the inquiry here. Click save changes when you're done.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           {/* 2-column grid for most fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Name */}
@@ -389,7 +389,13 @@ export function EditInquiryDialog({
             </div>
           )}
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-3 pt-2">
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Save changes
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -398,12 +404,6 @@ export function EditInquiryDialog({
             >
               <Calendar className="mr-2 h-4 w-4" />
               Schedule Event
-            </Button>
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Save changes
             </Button>
           </div>
         </form>
