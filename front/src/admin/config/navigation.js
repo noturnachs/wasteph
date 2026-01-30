@@ -131,6 +131,12 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
             icon: FileSignature,
             description: "Manage contract requests",
           },
+          {
+            title: "Contract Templates",
+            url: "/admin/contract-templates",
+            icon: FileSignature,
+            description: "Manage contract templates",
+          },
         ],
       },
       {

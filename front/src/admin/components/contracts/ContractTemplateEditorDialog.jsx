@@ -240,7 +240,7 @@ export function ContractTemplateEditorDialog({ open, onOpenChange, template, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-7xl! w-[90vw]! max-h-[90vh] flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>
             {template ? "Edit Contract Template" : "Create Contract Template"}
@@ -322,7 +322,7 @@ export function ContractTemplateEditorDialog({ open, onOpenChange, template, onS
               Use Handlebars syntax for dynamic data: {'{{contractNumber}}, {{clientName}}, etc.'}
             </p>
             <HTMLTemplateEditor
-              value={formData.htmlTemplate}
+              content={formData.htmlTemplate}
               onChange={(value) => setFormData({ ...formData, htmlTemplate: value })}
             />
           </div>

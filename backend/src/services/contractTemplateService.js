@@ -67,6 +67,27 @@ class ContractTemplateService {
     const { name, description, htmlTemplate, templateType, isDefault } =
       templateData;
 
+    // Enforce one active template per type
+    if (templateType) {
+      const [existing] = await db
+        .select()
+        .from(contractTemplatesTable)
+        .where(
+          and(
+            eq(contractTemplatesTable.templateType, templateType),
+            eq(contractTemplatesTable.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        throw new AppError(
+          `An active template already exists for type "${templateType}". Delete or deactivate it first.`,
+          409
+        );
+      }
+    }
+
     // If setting as default, unset other defaults first
     if (isDefault) {
       await db
@@ -267,6 +288,28 @@ class ContractTemplateService {
 
     const { name, description, htmlTemplate, templateType, isDefault } =
       updateData;
+
+    // Enforce one active template per type (exclude current template)
+    if (templateType && templateType !== existingTemplate.templateType) {
+      const [conflict] = await db
+        .select()
+        .from(contractTemplatesTable)
+        .where(
+          and(
+            eq(contractTemplatesTable.templateType, templateType),
+            eq(contractTemplatesTable.isActive, true),
+            sql`${contractTemplatesTable.id} != ${id}`
+          )
+        )
+        .limit(1);
+
+      if (conflict) {
+        throw new AppError(
+          `An active template already exists for type "${templateType}". Delete or deactivate it first.`,
+          409
+        );
+      }
+    }
 
     // If setting as default, unset other defaults first
     if (isDefault && !existingTemplate.isDefault) {

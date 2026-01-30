@@ -41,6 +41,8 @@ export default function AppLayout() {
     "/admin/clients": { name: "Clients", parent: "/admin/dashboard" },
     "/admin/proposals": { name: "Proposals", parent: "/admin/dashboard" },
     "/admin/contract-requests": { name: "Contract Requests", parent: "/admin/dashboard" },
+    "/admin/proposal-templates": { name: "Proposal Templates", parent: "/admin/dashboard" },
+    "/admin/contract-templates": { name: "Contract Templates", parent: "/admin/dashboard" },
     "/admin/blog": { name: "Blog Posts", parent: "/admin/dashboard" },
     "/admin/users": { name: "Users", parent: "/admin/dashboard" },
     "/admin/settings": { name: "Settings", parent: "/admin/dashboard" },
