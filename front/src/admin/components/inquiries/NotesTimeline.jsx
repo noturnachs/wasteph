@@ -17,6 +17,7 @@ import {
   Mail,
   FilePlus,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
+import { useNavigate } from "react-router-dom";
 
 const getInitials = (firstName, lastName) => {
   return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
@@ -115,6 +117,7 @@ const formatFieldChange = (field, change) => {
 };
 
 export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
+  const navigate = useNavigate();
   const [timeline, setTimeline] = useState(initialNotes);
   const [newNote, setNewNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -297,6 +300,9 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
         badgeBg: "bg-amber-50 dark:bg-amber-950",
         badgeText: "text-amber-700 dark:text-amber-300",
         badgeBorder: "border-amber-200 dark:border-amber-800",
+        showReport: details?.statusChanged?.to === "completed" && details?.eventId,
+        eventId: details?.eventId,
+        reportContent: details?.notes,
       },
       calendar_event_deleted: {
         label: "Event Cancelled",
@@ -418,6 +424,27 @@ export const NotesTimeline = ({ inquiryId, initialNotes = [] }) => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Show report for completed events */}
+            {activityInfo.showReport && activityInfo.reportContent && (
+              <div className="mt-3 p-3 bg-muted/30 rounded-md border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">Event Report</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate("/admin/calendar")}
+                    className="h-6 px-2 text-xs"
+                  >
+                    View in Calendar
+                    <ExternalLink className="ml-1 h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                  {activityInfo.reportContent}
+                </p>
               </div>
             )}
           </div>
