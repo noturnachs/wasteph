@@ -64,6 +64,7 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
   "accepted",     // Client accepted the proposal
   "rejected",     // Client rejected the proposal
   "cancelled",    // Cancelled by sales or admin
+  "expired",      // Proposal passed its validity period without client response
 ]);
 
 // Contract status - tracks contract request workflow
@@ -415,6 +416,7 @@ export const proposalTable = pgTable("proposal", {
   sentAt: timestamp("sent_at", { withTimezone: true }), // When sent to client
   emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
   emailStatus: text("email_status"), // "sent", "failed"
+  expiresAt: timestamp("expires_at", { withTimezone: true }), // sentAt + validityDays
 
   // Client Response (from email buttons)
   clientResponse: text("client_response"), // "approved", "rejected", null

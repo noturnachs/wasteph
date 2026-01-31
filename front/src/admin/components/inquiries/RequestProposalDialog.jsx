@@ -68,6 +68,7 @@ export function RequestProposalDialog({
     clientPosition: "",
     clientAddress: "",
     proposalDate: new Date().toISOString().split("T")[0],
+    validityDays: 30,
     notes: "",
   });
 
@@ -468,6 +469,11 @@ ${bodyTag}
         // Proposal metadata
         proposalDate: formData.proposalDate,
         notes: formData.notes || "",
+
+        // Terms
+        terms: {
+          validityDays: formData.validityDays,
+        },
 
         // The actual proposal content (edited HTML and JSON for re-editing)
         editedHtmlContent: savedEditorContent.html,
@@ -998,6 +1004,26 @@ ${bodyTag}
                               {validationErrors.proposalDate}
                             </p>
                           )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="validityDays">
+                            Validity (Days)
+                          </Label>
+                          <Input
+                            id="validityDays"
+                            type="number"
+                            min="1"
+                            value={formData.validityDays}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "validityDays",
+                                parseInt(e.target.value) || 30,
+                              )
+                            }
+                          />
                         </div>
                       </div>
 

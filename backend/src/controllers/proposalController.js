@@ -439,6 +439,7 @@ export const getProposalStatusPublic = async (req, res, next) => {
         clientResponse: proposal.clientResponse,
         respondedAt: proposal.clientResponseAt,
         sentAt: proposal.sentAt,
+        expiresAt: proposal.expiresAt,
       },
     });
   } catch (error) {

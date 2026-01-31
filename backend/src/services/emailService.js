@@ -68,10 +68,16 @@ class EmailService {
         total = pricing?.total;
       }
 
+      // Compute validity date for email
+      const validityDays = proposalData.terms?.validityDays || 30;
+      const validUntilDate = new Date();
+      validUntilDate.setDate(validUntilDate.getDate() + validityDays);
+      const validUntilStr = validUntilDate.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
+
       // Generate email HTML
       const htmlContent = isNewFormat
-        ? this.generateSimpleProposalEmailHTML(clientName, proposalId, responseToken)
-        : this.generateProposalEmailHTML(clientName, total, proposalId, responseToken);
+        ? this.generateSimpleProposalEmailHTML(clientName, proposalId, responseToken, validUntilStr)
+        : this.generateProposalEmailHTML(clientName, total, proposalId, responseToken, validUntilStr);
 
       // Send email with PDF attachment
       console.log(`📤 Sending proposal email to: ${to}`);
@@ -147,7 +153,7 @@ class EmailService {
    * @param {string} responseToken - Secure token for client response
    * @returns {string} HTML content
    */
-  generateSimpleProposalEmailHTML(clientName, proposalId, responseToken) {
+  generateSimpleProposalEmailHTML(clientName, proposalId, responseToken, validUntilStr) {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     return `
 <!DOCTYPE html>
@@ -278,6 +284,10 @@ class EmailService {
       <p>We look forward to the opportunity to serve you.</p>
     </div>
 
+    <div class="validity-box">
+      <p>This proposal is valid until <strong>${validUntilStr}</strong></p>
+    </div>
+
     <div class="action-buttons">
       <p style="margin-bottom: 20px; color: #666;">Please review the attached proposal and let us know your decision:</p>
       <a href="${frontendUrl}/proposal-response/${proposalId}/approve?token=${responseToken}" class="btn btn-approve">✓ Approve Proposal</a>
@@ -305,7 +315,7 @@ class EmailService {
    * @param {string} responseToken - Secure token for client response
    * @returns {string} HTML content
    */
-  generateProposalEmailHTML(clientName, total, proposalId, responseToken) {
+  generateProposalEmailHTML(clientName, total, proposalId, responseToken, validUntilStr) {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     return `
 <!DOCTYPE html>
@@ -375,6 +385,21 @@ class EmailService {
     }
     .summary-table tr:last-child td {
       border-bottom: none;
+    }
+    .validity-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .validity-box p {
+      margin: 0;
+      color: #166534;
+    }
+    .validity-box strong {
+      font-size: 18px;
     }
     .cta-button {
       display: inline-block;
@@ -452,6 +477,10 @@ class EmailService {
           <td>₱${Number(total).toFixed(2)}</td>
         </tr>
       </table>
+
+      <div class="validity-box">
+        <p>This proposal is valid until <strong>${validUntilStr}</strong></p>
+      </div>
 
       <p>The attached PDF contains complete details including:</p>
       <ul style="margin: 15px 0; padding-left: 20px;">

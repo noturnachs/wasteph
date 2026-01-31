@@ -135,6 +135,12 @@ const ProposalResponse = () => {
                       {proposalDetails.sentAt ? new Date(proposalDetails.sentAt).toLocaleDateString() : "N/A"}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Expires:</span>
+                    <span className="font-medium">
+                      {proposalDetails.expiresAt ? new Date(proposalDetails.expiresAt).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
                   {proposalDetails.clientResponse && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Current Status:</span>

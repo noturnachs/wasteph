@@ -408,6 +408,10 @@ class ProposalService {
     }
 
     // Step 6: Update proposal to sent (with optimistic locking to prevent race conditions)
+    const validityDays = proposalData.terms?.validityDays || 30;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + validityDays);
+
     const [updatedProposal] = await db
       .update(proposalTable)
       .set({
@@ -416,6 +420,7 @@ class ProposalService {
         sentAt: new Date(),
         emailSentAt: new Date(),
         emailStatus: "sent",
+        expiresAt,
         pdfUrl,
         updatedAt: new Date(),
       })
@@ -707,6 +712,17 @@ class ProposalService {
     // Check if already responded
     if (proposal.clientResponse) {
       throw new AppError(`This proposal has already been ${proposal.clientResponse}`, 400);
+    }
+
+    // Check if proposal has expired
+    if (proposal.expiresAt && new Date() > new Date(proposal.expiresAt)) {
+      if (proposal.status === "sent") {
+        await db
+          .update(proposalTable)
+          .set({ status: "expired", updatedAt: new Date() })
+          .where(and(eq(proposalTable.id, proposalId), eq(proposalTable.status, "sent")));
+      }
+      throw new AppError("This proposal has expired. Please contact us for an updated quote.", 410);
     }
 
     return proposal;
