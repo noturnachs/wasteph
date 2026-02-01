@@ -564,7 +564,15 @@ class ApiClient {
 
   async previewContractPdf(id) {
     const url = `${this.baseURL}/contracts/${id}/preview-pdf`;
-    window.open(url, "_blank");
+    const response = await fetch(url, { method: "GET", credentials: "include" });
+    if (!response.ok) throw new Error("Failed to fetch contract PDF");
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   async generateContractFromTemplate(id, editedData = null, adminNotes = null, editedHtmlContent = null) {

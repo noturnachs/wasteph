@@ -31,6 +31,7 @@ import {
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 import ProposalHtmlEditor from "@/components/common/ProposalHtmlEditor";
+import { PDFViewer } from "../PDFViewer";
 
 const CONTRACT_TYPES = [
   { value: "long_term_variable", label: "LONG TERM GARBAGE VARIABLE CHARGE" },
@@ -71,6 +72,8 @@ export function GenerateContractDialog({
   const [savedHtml, setSavedHtml] = useState("");
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   const [hasUnsavedHtmlChanges, setHasUnsavedHtmlChanges] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState("");
   const templateStructureRef = useRef({ head: "", bodyTag: "", styles: "" });
 
   // Initialize data when dialog opens
@@ -188,11 +191,8 @@ export function GenerateContractDialog({
       );
 
       if (response.success) {
-        // Open PDF in new window
-        const pdfWindow = window.open("", "_blank");
-        pdfWindow.document.write(
-          `<iframe width='100%' height='100%' src='data:application/pdf;base64,${response.data}'></iframe>`
-        );
+        setPreviewPdfUrl(`data:application/pdf;base64,${response.data}`);
+        setShowPdfViewer(true);
       }
     } catch (error) {
       toast.error(error.message || "Failed to generate preview");
@@ -769,6 +769,16 @@ export function GenerateContractDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {showPdfViewer && previewPdfUrl && (
+      <PDFViewer
+        fileUrl={previewPdfUrl}
+        fileName={`${editedData.clientName || "Contract"} - Preview.pdf`}
+        title="Contract Preview"
+        onClose={() => setShowPdfViewer(false)}
+        isOpen={showPdfViewer}
+      />
+    )}
     </>
   );
 }

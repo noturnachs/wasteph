@@ -23,6 +23,7 @@ import { UploadContractDialog } from "../components/contracts/UploadContractDial
 import { GenerateContractDialog } from "../components/contracts/GenerateContractDialog";
 import { SendToClientDialog } from "../components/contracts/SendToClientDialog";
 import { ViewContractDetailsDialog } from "../components/contracts/ViewContractDetailsDialog";
+import { PDFViewer } from "../components/PDFViewer";
 
 export default function ContractRequests() {
   const { user } = useAuth();
@@ -60,6 +61,9 @@ export default function ContractRequests() {
   const [isSendToClientDialogOpen, setIsSendToClientDialogOpen] =
     useState(false);
   const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState("");
+  const [pdfViewerName, setPdfViewerName] = useState("");
   const [selectedContract, setSelectedContract] = useState(null);
 
   // Fetch users on mount
@@ -160,8 +164,15 @@ export default function ContractRequests() {
     fileInput.click();
   };
 
-  const handleViewContract = (contract) => {
-    api.previewContractPdf(contract.contract.id);
+  const handleViewContract = async (contract) => {
+    try {
+      const dataUrl = await api.previewContractPdf(contract.contract.id);
+      setPdfViewerUrl(dataUrl);
+      setPdfViewerName(`${contract.inquiry?.name || "Contract"} - Contract.pdf`);
+      setShowPdfViewer(true);
+    } catch (error) {
+      toast.error("Failed to load contract PDF");
+    }
   };
 
   const handleViewDetails = (contract) => {
@@ -383,6 +394,16 @@ export default function ContractRequests() {
         contract={selectedContract}
         users={users}
       />
+
+      {showPdfViewer && pdfViewerUrl && (
+        <PDFViewer
+          fileUrl={pdfViewerUrl}
+          fileName={pdfViewerName}
+          title="Contract PDF"
+          onClose={() => setShowPdfViewer(false)}
+          isOpen={showPdfViewer}
+        />
+      )}
     </div>
   );
 }

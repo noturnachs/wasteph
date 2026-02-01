@@ -10,9 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Eye, AlertTriangle, Mail } from "lucide-react";
 import { api } from "../../services/api";
+import { PDFViewer } from "../PDFViewer";
 
 export function SendToClientDialog({ open, onOpenChange, contract, onConfirm }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState("");
 
   const handleSubmit = async () => {
     const clientEmail = contract?.inquiry?.email;
@@ -28,9 +31,14 @@ export function SendToClientDialog({ open, onOpenChange, contract, onConfirm }) 
     }
   };
 
-  const handlePreview = () => {
-    if (contract?.contract?.id) {
-      api.previewContractPdf(contract.contract.id);
+  const handlePreview = async () => {
+    if (!contract?.contract?.id) return;
+    try {
+      const dataUrl = await api.previewContractPdf(contract.contract.id);
+      setPreviewPdfUrl(dataUrl);
+      setShowPdfViewer(true);
+    } catch (error) {
+      console.error("Failed to load PDF preview:", error);
     }
   };
 
@@ -40,6 +48,7 @@ export function SendToClientDialog({ open, onOpenChange, contract, onConfirm }) 
   const clientEmail = contract.inquiry?.email || "N/A";
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -109,5 +118,16 @@ export function SendToClientDialog({ open, onOpenChange, contract, onConfirm }) 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {showPdfViewer && previewPdfUrl && (
+      <PDFViewer
+        fileUrl={previewPdfUrl}
+        fileName={`${contract?.inquiry?.name || "Contract"} - Contract.pdf`}
+        title="Contract PDF Preview"
+        onClose={() => setShowPdfViewer(false)}
+        isOpen={showPdfViewer}
+      />
+    )}
+    </>
   );
 }
