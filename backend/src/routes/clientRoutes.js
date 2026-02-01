@@ -17,7 +17,7 @@ router.use(requireAuth);
 router.post("/", clientValidation, validate, createClient);
 router.get("/", getAllClients);
 router.get("/:id", getClientById);
-router.patch("/:id", requireRole("admin", "manager"), updateClient);
-router.delete("/:id", requireRole("admin", "manager"), deleteClient);
+router.patch("/:id", requireRole("admin", "super_admin", "manager"), updateClient);
+router.delete("/:id", requireRole("admin", "super_admin", "manager"), deleteClient);
 
 export default router;
