@@ -72,6 +72,8 @@ export function GenerateContractDialog({
   const [savedHtml, setSavedHtml] = useState("");
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   const [hasUnsavedHtmlChanges, setHasUnsavedHtmlChanges] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingData, setPendingData] = useState({});
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState("");
   const templateStructureRef = useRef({ head: "", bodyTag: "", styles: "" });
@@ -117,6 +119,8 @@ export function GenerateContractDialog({
       setOriginalData(data);
       setAdminNotes("");
       setPdfPreviewUrl("");
+      setIsEditing(false);
+      setPendingData({});
       setIsEditModalOpen(false);
       setRenderedHtml("");
       setSavedHtml("");
@@ -157,29 +161,45 @@ export function GenerateContractDialog({
   }, [contract, open]);
 
   const handleFieldChange = (field, value) => {
-    setEditedData((prev) => ({ ...prev, [field]: value }));
+    setPendingData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSignatoryChange = (index, field, value) => {
-    const newSignatories = [...editedData.signatories];
+    const newSignatories = [...pendingData.signatories];
     newSignatories[index] = { ...newSignatories[index], [field]: value };
-    setEditedData((prev) => ({ ...prev, signatories: newSignatories }));
+    setPendingData((prev) => ({ ...prev, signatories: newSignatories }));
   };
 
   const addSignatory = () => {
-    setEditedData((prev) => ({
+    setPendingData((prev) => ({
       ...prev,
       signatories: [...prev.signatories, { name: "", position: "" }],
     }));
   };
 
   const removeSignatory = (index) => {
-    if (editedData.signatories.length > 1) {
-      setEditedData((prev) => ({
+    if (pendingData.signatories.length > 1) {
+      setPendingData((prev) => ({
         ...prev,
         signatories: prev.signatories.filter((_, i) => i !== index),
       }));
     }
+  };
+
+  const handleEditStart = () => {
+    setPendingData({ ...editedData });
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setPendingData({});
+    setIsEditing(false);
+  };
+
+  const handleEditSave = () => {
+    setEditedData(pendingData);
+    setPendingData({});
+    setIsEditing(false);
   };
 
   const handlePreview = async () => {
@@ -201,22 +221,40 @@ export function GenerateContractDialog({
     }
   };
 
-  const handleGenerate = async () => {
+  const handlePreviewInPanel = async () => {
+    try {
+      setIsLoadingPdf(true);
+      const response = await api.previewContractFromTemplate(
+        contract.contract.id,
+        editedData
+      );
+
+      if (response.success) {
+        setPdfPreviewUrl(`data:application/pdf;base64,${response.data}`);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to generate preview");
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
-      const response = await api.generateContractFromTemplate(
+      await api.generateContractFromTemplate(
         contract.contract.id,
         editedData,
         adminNotes || null
       );
 
-      toast.success("Contract generated successfully");
+      toast.success("Contract submitted successfully");
       setIsGenerated(true);
 
-      // Load the generated PDF
+      // Load the saved PDF
       await loadGeneratedPdf();
     } catch (error) {
-      toast.error(error.message || "Failed to generate contract");
+      toast.error(error.message || "Failed to submit contract");
     } finally {
       setIsSubmitting(false);
     }
@@ -360,9 +398,8 @@ export function GenerateContractDialog({
               <div className="sticky top-0 bg-background pb-3 border-b z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Edit className="h-4 w-4" />
-                      Edit Contract Details
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Contract Details
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       Sales Person: {salesPersonName}
@@ -372,265 +409,259 @@ export function GenerateContractDialog({
                     {isGenerated && (
                       <Badge className="bg-green-600">Generated</Badge>
                     )}
+                    {!isEditing ? (
+                      <Button type="button" variant="outline" size="sm" onClick={handleEditStart}>
+                        <Edit className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Button>
+                    ) : (
+                      <>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleEditCancel}>
+                          Cancel
+                        </Button>
+                        <Button type="button" size="sm" onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">
+                          Save
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Editable Fields */}
+              {/* Contract Details Fields */}
               <div className="space-y-4">
-          {/* Contract Type */}
-          <div className="space-y-2">
-            <Label htmlFor="contractType">Contract Type *</Label>
-            <Select
-              value={editedData.contractType}
-              onValueChange={(value) => handleFieldChange("contractType", value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CONTRACT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                {(() => {
+                  const d = isEditing ? pendingData : editedData;
+                  return (
+                    <>
+                      {/* Contract Type */}
+                      <div className="space-y-2">
+                        <Label>Contract Type *</Label>
+                        <Select
+                          value={d.contractType}
+                          onValueChange={(value) => handleFieldChange("contractType", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTRACT_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-          {/* Client Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="clientName">Client Name *</Label>
-              <Input
-                id="clientName"
-                value={editedData.clientName || ""}
-                onChange={(e) => handleFieldChange("clientName", e.target.value)}
-              />
-            </div>
+                      {/* Client Information */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Client Name *</Label>
+                          <Input
+                            value={d.clientName || ""}
+                            onChange={(e) => handleFieldChange("clientName", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Company Name *</Label>
+                          <Input
+                            value={d.companyName || ""}
+                            onChange={(e) => handleFieldChange("companyName", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Client Email *</Label>
+                          <Input
+                            type="email"
+                            value={d.clientEmailContract || ""}
+                            onChange={(e) => handleFieldChange("clientEmailContract", e.target.value)}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Contract Duration *</Label>
+                          <Input
+                            value={d.contractDuration || ""}
+                            onChange={(e) => handleFieldChange("contractDuration", e.target.value)}
+                            placeholder="e.g., 12 months"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name *</Label>
-              <Input
-                id="companyName"
-                value={editedData.companyName || ""}
-                onChange={(e) => handleFieldChange("companyName", e.target.value)}
-              />
-            </div>
+                      <div className="space-y-2">
+                        <Label>Client Address *</Label>
+                        <Textarea
+                          value={d.clientAddress || ""}
+                          onChange={(e) => handleFieldChange("clientAddress", e.target.value)}
+                          rows={2}
+                          disabled={!isEditing}
+                        />
+                      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="clientEmailContract">Client Email *</Label>
-              <Input
-                id="clientEmailContract"
-                type="email"
-                value={editedData.clientEmailContract || ""}
-                onChange={(e) =>
-                  handleFieldChange("clientEmailContract", e.target.value)
-                }
-              />
-            </div>
+                      {/* Service Details */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Collection Schedule *</Label>
+                          <Select
+                            value={d.collectionSchedule}
+                            onValueChange={(value) => handleFieldChange("collectionSchedule", value)}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COLLECTION_SCHEDULES.map((schedule) => (
+                                <SelectItem key={schedule.value} value={schedule.value}>
+                                  {schedule.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="contractDuration">Contract Duration *</Label>
-              <Input
-                id="contractDuration"
-                value={editedData.contractDuration || ""}
-                onChange={(e) =>
-                  handleFieldChange("contractDuration", e.target.value)
-                }
-                placeholder="e.g., 12 months"
-              />
-            </div>
-          </div>
+                        {d.collectionSchedule === "other" && (
+                          <div className="space-y-2">
+                            <Label>Specify Schedule *</Label>
+                            <Input
+                              value={d.collectionScheduleOther || ""}
+                              onChange={(e) => handleFieldChange("collectionScheduleOther", e.target.value)}
+                              disabled={!isEditing}
+                            />
+                          </div>
+                        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="clientAddress">Client Address *</Label>
-            <Textarea
-              id="clientAddress"
-              value={editedData.clientAddress || ""}
-              onChange={(e) => handleFieldChange("clientAddress", e.target.value)}
-              rows={2}
-            />
-          </div>
+                        <div className="space-y-2">
+                          <Label>Waste Allowance *</Label>
+                          <Input
+                            value={d.wasteAllowance || ""}
+                            onChange={(e) => handleFieldChange("wasteAllowance", e.target.value)}
+                            placeholder="e.g., 500 kg/month"
+                            disabled={!isEditing}
+                          />
+                        </div>
 
-          {/* Service Details */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="collectionSchedule">Collection Schedule *</Label>
-              <Select
-                value={editedData.collectionSchedule}
-                onValueChange={(value) =>
-                  handleFieldChange("collectionSchedule", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COLLECTION_SCHEDULES.map((schedule) => (
-                    <SelectItem key={schedule.value} value={schedule.value}>
-                      {schedule.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                        <div className="space-y-2">
+                          <Label>Rate per Kg *</Label>
+                          <Input
+                            value={d.ratePerKg || ""}
+                            onChange={(e) => handleFieldChange("ratePerKg", e.target.value)}
+                            placeholder="e.g., PHP 3.50/kg"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
 
-            {editedData.collectionSchedule === "other" && (
-              <div className="space-y-2">
-                <Label htmlFor="collectionScheduleOther">
-                  Specify Schedule *
-                </Label>
-                <Input
-                  id="collectionScheduleOther"
-                  value={editedData.collectionScheduleOther || ""}
-                  onChange={(e) =>
-                    handleFieldChange("collectionScheduleOther", e.target.value)
-                  }
-                />
-              </div>
-            )}
+                      {/* GPS Coordinates */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Service Latitude *</Label>
+                          <Input
+                            value={d.serviceLatitude || ""}
+                            onChange={(e) => handleFieldChange("serviceLatitude", e.target.value)}
+                            placeholder="e.g., 14.5995"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Service Longitude *</Label>
+                          <Input
+                            value={d.serviceLongitude || ""}
+                            onChange={(e) => handleFieldChange("serviceLongitude", e.target.value)}
+                            placeholder="e.g., 120.9842"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="wasteAllowance">Waste Allowance *</Label>
-              <Input
-                id="wasteAllowance"
-                value={editedData.wasteAllowance || ""}
-                onChange={(e) =>
-                  handleFieldChange("wasteAllowance", e.target.value)
-                }
-                placeholder="e.g., 500 kg/month"
-              />
-            </div>
+                      {/* Special Clauses */}
+                      <div className="space-y-2">
+                        <Label>Special Clauses *</Label>
+                        <Textarea
+                          value={d.specialClauses || ""}
+                          onChange={(e) => handleFieldChange("specialClauses", e.target.value)}
+                          rows={3}
+                          disabled={!isEditing}
+                        />
+                      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ratePerKg">Rate per Kg *</Label>
-              <Input
-                id="ratePerKg"
-                value={editedData.ratePerKg || ""}
-                onChange={(e) => handleFieldChange("ratePerKg", e.target.value)}
-                placeholder="e.g., PHP 3.50/kg"
-              />
-            </div>
-          </div>
+                      {/* Client Requests */}
+                      <div className="space-y-2">
+                        <Label>Client Requests *</Label>
+                        <Textarea
+                          value={d.clientRequests || ""}
+                          onChange={(e) => handleFieldChange("clientRequests", e.target.value)}
+                          rows={2}
+                          disabled={!isEditing}
+                        />
+                      </div>
 
-          {/* GPS Coordinates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="serviceLatitude">Service Latitude *</Label>
-              <Input
-                id="serviceLatitude"
-                value={editedData.serviceLatitude || ""}
-                onChange={(e) =>
-                  handleFieldChange("serviceLatitude", e.target.value)
-                }
-                placeholder="e.g., 14.5995"
-              />
-            </div>
+                      {/* Signatories */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>Signatories *</Label>
+                          {isEditing && (
+                            <Button type="button" variant="outline" size="sm" onClick={addSignatory}>
+                              <Plus className="h-3.5 w-3.5 mr-1" />
+                              Add Signatory
+                            </Button>
+                          )}
+                        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="serviceLongitude">Service Longitude *</Label>
-              <Input
-                id="serviceLongitude"
-                value={editedData.serviceLongitude || ""}
-                onChange={(e) =>
-                  handleFieldChange("serviceLongitude", e.target.value)
-                }
-                placeholder="e.g., 120.9842"
-              />
-            </div>
-          </div>
+                        {d.signatories?.map((signatory, index) => (
+                          <div key={index} className="flex gap-3 items-start p-3 border rounded-lg">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <Input
+                                placeholder="Full Name"
+                                value={signatory.name}
+                                onChange={(e) => handleSignatoryChange(index, "name", e.target.value)}
+                                disabled={!isEditing}
+                              />
+                              <Input
+                                placeholder="Position/Title"
+                                value={signatory.position}
+                                onChange={(e) => handleSignatoryChange(index, "position", e.target.value)}
+                                disabled={!isEditing}
+                              />
+                            </div>
+                            {isEditing && d.signatories.length > 1 && (
+                              <Button type="button" variant="ghost" size="sm" onClick={() => removeSignatory(index)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
 
-          {/* Special Clauses */}
-          <div className="space-y-2">
-            <Label htmlFor="specialClauses">Special Clauses *</Label>
-            <Textarea
-              id="specialClauses"
-              value={editedData.specialClauses || ""}
-              onChange={(e) => handleFieldChange("specialClauses", e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          {/* Client Requests */}
-          <div className="space-y-2">
-            <Label htmlFor="clientRequests">Client Requests *</Label>
-            <Textarea
-              id="clientRequests"
-              value={editedData.clientRequests || ""}
-              onChange={(e) => handleFieldChange("clientRequests", e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          {/* Signatories */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Signatories *</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addSignatory}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Signatory
-              </Button>
-            </div>
-
-            {editedData.signatories?.map((signatory, index) => (
-              <div key={index} className="flex gap-3 items-start p-3 border rounded-lg">
-                <div className="flex-1 grid grid-cols-2 gap-3">
-                  <Input
-                    placeholder="Full Name"
-                    value={signatory.name}
-                    onChange={(e) =>
-                      handleSignatoryChange(index, "name", e.target.value)
-                    }
-                  />
-                  <Input
-                    placeholder="Position/Title"
-                    value={signatory.position}
-                    onChange={(e) =>
-                      handleSignatoryChange(index, "position", e.target.value)
-                    }
+                {/* Admin Notes — always editable */}
+                <div className="space-y-2">
+                  <Label htmlFor="adminNotes">
+                    Additional Notes for Sales{" "}
+                    <span className="text-muted-foreground">(Optional)</span>
+                  </Label>
+                  <Textarea
+                    id="adminNotes"
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Add any notes for sales team..."
                   />
                 </div>
-                {editedData.signatories.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeSignatory(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
 
-          {/* Admin Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="adminNotes">
-              Additional Notes for Sales{" "}
-              <span className="text-muted-foreground">(Optional)</span>
-            </Label>
-            <Textarea
-              id="adminNotes"
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              rows={2}
-              placeholder="Add any notes for sales team..."
-            />
-          </div>
-
-          {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              <strong>Note:</strong> All changes will be tracked and sent to sales automatically.
-            </p>
-          </div>
+                {/* Info */}
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Note:</strong> All changes will be tracked and sent to sales automatically.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -642,6 +673,22 @@ export function GenerateContractDialog({
                 Contract PDF
               </h3>
               <div className="flex items-center gap-2">
+                {pdfPreviewUrl && !isGenerated && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviewInPanel}
+                    disabled={isLoadingPdf}
+                  >
+                    {isLoadingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    Refresh
+                  </Button>
+                )}
                 {isGenerated && (
                   <Button
                     type="button"
@@ -659,7 +706,7 @@ export function GenerateContractDialog({
                   </Button>
                 )}
                 {isGenerated && (
-                  <Badge className="bg-green-600">Generated</Badge>
+                  <Badge className="bg-green-600">Submitted</Badge>
                 )}
               </div>
             </div>
@@ -682,15 +729,11 @@ export function GenerateContractDialog({
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center p-6">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Click "Generate Contract" to create the PDF
+                      Preview the contract before submitting
                     </p>
-                    <Button onClick={handleGenerate} disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <FileCheck className="mr-2 h-4 w-4" />
-                      )}
-                      Generate Contract
+                    <Button onClick={handlePreviewInPanel} variant="outline">
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Preview Contract
                     </Button>
                   </div>
                 </div>
@@ -705,7 +748,20 @@ export function GenerateContractDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Close
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || isGenerated}
+            className={isGenerated ? "bg-green-600 hover:bg-green-600" : "bg-blue-600 hover:bg-blue-700"}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isGenerated ? (
+              <>
+                <FileCheck className="mr-2 h-4 w-4" />
+                Submitted
+              </>
+            ) : isSubmitting ? "Submitting..." : "Submit Contract"}
           </Button>
         </DialogFooter>
       </DialogContent>

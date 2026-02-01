@@ -63,6 +63,8 @@ export function UploadContractDialog({
   // Editable contract data
   const [editedData, setEditedData] = useState({});
   const [originalData, setOriginalData] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingData, setPendingData] = useState({});
 
   const handleDownloadTemplate = () => {
     const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/contracts/${contract.contract.id}/custom-template`;
@@ -139,29 +141,45 @@ export function UploadContractDialog({
   };
 
   const handleChange = (field, value) => {
-    setEditedData((prev) => ({ ...prev, [field]: value }));
+    setPendingData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSignatoryChange = (index, field, value) => {
-    const newSignatories = [...editedData.signatories];
-    newSignatories[index][field] = value;
-    setEditedData((prev) => ({ ...prev, signatories: newSignatories }));
+    const newSignatories = [...pendingData.signatories];
+    newSignatories[index] = { ...newSignatories[index], [field]: value };
+    setPendingData((prev) => ({ ...prev, signatories: newSignatories }));
   };
 
   const addSignatory = () => {
-    setEditedData((prev) => ({
+    setPendingData((prev) => ({
       ...prev,
       signatories: [...prev.signatories, { name: "", position: "" }],
     }));
   };
 
   const removeSignatory = (index) => {
-    if (editedData.signatories.length > 1) {
-      const newSignatories = editedData.signatories.filter(
-        (_, i) => i !== index,
-      );
-      setEditedData((prev) => ({ ...prev, signatories: newSignatories }));
+    if (pendingData.signatories.length > 1) {
+      setPendingData((prev) => ({
+        ...prev,
+        signatories: prev.signatories.filter((_, i) => i !== index),
+      }));
     }
+  };
+
+  const handleEditStart = () => {
+    setPendingData({ ...editedData });
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setPendingData({});
+    setIsEditing(false);
+  };
+
+  const handleEditSave = () => {
+    setEditedData(pendingData);
+    setPendingData({});
+    setIsEditing(false);
   };
 
   // Generate change log for admin notes
@@ -239,6 +257,8 @@ export function UploadContractDialog({
       setError("");
       setEditedData({});
       setOriginalData({});
+      setIsEditing(false);
+      setPendingData({});
     }
     onOpenChange(isOpen);
   };
@@ -277,13 +297,29 @@ export function UploadContractDialog({
               <div className="sticky top-0 bg-background pb-3 border-b z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Edit className="h-4 w-4" />
-                      Edit Contract Details
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Contract Details
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       Sales Person: {salesPersonName}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!isEditing ? (
+                      <Button type="button" variant="outline" size="sm" onClick={handleEditStart}>
+                        <Edit className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Button>
+                    ) : (
+                      <>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleEditCancel}>
+                          Cancel
+                        </Button>
+                        <Button type="button" size="sm" onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">
+                          Save
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -326,274 +362,245 @@ export function UploadContractDialog({
                 </div>
               )}
 
-              {/* Editable Fields */}
+              {/* Contract Details Fields */}
               <div className="space-y-4">
-                {/* Contract Type */}
-                <div>
-                  <Label htmlFor="contractType">Contract Type *</Label>
-                  <Select
-                    value={editedData.contractType}
-                    onValueChange={(value) =>
-                      handleChange("contractType", value)
-                    }
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select contract type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CONTRACT_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {(() => {
+                  const d = isEditing ? pendingData : editedData;
+                  return (
+                    <>
+                      {/* Contract Type */}
+                      <div>
+                        <Label>Contract Type *</Label>
+                        <Select
+                          value={d.contractType}
+                          onValueChange={(value) => handleChange("contractType", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select contract type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTRACT_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                {/* Client Information */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientName">Client Name *</Label>
-                    <Input
-                      id="clientName"
-                      value={editedData.clientName}
-                      onChange={(e) =>
-                        handleChange("clientName", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="companyName">Company Name *</Label>
-                    <Input
-                      id="companyName"
-                      value={editedData.companyName}
-                      onChange={(e) =>
-                        handleChange("companyName", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+                      {/* Client Information */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Client Name *</Label>
+                          <Input
+                            value={d.clientName || ""}
+                            onChange={(e) => handleChange("clientName", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Company Name *</Label>
+                          <Input
+                            value={d.companyName || ""}
+                            onChange={(e) => handleChange("companyName", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clientEmailContract">Client Email *</Label>
-                    <Input
-                      id="clientEmailContract"
-                      type="email"
-                      value={editedData.clientEmailContract}
-                      onChange={(e) =>
-                        handleChange("clientEmailContract", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="clientAddress">Client Address *</Label>
-                    <Input
-                      id="clientAddress"
-                      value={editedData.clientAddress}
-                      onChange={(e) =>
-                        handleChange("clientAddress", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Client Email *</Label>
+                          <Input
+                            type="email"
+                            value={d.clientEmailContract || ""}
+                            onChange={(e) => handleChange("clientEmailContract", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Client Address *</Label>
+                          <Input
+                            value={d.clientAddress || ""}
+                            onChange={(e) => handleChange("clientAddress", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
 
-                {/* Contract Duration */}
-                <div>
-                  <Label htmlFor="contractDuration">Contract Duration *</Label>
-                  <Input
-                    id="contractDuration"
-                    value={editedData.contractDuration}
-                    onChange={(e) =>
-                      handleChange("contractDuration", e.target.value)
-                    }
-                    placeholder="e.g., January 1, 2024 - December 31, 2024"
-                    className="mt-1"
-                  />
-                </div>
-
-                {/* Service Address (Lat/Long) */}
-                <div>
-                  <Label>Service Address (Coordinates) *</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-1">
-                    <Input
-                      type="number"
-                      step="any"
-                      value={editedData.serviceLatitude}
-                      onChange={(e) =>
-                        handleChange("serviceLatitude", e.target.value)
-                      }
-                      placeholder="Latitude"
-                    />
-                    <Input
-                      type="number"
-                      step="any"
-                      value={editedData.serviceLongitude}
-                      onChange={(e) =>
-                        handleChange("serviceLongitude", e.target.value)
-                      }
-                      placeholder="Longitude"
-                    />
-                  </div>
-                </div>
-
-                {/* Collection Schedule */}
-                <div>
-                  <Label htmlFor="collectionSchedule">
-                    Collection Schedule *
-                  </Label>
-                  <Select
-                    value={editedData.collectionSchedule}
-                    onValueChange={(value) =>
-                      handleChange("collectionSchedule", value)
-                    }
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select schedule" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COLLECTION_SCHEDULES.map((schedule) => (
-                        <SelectItem key={schedule.value} value={schedule.value}>
-                          {schedule.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {editedData.collectionSchedule === "other" && (
-                    <Input
-                      value={editedData.collectionScheduleOther}
-                      onChange={(e) =>
-                        handleChange("collectionScheduleOther", e.target.value)
-                      }
-                      placeholder="Specify schedule"
-                      className="mt-2"
-                    />
-                  )}
-                </div>
-
-                {/* Waste Allowance & Rate */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="wasteAllowance">Waste Allowance *</Label>
-                    <Input
-                      id="wasteAllowance"
-                      value={editedData.wasteAllowance}
-                      onChange={(e) =>
-                        handleChange("wasteAllowance", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ratePerKg">Rate per KG *</Label>
-                    <Input
-                      id="ratePerKg"
-                      value={editedData.ratePerKg}
-                      onChange={(e) =>
-                        handleChange("ratePerKg", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                {/* Signatories */}
-                <div>
-                  <Label>Signatories *</Label>
-                  <div className="space-y-2 mt-2">
-                    {(Array.isArray(editedData.signatories)
-                      ? editedData.signatories
-                      : []
-                    ).map((signatory, index) => (
-                      <div key={index} className="flex gap-2">
+                      {/* Contract Duration */}
+                      <div>
+                        <Label>Contract Duration *</Label>
                         <Input
-                          value={signatory.name}
-                          onChange={(e) =>
-                            handleSignatoryChange(index, "name", e.target.value)
-                          }
-                          placeholder="Name"
-                          className="flex-1"
+                          value={d.contractDuration || ""}
+                          onChange={(e) => handleChange("contractDuration", e.target.value)}
+                          placeholder="e.g., January 1, 2024 - December 31, 2024"
+                          disabled={!isEditing}
+                          className="mt-1"
                         />
-                        <Input
-                          value={signatory.position}
-                          onChange={(e) =>
-                            handleSignatoryChange(
-                              index,
-                              "position",
-                              e.target.value,
-                            )
-                          }
-                          placeholder="Position"
-                          className="flex-1"
-                        />
-                        {editedData.signatories.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeSignatory(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                      </div>
+
+                      {/* Service Address (Lat/Long) */}
+                      <div>
+                        <Label>Service Address (Coordinates) *</Label>
+                        <div className="grid grid-cols-2 gap-4 mt-1">
+                          <Input
+                            type="number"
+                            step="any"
+                            value={d.serviceLatitude || ""}
+                            onChange={(e) => handleChange("serviceLatitude", e.target.value)}
+                            placeholder="Latitude"
+                            disabled={!isEditing}
+                          />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={d.serviceLongitude || ""}
+                            onChange={(e) => handleChange("serviceLongitude", e.target.value)}
+                            placeholder="Longitude"
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Collection Schedule */}
+                      <div>
+                        <Label>Collection Schedule *</Label>
+                        <Select
+                          value={d.collectionSchedule}
+                          onValueChange={(value) => handleChange("collectionSchedule", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select schedule" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COLLECTION_SCHEDULES.map((schedule) => (
+                              <SelectItem key={schedule.value} value={schedule.value}>
+                                {schedule.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {d.collectionSchedule === "other" && (
+                          <Input
+                            value={d.collectionScheduleOther || ""}
+                            onChange={(e) => handleChange("collectionScheduleOther", e.target.value)}
+                            placeholder="Specify schedule"
+                            disabled={!isEditing}
+                            className="mt-2"
+                          />
                         )}
                       </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addSignatory}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Signatory
-                    </Button>
-                  </div>
-                </div>
 
-                {/* Special Clauses */}
-                <div>
-                  <Label htmlFor="specialClauses">Special Clauses *</Label>
-                  <Textarea
-                    id="specialClauses"
-                    value={editedData.specialClauses}
-                    onChange={(e) =>
-                      handleChange("specialClauses", e.target.value)
-                    }
-                    rows={3}
-                    className="mt-1"
-                  />
-                </div>
+                      {/* Waste Allowance & Rate */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Waste Allowance *</Label>
+                          <Input
+                            value={d.wasteAllowance || ""}
+                            onChange={(e) => handleChange("wasteAllowance", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Rate per KG *</Label>
+                          <Input
+                            value={d.ratePerKg || ""}
+                            onChange={(e) => handleChange("ratePerKg", e.target.value)}
+                            disabled={!isEditing}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
 
-                {/* Client Requests */}
-                <div>
-                  <Label htmlFor="clientRequests">Client Requests *</Label>
-                  <Textarea
-                    id="clientRequests"
-                    value={editedData.clientRequests}
-                    onChange={(e) =>
-                      handleChange("clientRequests", e.target.value)
-                    }
-                    rows={3}
-                    className="mt-1"
-                  />
-                </div>
+                      {/* Signatories */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Label>Signatories *</Label>
+                          {isEditing && (
+                            <Button type="button" variant="outline" size="sm" onClick={addSignatory}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Signatory
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-2 mt-2">
+                          {(Array.isArray(d.signatories) ? d.signatories : []).map((signatory, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                value={signatory.name}
+                                onChange={(e) => handleSignatoryChange(index, "name", e.target.value)}
+                                placeholder="Name"
+                                disabled={!isEditing}
+                                className="flex-1"
+                              />
+                              <Input
+                                value={signatory.position}
+                                onChange={(e) => handleSignatoryChange(index, "position", e.target.value)}
+                                placeholder="Position"
+                                disabled={!isEditing}
+                                className="flex-1"
+                              />
+                              {isEditing && d.signatories.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeSignatory(index)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* Request Notes from Sales */}
-                {editedData.requestNotes && (
-                  <div>
-                    <Label>Request Notes from Sales</Label>
-                    <div className="mt-1 p-3 bg-muted rounded-lg">
-                      <p className="text-sm whitespace-pre-wrap">
-                        {editedData.requestNotes}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                      {/* Special Clauses */}
+                      <div>
+                        <Label>Special Clauses *</Label>
+                        <Textarea
+                          value={d.specialClauses || ""}
+                          onChange={(e) => handleChange("specialClauses", e.target.value)}
+                          rows={3}
+                          disabled={!isEditing}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Client Requests */}
+                      <div>
+                        <Label>Client Requests *</Label>
+                        <Textarea
+                          value={d.clientRequests || ""}
+                          onChange={(e) => handleChange("clientRequests", e.target.value)}
+                          rows={3}
+                          disabled={!isEditing}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Request Notes from Sales (read-only display) */}
+                      {editedData.requestNotes && (
+                        <div>
+                          <Label>Request Notes from Sales</Label>
+                          <div className="mt-1 p-3 bg-muted rounded-lg">
+                            <p className="text-sm whitespace-pre-wrap">
+                              {editedData.requestNotes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
