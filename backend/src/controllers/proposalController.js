@@ -135,7 +135,7 @@ export const approveProposal = async (req, res, next) => {
     };
 
     // Admin-only check
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       throw new AppError("Only admins can approve proposals", 403);
     }
 
@@ -170,7 +170,7 @@ export const rejectProposal = async (req, res, next) => {
     };
 
     // Admin-only check
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       throw new AppError("Only admins can reject proposals", 403);
     }
 
@@ -269,7 +269,7 @@ export const retryProposalEmail = async (req, res, next) => {
     };
 
     // Admin-only check
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       throw new AppError("Only admins can retry email sends", 403);
     }
 
