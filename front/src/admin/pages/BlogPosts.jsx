@@ -11,6 +11,7 @@ import {
   updatePost,
   deletePost,
   fetchBlogStats,
+  uploadBlogCoverImage,
 } from "../../services/blogService";
 import {
   Card,
@@ -112,6 +113,11 @@ const BlogPosts = () => {
     author: "WastePH Team",
   });
 
+  // Cover image upload state
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
   // Load posts and stats on mount
   useEffect(() => {
     loadPosts();
@@ -154,15 +160,56 @@ const BlogPosts = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const handleCoverImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, and WebP images are allowed");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    setCoverImageFile(file);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setCoverImagePreview(previewUrl);
+  };
+
   const handleCreatePost = async () => {
     setIsSubmitting(true);
     try {
+      // Create post without cover image first
       const postData = {
         ...formData,
+        coverImage: null, // Will be uploaded separately
         tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
       };
 
-      await createPost(postData);
+      const newPost = await createPost(postData);
+
+      // Upload cover image if selected
+      if (coverImageFile) {
+        setIsUploadingCover(true);
+        try {
+          await uploadBlogCoverImage(newPost.id, coverImageFile);
+        } catch (uploadError) {
+          console.error("Failed to upload cover image:", uploadError);
+          toast.error("Post created but cover image upload failed");
+        } finally {
+          setIsUploadingCover(false);
+        }
+      }
+
       toast.success("Blog post created successfully");
       setIsCreateDialogOpen(false);
       setFormData({
@@ -175,6 +222,8 @@ const BlogPosts = () => {
         coverImage: "",
         author: "WastePH Team",
       });
+      setCoverImageFile(null);
+      setCoverImagePreview(null);
       loadPosts();
       loadStats();
     } catch (error) {
@@ -211,9 +260,25 @@ const BlogPosts = () => {
       };
 
       await updatePost(selectedPost.id, postData);
+
+      // Upload new cover image if selected
+      if (coverImageFile) {
+        setIsUploadingCover(true);
+        try {
+          await uploadBlogCoverImage(selectedPost.id, coverImageFile);
+        } catch (uploadError) {
+          console.error("Failed to upload cover image:", uploadError);
+          toast.error("Post updated but cover image upload failed");
+        } finally {
+          setIsUploadingCover(false);
+        }
+      }
+
       toast.success("Blog post updated successfully");
       setIsEditDialogOpen(false);
       setSelectedPost(null);
+      setCoverImageFile(null);
+      setCoverImagePreview(null);
       loadPosts();
       loadStats();
     } catch (error) {
@@ -555,16 +620,25 @@ const BlogPosts = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Cover Image URL <span className="text-red-500">*</span>
+                Cover Image
               </label>
               <Input
-                placeholder="https://example.com/image.jpg"
-                value={formData.coverImage}
-                onChange={(e) =>
-                  setFormData({ ...formData, coverImage: e.target.value })
-                }
-                required
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleCoverImageChange}
               />
+              {coverImagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={coverImagePreview}
+                    alt="Cover preview"
+                    className="h-32 w-full rounded object-cover"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                JPEG, PNG, or WebP. Max 5MB.
+              </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

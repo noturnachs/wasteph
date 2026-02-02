@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { updateClientShowcase } from "../../../services/clientsShowcaseService";
+import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 
 export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client }) {
@@ -38,6 +39,10 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
 
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Logo upload state
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
 
   useEffect(() => {
     if (client) {
@@ -84,6 +89,27 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
     return Object.keys(errors).length === 0;
   };
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type (including SVG for logos)
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, WebP, and SVG images are allowed");
+      return;
+    }
+
+    // Validate file size (2MB for logos)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo size must be less than 2MB");
+      return;
+    }
+
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -95,14 +121,27 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
         achievements: formData.achievements,
       };
       delete submitData.achievementInput;
-      
+
       await updateClientShowcase(client.id, submitData);
+
+      // Upload new logo if selected
+      if (logoFile) {
+        try {
+          await api.uploadClientShowcaseLogo(client.id, logoFile);
+        } catch (uploadError) {
+          console.error("Failed to upload logo:", uploadError);
+          toast.error("Client showcase updated but logo upload failed");
+        }
+      }
+
+      setLogoFile(null);
+      setLogoPreview(null);
       onSuccess();
     } catch (error) {
       console.error("Error updating client showcase:", error);
       const errorMessage = error.message || "Failed to update client showcase";
       setFormErrors({ submit: errorMessage });
-      
+
       // Parse and display errors with proper line breaks
       const parts = errorMessage.split(': ');
       if (parts.length > 1 && parts[1].includes(' • ')) {
@@ -148,8 +187,17 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
     }));
   };
 
+  const handleOpenChange = (open) => {
+    if (!open) {
+      setFormErrors({});
+      setLogoFile(null);
+      setLogoPreview(null);
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[95vh] max-w-4xl overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Edit Client Showcase</DialogTitle>
@@ -179,14 +227,25 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="logo">Logo URL</Label>
+                <Label htmlFor="logo">Logo</Label>
                 <Input
                   id="logo"
-                  value={formData.logo}
-                  onChange={(e) => handleChange("logo", e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  type="url"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
+                  onChange={handleLogoChange}
                 />
+                {logoPreview && (
+                  <div className="mt-2">
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="h-16 w-auto rounded object-contain"
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  JPEG, PNG, WebP, or SVG. Max 2MB. Leave empty to keep current logo.
+                </p>
               </div>
             </div>
 

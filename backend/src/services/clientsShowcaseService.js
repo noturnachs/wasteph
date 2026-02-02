@@ -1,6 +1,7 @@
 import { db } from "../db/index.js";
 import { clientsShowcaseTable } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
+import { deleteObject, getPresignedUrl } from "./s3Service.js";
 
 /**
  * Clients Showcase Service
@@ -8,6 +9,21 @@ import { eq, desc } from "drizzle-orm";
  */
 
 class ClientsShowcaseService {
+  /**
+   * Add presigned URLs to client showcase logo
+   */
+  async addPresignedUrls(client) {
+    if (client.logo) {
+      try {
+        client.logoUrl = await getPresignedUrl(client.logo, 3600); // 1 hour expiry
+      } catch (error) {
+        console.warn(`Failed to generate presigned URL for logo: ${client.logo}`, error);
+        client.logoUrl = null;
+      }
+    }
+    return client;
+  }
+
   /**
    * Get all active client showcases (public)
    */
@@ -18,7 +34,8 @@ class ClientsShowcaseService {
       .where(eq(clientsShowcaseTable.isActive, true))
       .orderBy(desc(clientsShowcaseTable.createdAt));
 
-    return clients;
+    // Add presigned URLs for logos
+    return await Promise.all(clients.map(c => this.addPresignedUrls(c)));
   }
 
   /**
@@ -30,7 +47,8 @@ class ClientsShowcaseService {
       .from(clientsShowcaseTable)
       .orderBy(desc(clientsShowcaseTable.createdAt));
 
-    return clients;
+    // Add presigned URLs for logos
+    return await Promise.all(clients.map(c => this.addPresignedUrls(c)));
   }
 
   /**
@@ -43,7 +61,10 @@ class ClientsShowcaseService {
       .where(eq(clientsShowcaseTable.id, id))
       .limit(1);
 
-    return client || null;
+    if (!client) return null;
+
+    // Add presigned URL for logo
+    return await this.addPresignedUrls(client);
   }
 
   /**
@@ -135,7 +156,7 @@ class ClientsShowcaseService {
    */
   async toggleClientsShowcaseStatus(id) {
     const client = await this.getClientsShowcaseById(id);
-    
+
     if (!client) {
       throw new Error("Client showcase not found");
     }
@@ -147,6 +168,43 @@ class ClientsShowcaseService {
         updatedAt: new Date(),
       })
       .where(eq(clientsShowcaseTable.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  /**
+   * Update logo for client showcase
+   */
+  async updateLogo(clientShowcaseId, logoUrl, logoName) {
+    // Get existing client showcase to check for old logo
+    const [existingClient] = await db
+      .select()
+      .from(clientsShowcaseTable)
+      .where(eq(clientsShowcaseTable.id, clientShowcaseId))
+      .limit(1);
+
+    if (!existingClient) {
+      return null;
+    }
+
+    // Delete old logo from S3 if exists
+    if (existingClient.logo) {
+      try {
+        await deleteObject(existingClient.logo);
+      } catch (error) {
+        console.warn("Failed to delete old client showcase logo from S3:", error);
+      }
+    }
+
+    // Update with new S3 key
+    const [updated] = await db
+      .update(clientsShowcaseTable)
+      .set({
+        logo: logoUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(clientsShowcaseTable.id, clientShowcaseId))
       .returning();
 
     return updated;

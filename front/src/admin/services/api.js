@@ -11,10 +11,15 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
 
+    // Don't set Content-Type if headers is explicitly empty (for multipart/form-data)
+    const defaultHeaders = options.headers !== undefined && Object.keys(options.headers).length === 0
+      ? {} // Let browser set Content-Type for multipart uploads
+      : { "Content-Type": "application/json" };
+
     const config = {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...defaultHeaders,
         ...options.headers,
       },
       credentials: "include", // Important for cookies!
@@ -802,6 +807,45 @@ class ApiClient {
 
   async getClientTimeline(clientId) {
     return this.request(`/client-notes/client/${clientId}/timeline`);
+  }
+
+  // Blog cover image upload
+  async uploadBlogCoverImage(postId, file) {
+    const formData = new FormData();
+    formData.append("coverImage", file);
+
+    return this.request(`/blog/admin/${postId}/upload-cover`, {
+      method: "POST",
+      headers: {}, // Let browser set Content-Type for multipart
+      body: formData,
+      credentials: "include",
+    });
+  }
+
+  // Showcase image upload
+  async uploadShowcaseImage(showcaseId, file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    return this.request(`/showcases/${showcaseId}/upload-image`, {
+      method: "POST",
+      headers: {}, // Let browser set Content-Type for multipart
+      body: formData,
+      credentials: "include",
+    });
+  }
+
+  // Client showcase logo upload
+  async uploadClientShowcaseLogo(clientShowcaseId, file) {
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    return this.request(`/clients-showcase/${clientShowcaseId}/upload-logo`, {
+      method: "POST",
+      headers: {}, // Let browser set Content-Type for multipart
+      body: formData,
+      credentials: "include",
+    });
   }
 }
 

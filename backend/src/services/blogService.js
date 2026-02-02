@@ -1,6 +1,7 @@
 import { db } from "../db/index.js";
 import { blogPostTable } from "../db/schema.js";
 import { eq, desc, and, or, like, sql } from "drizzle-orm";
+import { deleteObject } from "./s3Service.js";
 
 /**
  * Generate a URL-friendly slug from title
@@ -233,4 +234,41 @@ export async function getBlogStats() {
     .from(blogPostTable);
 
   return stats;
+}
+
+/**
+ * Update cover image for a blog post
+ */
+export async function updateCoverImage(postId, coverImageUrl, coverImageName) {
+  // Get existing post to check for old cover image
+  const [existingPost] = await db
+    .select()
+    .from(blogPostTable)
+    .where(eq(blogPostTable.id, postId))
+    .limit(1);
+
+  if (!existingPost) {
+    return null;
+  }
+
+  // Delete old cover image from S3 if exists
+  if (existingPost.coverImage) {
+    try {
+      await deleteObject(existingPost.coverImage);
+    } catch (error) {
+      console.warn("Failed to delete old cover image from S3:", error);
+    }
+  }
+
+  // Update with new S3 key
+  const [updated] = await db
+    .update(blogPostTable)
+    .set({
+      coverImage: coverImageUrl,
+      updatedAt: new Date(),
+    })
+    .where(eq(blogPostTable.id, postId))
+    .returning();
+
+  return updated;
 }

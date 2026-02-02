@@ -228,7 +228,7 @@ const ClientsShowcase = () => {
                       }`}
                     >
                       {/* Logo Header */}
-                      {client.logo && !imageError ? (
+                      {client.logoUrl && !imageError ? (
                         <div className="relative h-32 w-full overflow-hidden bg-white">
                           {/* Loading Skeleton */}
                           {!imageLoaded && (
@@ -236,9 +236,9 @@ const ClientsShowcase = () => {
                               <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-[#15803d]" />
                             </div>
                           )}
-                          
+
                           <img
-                            src={client.logo}
+                            src={client.logoUrl}
                             alt={client.company}
                             loading="lazy"
                             decoding="async"

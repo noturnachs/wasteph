@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { createClientShowcase } from "../../../services/clientsShowcaseService";
+import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 
 export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
@@ -39,14 +40,16 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Logo upload state
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+
   const validateForm = () => {
     const errors = {};
     if (!formData.company?.trim()) {
       errors.company = "Company name is required";
     }
-    if (!formData.logo?.trim()) {
-      errors.logo = "Logo URL is required";
-    }
+    // Logo is now optional - will be uploaded separately
     if (!formData.industry?.trim()) {
       errors.industry = "Industry is required";
     }
@@ -66,6 +69,27 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
     return Object.keys(errors).length === 0;
   };
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type (including SVG for logos)
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, WebP, and SVG images are allowed");
+      return;
+    }
+
+    // Validate file size (2MB for logos)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo size must be less than 2MB");
+      return;
+    }
+
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -74,18 +98,30 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
     try {
       const submitData = {
         ...formData,
+        logo: null, // Will be uploaded separately
         achievements: formData.achievements,
       };
       delete submitData.achievementInput;
-      
-      await createClientShowcase(submitData);
+
+      const newClient = await createClientShowcase(submitData);
+
+      // Upload logo if selected
+      if (logoFile) {
+        try {
+          await api.uploadClientShowcaseLogo(newClient.id, logoFile);
+        } catch (uploadError) {
+          console.error("Failed to upload logo:", uploadError);
+          toast.error("Client showcase created but logo upload failed");
+        }
+      }
+
       resetForm();
       onSuccess();
     } catch (error) {
       console.error("Error creating client showcase:", error);
       const errorMessage = error.message || "Failed to create client showcase";
       setFormErrors({ submit: errorMessage });
-      
+
       // Parse and display errors with proper line breaks
       const parts = errorMessage.split(': ');
       if (parts.length > 1 && parts[1].includes(' • ')) {
@@ -128,6 +164,8 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
       achievementInput: "",
     });
     setFormErrors({});
+    setLogoFile(null);
+    setLogoPreview(null);
   };
 
   const handleOpenChange = (open) => {
@@ -192,20 +230,25 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="logo">
-                  Logo URL <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="logo">Logo</Label>
                 <Input
                   id="logo"
-                  value={formData.logo}
-                  onChange={(e) => handleChange("logo", e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  type="url"
-                  className={formErrors.logo ? "border-destructive" : ""}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
+                  onChange={handleLogoChange}
                 />
-                {formErrors.logo && (
-                  <p className="text-sm text-destructive">{formErrors.logo}</p>
+                {logoPreview && (
+                  <div className="mt-2">
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="h-16 w-auto rounded object-contain"
+                    />
+                  </div>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  JPEG, PNG, WebP, or SVG. Max 2MB.
+                </p>
               </div>
             </div>
 

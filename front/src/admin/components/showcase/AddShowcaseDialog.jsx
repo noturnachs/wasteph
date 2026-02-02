@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { createShowcase } from "../../../services/showcaseService";
+import { api } from "../../services/api";
+import { toast } from "../../utils/toast";
 import { RichTextEditor } from "./RichTextEditor";
 
 export function AddShowcaseDialog({ isOpen, onClose, onSuccess }) {
@@ -27,6 +29,10 @@ export function AddShowcaseDialog({ isOpen, onClose, onSuccess }) {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Image upload state
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   const validateForm = () => {
     const errors = {};
     if (!formData.title?.trim()) {
@@ -39,13 +45,47 @@ export function AddShowcaseDialog({ isOpen, onClose, onSuccess }) {
     return Object.keys(errors).length === 0;
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG, PNG, and WebP images are allowed");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
     try {
-      await createShowcase(formData);
+      // Create showcase without image first
+      const showcaseData = { ...formData, image: null };
+      const newShowcase = await createShowcase(showcaseData);
+
+      // Upload image if selected
+      if (imageFile) {
+        try {
+          await api.uploadShowcaseImage(newShowcase.id, imageFile);
+        } catch (uploadError) {
+          console.error("Failed to upload image:", uploadError);
+          toast.error("Showcase created but image upload failed");
+        }
+      }
+
       resetForm();
       onSuccess();
     } catch (error) {
@@ -66,6 +106,8 @@ export function AddShowcaseDialog({ isOpen, onClose, onSuccess }) {
       displayOrder: 0,
     });
     setFormErrors({});
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   const handleOpenChange = (open) => {
@@ -150,18 +192,26 @@ export function AddShowcaseDialog({ isOpen, onClose, onSuccess }) {
               </p>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="image">Image</Label>
               <Input
                 id="image"
-                value={formData.image}
-                onChange={(e) => handleChange("image", e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                type="url"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleImageChange}
               />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-32 w-full rounded object-cover"
+                  />
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
-                Enter a direct URL to the image
+                JPEG, PNG, or WebP. Max 5MB.
               </p>
             </div>
 

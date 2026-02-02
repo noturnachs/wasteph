@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -81,4 +82,23 @@ export async function getPresignedUrl(key, expiresIn = 900) {
     }),
     { expiresIn }
   );
+}
+
+/**
+ * Delete a file from S3
+ * @param {string} key - S3 object key
+ * @returns {Promise<void>}
+ */
+export async function deleteObject(key) {
+  console.log(`[S3] DELETE → key: ${key} | bucket: ${BUCKET}`);
+  const start = Date.now();
+
+  await s3Client.send(
+    new DeleteObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    })
+  );
+
+  console.log(`[S3] DELETE ✓ → key: ${key} | took: ${Date.now() - start}ms`);
 }

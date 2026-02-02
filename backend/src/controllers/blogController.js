@@ -172,7 +172,7 @@ export async function createPost(req, res) {
     if (!postData.excerpt || postData.excerpt.trim() === "") missingFields.push("excerpt");
     if (!postData.content || postData.content.trim() === "") missingFields.push("content");
     if (!postData.category || postData.category.trim() === "") missingFields.push("category");
-    if (!postData.coverImage || postData.coverImage.trim() === "") missingFields.push("coverImage");
+    // coverImage is now optional - will be uploaded separately
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -180,7 +180,7 @@ export async function createPost(req, res) {
         message: `Missing or empty required fields: ${missingFields.join(", ")}`,
         errors: missingFields.map(field => ({
           field,
-          message: `${field === "coverImage" ? "Cover Image URL" : field.charAt(0).toUpperCase() + field.slice(1)} is required and cannot be empty`
+          message: `${field.charAt(0).toUpperCase() + field.slice(1)} is required and cannot be empty`
         }))
       });
     }
@@ -280,6 +280,48 @@ export async function getBlogStats(req, res) {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch blog statistics",
+    });
+  }
+}
+
+/**
+ * Upload cover image for a blog post (admin)
+ * POST /api/blog/admin/:id/upload-cover
+ */
+export async function uploadCoverImage(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a cover image",
+      });
+    }
+
+    const post = await blogService.updateCoverImage(
+      id,
+      req.body.coverImage, // S3 key from middleware
+      req.body.coverImageName
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog post not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: post,
+      message: "Cover image uploaded successfully",
+    });
+  } catch (error) {
+    console.error("Error uploading cover image:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload cover image",
     });
   }
 }

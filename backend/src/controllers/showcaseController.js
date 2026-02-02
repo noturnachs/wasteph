@@ -233,3 +233,42 @@ export const updateDisplayOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Upload image for showcase
+ * Route: POST /api/showcases/:id/upload-image
+ * Access: Protected (super_admin, social_media)
+ */
+export const uploadImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload an image",
+      });
+    }
+
+    const showcase = await showcaseService.updateImage(
+      id,
+      req.body.image, // S3 key from middleware
+      req.body.imageName
+    );
+
+    if (!showcase) {
+      return res.status(404).json({
+        success: false,
+        message: "Showcase not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: showcase,
+      message: "Image uploaded successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

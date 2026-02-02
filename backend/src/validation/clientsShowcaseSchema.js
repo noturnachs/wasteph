@@ -6,14 +6,6 @@ import { sanitizeString, sanitizeArray } from "../utils/sanitize.js";
  * Uses Zod for runtime type checking and validation with sanitization
  */
 
-// URL validation helper
-const urlSchema = z
-  .string()
-  .url("Invalid URL format")
-  .max(2000, "URL must be less than 2000 characters")
-  .optional()
-  .or(z.literal(""));
-
 // Create Client Showcase Schema
 export const createClientShowcaseSchema = z.object({
   // Required fields
@@ -68,13 +60,13 @@ export const createClientShowcaseSchema = z.object({
     .transform((val) => sanitizeString(val)),
 
   logo: z
-    .string({
-      required_error: "Logo URL is required",
-      invalid_type_error: "Logo URL must be a string",
-    })
+    .string()
     .url("Invalid URL format")
     .max(2000, "Logo URL must be less than 2000 characters")
-    .transform((val) => sanitizeString(val)),
+    .transform((val) => sanitizeString(val))
+    .optional()
+    .or(z.literal(""))
+    .nullable(),
 
   location: z
     .string({
@@ -217,7 +209,14 @@ export const updateClientShowcaseSchema = z.object({
     .transform((val) => sanitizeString(val))
     .optional(),
 
-  logo: urlSchema,
+  logo: z
+    .string()
+    .url("Invalid URL format")
+    .max(2000, "Logo URL must be less than 2000 characters")
+    .transform((val) => sanitizeString(val))
+    .optional()
+    .or(z.literal(""))
+    .nullable(),
 
   location: z
     .string()

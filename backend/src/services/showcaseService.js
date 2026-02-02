@@ -1,6 +1,7 @@
 import { db } from "../db/index.js";
 import { showcaseTable } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
+import { deleteObject } from "./s3Service.js";
 
 /**
  * Showcase Service
@@ -144,6 +145,43 @@ class ShowcaseService {
         updatedAt: new Date(),
       })
       .where(eq(showcaseTable.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  /**
+   * Update image for showcase
+   */
+  async updateImage(showcaseId, imageUrl, imageName) {
+    // Get existing showcase to check for old image
+    const [existingShowcase] = await db
+      .select()
+      .from(showcaseTable)
+      .where(eq(showcaseTable.id, showcaseId))
+      .limit(1);
+
+    if (!existingShowcase) {
+      return null;
+    }
+
+    // Delete old image from S3 if exists
+    if (existingShowcase.image) {
+      try {
+        await deleteObject(existingShowcase.image);
+      } catch (error) {
+        console.warn("Failed to delete old showcase image from S3:", error);
+      }
+    }
+
+    // Update with new S3 key
+    const [updated] = await db
+      .update(showcaseTable)
+      .set({
+        image: imageUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(showcaseTable.id, showcaseId))
       .returning();
 
     return updated;

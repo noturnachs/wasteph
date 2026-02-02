@@ -73,9 +73,9 @@ export async function fetchAllPosts(filters = {}) {
   if (filters.status) params.append("status", filters.status);
   if (filters.category) params.append("category", filters.category);
   if (filters.search) params.append("search", filters.search);
-  
+
   const cacheKey = `fetchAllPosts-${params.toString()}`;
-  
+
   // Check if there's already a pending request
   if (pendingRequests.has(cacheKey)) {
     // console.log('🔄 Deduplicating blog request - returning existing promise');
@@ -113,7 +113,7 @@ export async function fetchAllPosts(filters = {}) {
 
   // Store the pending request
   pendingRequests.set(cacheKey, requestPromise);
-  
+
   return requestPromise;
 }
 
@@ -231,7 +231,7 @@ export async function deletePost(id) {
  */
 export async function fetchBlogStats() {
   const cacheKey = 'fetchBlogStats';
-  
+
   // Check if there's already a pending request
   if (pendingRequests.has(cacheKey)) {
     // console.log('🔄 Deduplicating blog stats request - returning existing promise');
@@ -266,6 +266,36 @@ export async function fetchBlogStats() {
 
   // Store the pending request
   pendingRequests.set(cacheKey, requestPromise);
-  
+
   return requestPromise;
+}
+
+/**
+ * Upload cover image for a blog post (admin)
+ */
+export async function uploadBlogCoverImage(postId, file) {
+  try {
+    const formData = new FormData();
+    formData.append("coverImage", file);
+
+    const response = await fetch(
+      `${API_BASE_URL}/blog/admin/${postId}/upload-cover`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to upload cover image");
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error uploading cover image:", error);
+    throw error;
+  }
 }

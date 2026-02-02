@@ -203,3 +203,42 @@ export const toggleClientsShowcaseStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Upload logo for client showcase
+ * Route: POST /api/clients-showcase/:id/upload-logo
+ * Access: Protected (super_admin, social_media)
+ */
+export const uploadLogo = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a logo",
+      });
+    }
+
+    const clientShowcase = await clientsShowcaseService.updateLogo(
+      id,
+      req.body.logo, // S3 key from middleware
+      req.body.logoName
+    );
+
+    if (!clientShowcase) {
+      return res.status(404).json({
+        success: false,
+        message: "Client showcase not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: clientShowcase,
+      message: "Logo uploaded successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
