@@ -109,7 +109,7 @@ class CalendarEventService {
     // Date range filter
     if (startDate) {
       conditions.push(
-        gte(calendarEventTable.scheduledDate, new Date(startDate)),
+        gte(calendarEventTable.scheduledDate, new Date(startDate))
       );
     }
     if (endDate) {
@@ -164,14 +164,8 @@ class CalendarEventService {
       })
       .from(calendarEventTable)
       .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id))
-      .leftJoin(
-        inquiryTable,
-        eq(calendarEventTable.inquiryId, inquiryTable.id),
-      )
-      .leftJoin(
-        clientTable,
-        eq(calendarEventTable.clientId, clientTable.id),
-      );
+      .leftJoin(inquiryTable, eq(calendarEventTable.inquiryId, inquiryTable.id))
+      .leftJoin(clientTable, eq(calendarEventTable.clientId, clientTable.id));
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
@@ -193,11 +187,12 @@ class CalendarEventService {
       .limit(limit)
       .offset(offset);
 
-    // Transform flattened results to nested structure
+    // Transform flattened results with both nested and flat structures
     const events = results.map((event) => ({
       id: event.id,
       userId: event.userId,
       inquiryId: event.inquiryId,
+      clientId: event.clientId,
       title: event.title,
       description: event.description,
       eventType: event.eventType,
@@ -209,6 +204,14 @@ class CalendarEventService {
       notes: event.notes,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      // Flattened fields for direct access
+      inquiryName: event.inquiryName,
+      inquiryCompany: event.inquiryCompany,
+      inquiryStatus: event.inquiryStatus,
+      clientCompanyName: event.clientCompanyName,
+      clientContactPerson: event.clientContactPerson,
+      clientStatus: event.clientStatus,
+      // Nested structures for backward compatibility
       user: event.userFirstName
         ? {
             id: event.userId,
@@ -222,6 +225,14 @@ class CalendarEventService {
             name: event.inquiryName,
             company: event.inquiryCompany,
             status: event.inquiryStatus,
+          }
+        : null,
+      client: event.clientId
+        ? {
+            id: event.clientId,
+            companyName: event.clientCompanyName,
+            contactPerson: event.clientContactPerson,
+            status: event.clientStatus,
           }
         : null,
     }));
@@ -246,6 +257,7 @@ class CalendarEventService {
         id: calendarEventTable.id,
         userId: calendarEventTable.userId,
         inquiryId: calendarEventTable.inquiryId,
+        clientId: calendarEventTable.clientId,
         title: calendarEventTable.title,
         description: calendarEventTable.description,
         eventType: calendarEventTable.eventType,
@@ -265,10 +277,15 @@ class CalendarEventService {
         inquiryName: inquiryTable.name,
         inquiryCompany: inquiryTable.company,
         inquiryStatus: inquiryTable.status,
+        // Flattened client info
+        clientCompanyName: clientTable.companyName,
+        clientContactPerson: clientTable.contactPerson,
+        clientStatus: clientTable.status,
       })
       .from(calendarEventTable)
       .leftJoin(userTable, eq(calendarEventTable.userId, userTable.id))
       .leftJoin(inquiryTable, eq(calendarEventTable.inquiryId, inquiryTable.id))
+      .leftJoin(clientTable, eq(calendarEventTable.clientId, clientTable.id))
       .where(eq(calendarEventTable.id, eventId))
       .limit(1);
 
@@ -276,11 +293,12 @@ class CalendarEventService {
       throw new AppError("Event not found", 404);
     }
 
-    // Transform to nested structure
+    // Transform to flattened structure (keep both nested and flat for compatibility)
     const event = {
       id: result.id,
       userId: result.userId,
       inquiryId: result.inquiryId,
+      clientId: result.clientId,
       title: result.title,
       description: result.description,
       eventType: result.eventType,
@@ -292,6 +310,14 @@ class CalendarEventService {
       notes: result.notes,
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
+      // Flattened fields for direct access
+      inquiryName: result.inquiryName,
+      inquiryCompany: result.inquiryCompany,
+      inquiryStatus: result.inquiryStatus,
+      clientCompanyName: result.clientCompanyName,
+      clientContactPerson: result.clientContactPerson,
+      clientStatus: result.clientStatus,
+      // Nested structures for backward compatibility
       user: result.userFirstName
         ? {
             id: result.userId,
@@ -305,6 +331,14 @@ class CalendarEventService {
             name: result.inquiryName,
             company: result.inquiryCompany,
             status: result.inquiryStatus,
+          }
+        : null,
+      client: result.clientId
+        ? {
+            id: result.clientId,
+            companyName: result.clientCompanyName,
+            contactPerson: result.clientContactPerson,
+            status: result.clientStatus,
           }
         : null,
     };
@@ -440,12 +474,12 @@ class CalendarEventService {
       status: "completed",
       completedAt: new Date(),
     };
-    
+
     // Update notes if provided
     if (notes !== null && notes !== undefined) {
       updateData.notes = notes;
     }
-    
+
     return this.updateEvent(eventId, updateData, userId, metadata);
   }
 }
