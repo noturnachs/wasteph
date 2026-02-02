@@ -26,7 +26,7 @@ import {
  * - sales: Access to sales pipeline only
  */
 
-// Sales Pipeline items (accessible by both roles)
+// Sales Pipeline items (accessible by all roles)
 // Order: Leads (pool) → Inquiries (claimed) → Clients
 const salesPipelineItems = [
   {
@@ -46,6 +46,16 @@ const salesPipelineItems = [
     url: "/admin/clients",
     icon: Users,
     description: "Contracted clients",
+  },
+];
+
+// Support items (accessible by all roles)
+const supportItems = [
+  {
+    title: "Tickets",
+    url: "/admin/tickets",
+    icon: Ticket,
+    description: "Client support tickets",
   },
 ];
 
@@ -77,6 +87,10 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
     {
       label: "Sales Pipeline",
       items: salesPipelineItems,
+    },
+    {
+      label: "Support",
+      items: supportItems,
     },
     {
       label: "Contracts",

@@ -48,15 +48,8 @@ const CRMApp = () => {
             <Route path="leads" element={<Leads />} />
             <Route path="clients" element={<Clients />} />
 
-            {/* Support - Admin only */}
-            <Route
-              path="tickets"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
-                  <Tickets />
-                </ProtectedRoute>
-              }
-            />
+            {/* Support - accessible by all roles */}
+            <Route path="tickets" element={<Tickets />} />
 
             {/* Tools - Master Sales only */}
             <Route path="proposal-templates" element={<ProposalTemplates />} />
