@@ -97,12 +97,7 @@ export const createClientColumns = ({ userRole, onView, onEdit, onDelete }) => [
     cell: ({ row }) => {
       const cs = row.original.contractStatus;
       if (cs === "hardbound_received") {
-        return (
-          <div className="flex flex-col gap-1">
-            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-xs">Signed</Badge>
-            <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700 text-xs">Hardbound Received</Badge>
-          </div>
-        );
+        return <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-700 text-xs">Hardbound Received</Badge>;
       }
       if (cs === "signed") {
         return <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-xs">Signed</Badge>;
