@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { userTable } from "../db/schema.js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, or, like, inArray, count, sql } from "drizzle-orm";
 import { generateIdFromEntropySize } from "lucia";
 
 const userSelect = {
@@ -17,23 +17,56 @@ const userSelect = {
 
 class UserService {
   async getAllUsers(filters = {}) {
+    const { includeInactive, role, search, page: rawPage = 1, limit: rawLimit = 10 } = filters;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
+    const offset = (page - 1) * limit;
+
     const conditions = [];
 
-    if (!filters.includeInactive) {
+    if (!includeInactive) {
       conditions.push(eq(userTable.isActive, true));
     }
 
-    if (filters.role) {
-      conditions.push(eq(userTable.role, filters.role));
+    if (role) {
+      const roles = role.split(",");
+      conditions.push(roles.length === 1 ? eq(userTable.role, roles[0]) : inArray(userTable.role, roles));
     }
 
-    const query = db.select(userSelect).from(userTable).orderBy(userTable.firstName);
-
-    if (conditions.length > 0) {
-      query.where(and(...conditions));
+    if (search) {
+      const searchTerm = `%${search}%`;
+      conditions.push(
+        or(
+          like(sql`${userTable.firstName} || ' ' || ${userTable.lastName}`, searchTerm),
+          like(userTable.email, searchTerm)
+        )
+      );
     }
 
-    return await query;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(userTable)
+      .where(whereClause);
+
+    const users = await db
+      .select(userSelect)
+      .from(userTable)
+      .where(whereClause)
+      .orderBy(userTable.firstName)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getUserById(userId) {

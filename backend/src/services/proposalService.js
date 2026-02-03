@@ -99,7 +99,9 @@ class ProposalService {
    * @returns {Promise<Object>} Proposals with pagination
    */
   async getAllProposals(options = {}, userId, userRole, isMasterSales) {
-    const { status, inquiryId, search, page = 1, limit = 10 } = options;
+    const { status, inquiryId, search, page: rawPage = 1, limit: rawLimit = 10 } = options;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
 
     // Select proposal data with joined inquiry details

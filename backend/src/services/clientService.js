@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { clientTable, contractsTable, activityLogTable } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, like, or, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -69,7 +69,42 @@ class ClientService {
    * Get all clients
    * @returns {Promise<Array>} Array of clients
    */
-  async getAllClients() {
+  async getAllClients(options = {}) {
+    const { status, search, page: rawPage = 1, limit: rawLimit = 10 } = options;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+
+    if (status) {
+      const statuses = status.split(",").map((s) => s.trim());
+      conditions.push(statuses.length === 1
+        ? eq(clientTable.status, statuses[0])
+        : clientTable.status.in(statuses));
+    }
+
+    if (search) {
+      conditions.push(
+        or(
+          like(clientTable.companyName, `%${search}%`),
+          like(clientTable.contactPerson, `%${search}%`),
+          like(clientTable.email, `%${search}%`),
+          like(clientTable.city, `%${search}%`),
+          like(clientTable.province, `%${search}%`),
+        )
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count total
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(clientTable)
+      .where(whereClause);
+
+    // Paginated data
     const rows = await db
       .select({
         client: clientTable,
@@ -77,12 +112,23 @@ class ClientService {
       })
       .from(clientTable)
       .leftJoin(contractsTable, eq(contractsTable.clientId, clientTable.id))
-      .orderBy(desc(clientTable.createdAt));
+      .where(whereClause)
+      .orderBy(desc(clientTable.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return rows.map((row) => ({
-      ...row.client,
-      contractStatus: row.contractStatus || null,
-    }));
+    return {
+      data: rows.map((row) => ({
+        ...row.client,
+        contractStatus: row.contractStatus || null,
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**

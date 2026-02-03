@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { DataTable } from "../components/DataTable";
 import { FacetedFilter } from "../components/FacetedFilter";
@@ -25,6 +32,14 @@ export default function Tickets() {
   const [tickets, setTickets] = useState([]);
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
 
   // Filters
   const [statusFilter, setStatusFilter] = useState([]);
@@ -44,27 +59,23 @@ export default function Tickets() {
     createdAt: true,
   });
 
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
+
   // Dialogs
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
 
+  // Fetch clients on mount
   useEffect(() => {
-    fetchTickets();
     fetchClients();
   }, []);
 
-  const fetchTickets = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.getTickets();
-      setTickets(response.data || []);
-    } catch (error) {
-      toast.error("Failed to fetch tickets");
-      console.error("Fetch tickets error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch tickets, reset to page 1 on filter change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchTickets(1);
+  }, [statusFilter, categoryFilter, priorityFilter, searchTerm]);
 
   const fetchClients = async () => {
     try {
@@ -75,36 +86,43 @@ export default function Tickets() {
     }
   };
 
-  // Client-side filtering
-  const filteredTickets = useMemo(() => {
-    let result = tickets;
+  const fetchTickets = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
+    setIsLoading(true);
+    try {
+      const filters = {
+        page,
+        limit,
+        ...(statusFilter.length > 0 && { status: statusFilter.join(",") }),
+        ...(categoryFilter.length > 0 && { category: categoryFilter.join(",") }),
+        ...(priorityFilter.length > 0 && { priority: priorityFilter.join(",") }),
+        ...(searchTerm && { search: searchTerm }),
+      };
 
-    if (statusFilter.length > 0) {
-      result = result.filter((t) => statusFilter.includes(t.status));
+      const response = await api.getTickets(filters);
+
+      if (currentFetchId !== fetchIdRef.current) return;
+
+      const data = response.data || [];
+      const meta = response.pagination || {
+        total: data.length,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      setTickets(data);
+      setPagination(meta);
+    } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
+      toast.error("Failed to fetch tickets");
+      console.error("Fetch tickets error:", error);
+    } finally {
+      if (currentFetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
-
-    if (categoryFilter.length > 0) {
-      result = result.filter((t) => categoryFilter.includes(t.category));
-    }
-
-    if (priorityFilter.length > 0) {
-      result = result.filter((t) => priorityFilter.includes(t.priority));
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.ticketNumber?.toLowerCase().includes(term) ||
-          t.subject?.toLowerCase().includes(term) ||
-          t.description?.toLowerCase().includes(term) ||
-          t.creatorFirstName?.toLowerCase().includes(term) ||
-          t.creatorLastName?.toLowerCase().includes(term)
-      );
-    }
-
-    return result;
-  }, [tickets, statusFilter, categoryFilter, priorityFilter, searchTerm]);
+  };
 
   const handleView = (ticket) => {
     setSelectedTicketId(ticket.id);
@@ -129,13 +147,9 @@ export default function Tickets() {
     return columnVisibility[column.accessorKey];
   });
 
-  // Get filter counts
+  // Stats from current page data
   const getStatusCount = (status) =>
     tickets.filter((t) => t.status === status).length;
-  const getCategoryCount = (category) =>
-    tickets.filter((t) => t.category === category).length;
-  const getPriorityCount = (priority) =>
-    tickets.filter((t) => t.priority === priority).length;
 
   return (
     <div className="space-y-6">
@@ -184,7 +198,9 @@ export default function Tickets() {
               ]}
               selectedValues={categoryFilter}
               onSelectionChange={setCategoryFilter}
-              getCount={getCategoryCount}
+              getCount={(category) =>
+                tickets.filter((t) => t.category === category).length
+              }
             />
 
             <FacetedFilter
@@ -197,7 +213,9 @@ export default function Tickets() {
               ]}
               selectedValues={priorityFilter}
               onSelectionChange={setPriorityFilter}
-              getCount={getPriorityCount}
+              getCount={(priority) =>
+                tickets.filter((t) => t.priority === priority).length
+              }
             />
 
             {(statusFilter.length > 0 ||
@@ -264,17 +282,100 @@ export default function Tickets() {
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-2xl font-bold">{tickets.length}</p>
+          <p className="text-2xl font-bold">{pagination.total}</p>
         </div>
       </div>
 
       {/* Table */}
       <DataTable
         columns={columns}
-        data={filteredTickets}
+        data={tickets}
         isLoading={isLoading}
         emptyMessage="No tickets found"
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchTickets(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTickets(1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">First page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTickets(Math.max(pagination.page - 1, 1))}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTickets(Math.min(pagination.page + 1, pagination.totalPages))}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTickets(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <ViewTicketDialog

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { DataTable } from "../components/DataTable";
 import { FacetedFilter } from "../components/FacetedFilter";
@@ -41,6 +48,17 @@ export default function Users() {
     createdAt: true,
   });
 
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
+
   // Dialogs
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -48,42 +66,44 @@ export default function Users() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  // Fetch users, reset to page 1 on filter change
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchUsers(1);
+  }, [roleFilter, searchTerm]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
     setIsLoading(true);
     try {
-      const response = await api.getAllUsers();
+      const filters = {
+        page,
+        limit,
+        ...(roleFilter.length > 0 && { role: roleFilter.join(",") }),
+        ...(searchTerm && { search: searchTerm }),
+      };
+
+      const response = await api.getAllUsers(filters);
+
+      if (currentFetchId !== fetchIdRef.current) return;
+
       setUsers(response.data || []);
+      setPagination(response.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      });
     } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
       toast.error("Failed to fetch users");
       console.error("Fetch users error:", error);
     } finally {
-      setIsLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   };
-
-  // Client-side filtering
-  const filteredUsers = useMemo(() => {
-    let result = users;
-
-    if (roleFilter.length > 0) {
-      result = result.filter((u) => roleFilter.includes(u.role));
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (u) =>
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(term) ||
-          u.email?.toLowerCase().includes(term)
-      );
-    }
-
-    return result;
-  }, [users, roleFilter, searchTerm]);
 
   const handleView = (user) => {
     setSelectedUser(user);
@@ -232,10 +252,93 @@ export default function Users() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={filteredUsers}
+        data={users}
         isLoading={isLoading}
         emptyMessage="No users found"
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchUsers(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchUsers(1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">First page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchUsers(Math.max(pagination.page - 1, 1))}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchUsers(Math.min(pagination.page + 1, pagination.totalPages))}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchUsers(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <ViewUserDialog

@@ -20,34 +20,7 @@ import {
   Send
 } from "lucide-react";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-
-const getStatusBadge = (status) => {
-  const statusConfig = {
-    pending: { label: "Pending Review", variant: "secondary" },
-    approved: { label: "Approved", variant: "success" },
-    disapproved: { label: "Disapproved", variant: "destructive" },
-    sent: { label: "Sent to Client", variant: "default" },
-    accepted: { label: "Client Accepted", variant: "success" },
-    rejected: { label: "Client Rejected", variant: "destructive" },
-    expired: { label: "Expired", variant: "destructive" },
-  };
-
-  const config = statusConfig[status] || { label: status, variant: "secondary" };
-
-  return (
-    <Badge
-      variant={config.variant}
-      className={
-        config.variant === "success"
-          ? "bg-green-600 hover:bg-green-700 text-white"
-          : ""
-      }
-    >
-      {config.label}
-    </Badge>
-  );
-};
+import { StatusBadge } from "../StatusBadge";
 
 export const createColumns = ({ users = [], onReview, onDelete, onRevise, onSendToClient, userRole }) => [
   {
@@ -135,7 +108,7 @@ export const createColumns = ({ users = [], onReview, onDelete, onRevise, onSend
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      return getStatusBadge(row.original.status);
+      return <StatusBadge status={row.original.status} />;
     },
   },
   {

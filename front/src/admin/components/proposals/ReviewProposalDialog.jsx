@@ -8,35 +8,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Eye } from "lucide-react";
 import { PDFViewer } from "../PDFViewer";
-
-const getStatusBadge = (status) => {
-  const statusConfig = {
-    pending: { label: "Pending Review", variant: "secondary" },
-    approved: { label: "Approved", variant: "success" },
-    disapproved: { label: "Disapproved", variant: "destructive" },
-    accepted: { label: "Client Accepted", variant: "success" },
-    rejected: { label: "Client Rejected", variant: "destructive" },
-    sent: { label: "Sent to Client", variant: "default" },
-  };
-
-  const config = statusConfig[status] || { label: status, variant: "secondary" };
-
-  return (
-    <Badge
-      variant={config.variant}
-      className={
-        config.variant === "success"
-          ? "bg-green-600 hover:bg-green-700 text-white"
-          : ""
-      }
-    >
-      {config.label}
-    </Badge>
-  );
-};
+import { StatusBadge } from "../StatusBadge";
 
 export function ReviewProposalDialog({
   open,
@@ -163,7 +137,7 @@ export function ReviewProposalDialog({
                 <Eye className="h-4 w-4 mr-2" />
                 View PDF
               </Button>
-              {getStatusBadge(proposal.status)}
+              <StatusBadge status={proposal.status} />
             </div>
           </div>
         </DialogHeader>

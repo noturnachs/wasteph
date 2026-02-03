@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Eye, Code, X, SlidersHorizontal, MoreHorizontal } from "lucide-react";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -12,6 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "../components/DataTable";
 import { SearchInput } from "../components/SearchInput";
@@ -40,10 +47,20 @@ const SERVICE_TYPE_OPTIONS = [
 
 export default function ProposalTemplates() {
   const [templates, setTemplates] = useState([]);
-  const [allTemplates, setAllTemplates] = useState([]); // For counting
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceTypeFilter, setServiceTypeFilter] = useState([]);
+
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useState({
@@ -58,61 +75,42 @@ export default function ProposalTemplates() {
   const [previewDialog, setPreviewDialog] = useState({ open: false, template: null });
   const [editorDialog, setEditorDialog] = useState({ open: false, template: null });
 
+  // Fetch templates, reset to page 1 on filter change
   useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  useEffect(() => {
-    fetchTemplates();
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchTemplates(1);
   }, [serviceTypeFilter, searchTerm]);
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await api.getProposalTemplates({ isActive: true });
-      if (response.success) {
-        // Handle paginated response structure
-        const templatesData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data?.data || response.data || []);
-        
-        // Debug: Check if htmlTemplate is included
-        if (templatesData.length > 0) {
-          console.log("Template data sample:", {
-            id: templatesData[0].id,
-            name: templatesData[0].name,
-            hasHtmlTemplate: !!templatesData[0].htmlTemplate,
-            htmlTemplateLength: templatesData[0].htmlTemplate?.length || 0,
-            allKeys: Object.keys(templatesData[0])
-          });
-        }
-        setAllTemplates(templatesData);
+      const filters = {
+        isActive: true,
+        page,
+        limit,
+        ...(serviceTypeFilter.length > 0 && { templateType: serviceTypeFilter.join(",") }),
+        ...(searchTerm && { search: searchTerm }),
+      };
 
-        // Apply filters
-        let filtered = templatesData;
+      const response = await api.getProposalTemplates(filters);
 
-        // Service type filter
-        if (serviceTypeFilter.length > 0) {
-          filtered = filtered.filter(t =>
-            serviceTypeFilter.includes(t.serviceType || "fixed_monthly")
-          );
-        }
+      if (currentFetchId !== fetchIdRef.current) return;
 
-        // Search filter
-        if (searchTerm) {
-          const search = searchTerm.toLowerCase();
-          filtered = filtered.filter(t =>
-            t.name.toLowerCase().includes(search) ||
-            (t.description && t.description.toLowerCase().includes(search))
-          );
-        }
-
-        setTemplates(filtered);
-      }
+      setTemplates(response.data || []);
+      setPagination(response.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      });
     } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
       toast.error("Failed to fetch proposal templates");
     } finally {
-      setLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -145,16 +143,11 @@ export default function ProposalTemplates() {
     }
   };
 
-  // Count function for service type filter
   const getServiceTypeCount = (value) => {
-    return allTemplates.filter(t =>
-      (t.serviceType || "fixed_monthly") === value
-    ).length;
+    return templates.filter(t => t.templateType === value).length;
   };
 
-  // Define table columns
-  const allColumns = useMemo(
-    () => [
+  const allColumns = [
       {
         accessorKey: "name",
         header: "Template Name",
@@ -240,9 +233,7 @@ export default function ProposalTemplates() {
           </DropdownMenu>
         ),
       },
-    ],
-    []
-  );
+  ];
 
   // Filter columns based on visibility
   const columns = allColumns.filter(column => {
@@ -346,6 +337,89 @@ export default function ProposalTemplates() {
         isLoading={loading}
         emptyMessage="No templates found. Create your first template to get started."
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchTemplates(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTemplates(1)}
+            disabled={pagination.page === 1 || loading}
+          >
+            <span className="sr-only">First page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTemplates(Math.max(pagination.page - 1, 1))}
+            disabled={pagination.page === 1 || loading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTemplates(Math.min(pagination.page + 1, pagination.totalPages))}
+            disabled={pagination.page >= pagination.totalPages || loading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchTemplates(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || loading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Preview Dialog */}
       <TemplatePreviewDialog

@@ -6,7 +6,7 @@ import {
   activityLogTable,
   userTable,
 } from "../db/schema.js";
-import { eq, desc, and, or, inArray } from "drizzle-orm";
+import { eq, desc, and, or, inArray, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import counterService from "./counterService.js";
 
@@ -71,7 +71,10 @@ class TicketService {
    * @returns {Promise<Array>} Tickets array
    */
   async getAllTickets(options = {}, userId, userRole, isMasterSales) {
-    const { clientId, status, category, priority, createdBy } = options;
+    const { clientId, status, category, priority, createdBy, search, page: rawPage = 1, limit: rawLimit = 10 } = options;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
+    const offset = (page - 1) * limit;
 
     // Build where conditions
     const conditions = [];
@@ -81,27 +84,55 @@ class TicketService {
     }
 
     if (status) {
-      conditions.push(eq(clientTicketsTable.status, status));
+      const statuses = status.split(",").map((s) => s.trim());
+      conditions.push(statuses.length === 1
+        ? eq(clientTicketsTable.status, statuses[0])
+        : inArray(clientTicketsTable.status, statuses));
     }
 
     if (category) {
-      conditions.push(eq(clientTicketsTable.category, category));
+      const categories = category.split(",").map((s) => s.trim());
+      conditions.push(categories.length === 1
+        ? eq(clientTicketsTable.category, categories[0])
+        : inArray(clientTicketsTable.category, categories));
     }
 
     if (priority) {
-      conditions.push(eq(clientTicketsTable.priority, priority));
+      const priorities = priority.split(",").map((s) => s.trim());
+      conditions.push(priorities.length === 1
+        ? eq(clientTicketsTable.priority, priorities[0])
+        : inArray(clientTicketsTable.priority, priorities));
+    }
+
+    if (search) {
+      conditions.push(
+        or(
+          like(clientTicketsTable.ticketNumber, `%${search}%`),
+          like(clientTicketsTable.subject, `%${search}%`),
+          like(clientTicketsTable.description, `%${search}%`),
+          like(userTable.firstName, `%${search}%`),
+          like(userTable.lastName, `%${search}%`),
+        )
+      );
     }
 
     // Permission filtering
     if (userRole === "sales" && !isMasterSales) {
-      // Regular sales can only see their own tickets
       conditions.push(eq(clientTicketsTable.createdBy, userId));
     } else if (createdBy) {
-      // Admin or master sales can filter by createdBy
       conditions.push(eq(clientTicketsTable.createdBy, createdBy));
     }
 
-    // Query tickets
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count total
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(clientTicketsTable)
+      .leftJoin(userTable, eq(clientTicketsTable.createdBy, userTable.id))
+      .where(whereClause);
+
+    // Paginated query
     const tickets = await db
       .select({
         id: clientTicketsTable.id,
@@ -118,17 +149,26 @@ class TicketService {
         resolutionNotes: clientTicketsTable.resolutionNotes,
         createdAt: clientTicketsTable.createdAt,
         updatedAt: clientTicketsTable.updatedAt,
-        // Join creator info
         creatorFirstName: userTable.firstName,
         creatorLastName: userTable.lastName,
         creatorEmail: userTable.email,
       })
       .from(clientTicketsTable)
       .leftJoin(userTable, eq(clientTicketsTable.createdBy, userTable.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(clientTicketsTable.createdAt));
+      .where(whereClause)
+      .orderBy(desc(clientTicketsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return tickets;
+    return {
+      data: tickets,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**

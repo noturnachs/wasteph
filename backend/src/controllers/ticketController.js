@@ -38,22 +38,21 @@ export const getAllTickets = async (req, res, next) => {
       category: req.query.category,
       priority: req.query.priority,
       createdBy: req.query.createdBy,
+      search: req.query.search,
+      page: req.query.page,
+      limit: req.query.limit,
     };
 
-    const userId = req.user.id;
-    const userRole = req.user.role;
-    const isMasterSales = req.user.isMasterSales;
-
-    const tickets = await ticketService.getAllTickets(
+    const result = await ticketService.getAllTickets(
       options,
-      userId,
-      userRole,
-      isMasterSales
+      req.user.id,
+      req.user.role,
+      req.user.isMasterSales
     );
 
     res.json({
       success: true,
-      data: tickets,
+      ...result,
     });
   } catch (error) {
     next(error);

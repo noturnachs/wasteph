@@ -12,15 +12,15 @@ import { Badge } from "@/components/ui/badge";
 
 const getStatusBadge = (status) => {
   const statusConfig = {
-    active: { label: "Active", className: "bg-green-600 hover:bg-green-700 text-white" },
-    inactive: { label: "Inactive", className: "bg-gray-200 hover:bg-gray-300 text-gray-700" },
-    suspended: { label: "Suspended", className: "bg-red-100 hover:bg-red-200 text-red-700" },
+    active: { label: "Active", className: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700" },
+    inactive: { label: "Inactive", className: "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600" },
+    suspended: { label: "Suspended", className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900 dark:text-red-300 dark:border-red-700" },
   };
 
   const config = statusConfig[status] || { label: status, className: "" };
 
   return (
-    <Badge variant="default" className={config.className}>
+    <Badge variant="outline" className={config.className}>
       {config.label}
     </Badge>
   );
@@ -97,15 +97,10 @@ export const createClientColumns = ({ userRole, onView, onEdit, onDelete }) => [
     cell: ({ row }) => {
       const cs = row.original.contractStatus;
       if (cs === "hardbound_received") {
-        return (
-          <div className="flex flex-col gap-1">
-            <Badge className="bg-green-600 text-white text-xs">Signed</Badge>
-            <Badge className="bg-emerald-700 text-white text-xs">Hardbound Received</Badge>
-          </div>
-        );
+        return <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-700 text-xs">Hardbound Received</Badge>;
       }
       if (cs === "signed") {
-        return <Badge className="bg-green-600 text-white text-xs">Signed</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-xs">Signed</Badge>;
       }
       return <span className="text-muted-foreground text-sm">—</span>;
     },

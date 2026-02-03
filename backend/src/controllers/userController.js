@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export const getAllUsers = async (req, res, next) => {
   try {
-    const { role, includeInactive } = req.query;
+    const { role, includeInactive, search, page, limit } = req.query;
     const filters = {};
 
     if (role) {
@@ -17,11 +17,18 @@ export const getAllUsers = async (req, res, next) => {
       filters.includeInactive = true;
     }
 
-    const users = await userService.getAllUsers(filters);
+    if (search) {
+      filters.search = search;
+    }
+
+    if (page) filters.page = page;
+    if (limit) filters.limit = limit;
+
+    const result = await userService.getAllUsers(filters);
 
     res.json({
       success: true,
-      data: users,
+      ...result,
     });
   } catch (error) {
     next(error);

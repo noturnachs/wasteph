@@ -52,8 +52,8 @@ export const getAllTemplates = async (req, res, next) => {
       isActive: isActive === "true" ? true : isActive === "false" ? false : undefined,
       templateType,
       search,
-      page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 100,
+      page,
+      limit,
     });
 
     res.status(200).json({

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { DataTable } from "../components/DataTable";
 import { FacetedFilter } from "../components/FacetedFilter";
@@ -27,6 +34,14 @@ export default function Clients() {
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState([]);
+
+  // Pagination
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
 
   // Filters
   const [statusFilter, setStatusFilter] = useState([]);
@@ -45,29 +60,25 @@ export default function Clients() {
     createdAt: true,
   });
 
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
+
   // Dialogs
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
 
+  // Fetch users on mount
   useEffect(() => {
-    fetchClients();
     fetchUsers();
   }, []);
 
-  const fetchClients = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.getClients();
-      setClients(response.data || []);
-    } catch (error) {
-      toast.error("Failed to fetch clients");
-      console.error("Fetch clients error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch clients, reset to page 1 on filter change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchClients(1);
+  }, [statusFilter, searchTerm]);
 
   const fetchUsers = async () => {
     try {
@@ -78,28 +89,41 @@ export default function Clients() {
     }
   };
 
-  // Client-side filtering
-  const filteredClients = useMemo(() => {
-    let result = clients;
+  const fetchClients = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
+    setIsLoading(true);
+    try {
+      const filters = {
+        page,
+        limit,
+        ...(statusFilter.length > 0 && { status: statusFilter.join(",") }),
+        ...(searchTerm && { search: searchTerm }),
+      };
 
-    if (statusFilter.length > 0) {
-      result = result.filter((c) => statusFilter.includes(c.status));
+      const response = await api.getClients(filters);
+
+      if (currentFetchId !== fetchIdRef.current) return;
+
+      const data = response.data || [];
+      const meta = response.pagination || {
+        total: data.length,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      setClients(data);
+      setPagination(meta);
+    } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
+      toast.error("Failed to fetch clients");
+      console.error("Fetch clients error:", error);
+    } finally {
+      if (currentFetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.companyName?.toLowerCase().includes(term) ||
-          c.contactPerson?.toLowerCase().includes(term) ||
-          c.email?.toLowerCase().includes(term) ||
-          c.city?.toLowerCase().includes(term) ||
-          c.province?.toLowerCase().includes(term)
-      );
-    }
-
-    return result;
-  }, [clients, statusFilter, searchTerm]);
+  };
 
   const handleView = (client) => {
     setSelectedClient(client);
@@ -233,10 +257,93 @@ export default function Clients() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={filteredClients}
+        data={clients}
         isLoading={isLoading}
         emptyMessage="No clients found"
       />
+
+      {/* Pagination */}
+      <div className="flex items-center justify-end gap-8 pt-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm whitespace-nowrap">Rows per page</span>
+          <Select
+            value={pagination.limit.toString()}
+            onValueChange={(value) => {
+              const newLimit = parseInt(value);
+              setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+              fetchClients(1, newLimit);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <span className="text-sm">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchClients(1)}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">First page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="11 17 6 12 11 7" />
+              <polyline points="18 17 13 12 18 7" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchClients(Math.max(pagination.page - 1, 1))}
+            disabled={pagination.page === 1 || isLoading}
+          >
+            <span className="sr-only">Previous page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchClients(Math.min(pagination.page + 1, pagination.totalPages))}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Next page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fetchClients(pagination.totalPages)}
+            disabled={pagination.page >= pagination.totalPages || isLoading}
+          >
+            <span className="sr-only">Last page</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 17 18 12 13 7" />
+              <polyline points="6 17 11 12 6 7" />
+            </svg>
+          </Button>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <ClientDetailDialog

@@ -219,8 +219,15 @@ class ApiClient {
   }
 
   // Client endpoints
-  async getClients() {
-    return this.request("/clients");
+  async getClients(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    const queryString = params.toString();
+    return this.request(`/clients${queryString ? `?${queryString}` : ""}`);
   }
 
   async createClient(data) {
@@ -251,13 +258,20 @@ class ApiClient {
   async getUsers(role = "sales") {
     const params = new URLSearchParams();
     if (role) params.append("role", role);
+    params.append("limit", "100");
 
-    const queryString = params.toString();
-    return this.request(`/users${queryString ? `?${queryString}` : ""}`);
+    return this.request(`/users?${params.toString()}`);
   }
 
-  async getAllUsers() {
-    return this.request("/users?includeInactive=true");
+  async getAllUsers(filters = {}) {
+    const params = new URLSearchParams();
+    params.append("includeInactive", "true");
+    if (filters.role) params.append("role", filters.role);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+
+    return this.request(`/users?${params.toString()}`);
   }
 
   async createUser(data) {
@@ -402,6 +416,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters.isActive !== undefined)
       params.append("isActive", filters.isActive);
+    if (filters.templateType) params.append("templateType", filters.templateType);
     if (filters.search) params.append("search", filters.search);
     if (filters.page) params.append("page", filters.page);
     if (filters.limit) params.append("limit", filters.limit);
@@ -731,6 +746,9 @@ class ApiClient {
     if (filters.category) params.append("category", filters.category);
     if (filters.priority) params.append("priority", filters.priority);
     if (filters.createdBy) params.append("createdBy", filters.createdBy);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
 
     const queryString = params.toString();
     return this.request(`/tickets${queryString ? `?${queryString}` : ""}`);

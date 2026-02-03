@@ -10,27 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { FileText, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { api } from "../../services/api";
-
-const getStatusBadge = (status) => {
-  const statusConfig = {
-    pending: { label: "PENDING", variant: "secondary", className: "bg-blue-600 text-white hover:bg-blue-700" },
-    approved: { label: "APPROVED", variant: "success", className: "bg-green-600 text-white hover:bg-green-700" },
-    disapproved: { label: "DISAPPROVED", variant: "destructive", className: "bg-red-600 text-white hover:bg-red-700" },
-    sent: { label: "SENT", variant: "default", className: "bg-blue-600 text-white hover:bg-blue-700" },
-  };
-
-  const config = statusConfig[status] || { label: status.toUpperCase(), variant: "secondary", className: "" };
-
-  return (
-    <Badge variant={config.variant} className={config.className}>
-      {config.label}
-    </Badge>
-  );
-};
+import { StatusBadge } from "../StatusBadge";
 
 export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm }) {
   const [adminNotes, setAdminNotes] = useState("");
@@ -165,7 +148,9 @@ export function ApproveProposalDialog({ open, onOpenChange, proposal, onConfirm 
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
                   Proposal Status
                 </p>
-                <div>{getStatusBadge(proposal.status)}</div>
+                <div>
+                  <StatusBadge status={proposal.status} />
+                </div>
               </div>
             </div>
           </div>

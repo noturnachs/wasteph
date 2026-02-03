@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -76,6 +76,9 @@ export default function Leads() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [claimSource, setClaimSource] = useState("");
 
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
+
   useEffect(() => {
     fetchAllLeads();
   }, []);
@@ -96,8 +99,9 @@ export default function Leads() {
   };
 
   const fetchLeads = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const params = {
         search: searchTerm || undefined,
         page,
@@ -111,12 +115,17 @@ export default function Leads() {
 
       const response = await api.getLeads(params);
 
+      if (currentFetchId !== fetchIdRef.current) return;
+
       setLeads(response.data || []);
       setPagination(response.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
     } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
       toast.error(error.message || "Failed to fetch leads");
     } finally {
-      setIsLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -422,13 +431,13 @@ export default function Leads() {
               <polyline points="18 17 13 12 18 7" />
             </svg>
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchLeads(pagination.page - 1)} disabled={pagination.page === 1 || isLoading}>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchLeads(Math.max(pagination.page - 1, 1))} disabled={pagination.page === 1 || isLoading}>
             <span className="sr-only">Previous page</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchLeads(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages || isLoading}>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchLeads(Math.min(pagination.page + 1, pagination.totalPages))} disabled={pagination.page >= pagination.totalPages || isLoading}>
             <span className="sr-only">Next page</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />

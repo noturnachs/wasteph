@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { proposalTemplateTable, activityLogTable, serviceTable } from "../db/schema.js";
-import { eq, desc, and, or, like, count } from "drizzle-orm";
+import { eq, desc, and, or, like, count, inArray } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import Handlebars from "handlebars";
 
@@ -56,7 +56,9 @@ class ProposalTemplateService {
    * @returns {Promise<Object>} Templates with pagination
    */
   async getAllTemplates(options = {}) {
-    const { isActive, search, page = 1, limit = 10 } = options;
+    const { isActive, templateType, search, page: rawPage = 1, limit: rawLimit = 10 } = options;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
 
     let query = db.select().from(proposalTemplateTable);
@@ -65,6 +67,14 @@ class ProposalTemplateService {
     // Active filter
     if (isActive !== undefined) {
       conditions.push(eq(proposalTemplateTable.isActive, isActive));
+    }
+
+    // Template type filter (comma-separated)
+    if (templateType) {
+      const types = templateType.split(",");
+      conditions.push(types.length === 1
+        ? eq(proposalTemplateTable.templateType, types[0])
+        : inArray(proposalTemplateTable.templateType, types));
     }
 
     // Search filter (name or description)

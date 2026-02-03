@@ -46,10 +46,11 @@ export const createTemplate = async (req, res, next) => {
  */
 export const getAllTemplates = async (req, res, next) => {
   try {
-    const { isActive, search, page, limit } = req.query;
+    const { isActive, templateType, search, page, limit } = req.query;
 
     const result = await proposalTemplateService.getAllTemplates({
       isActive: isActive === "true" ? true : isActive === "false" ? false : undefined,
+      templateType,
       search,
       page,
       limit,

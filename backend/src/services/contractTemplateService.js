@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { contractTemplatesTable, activityLogTable } from "../db/schema.js";
-import { eq, desc, and, or, like, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, like, count, inArray, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import Handlebars from "handlebars";
 
@@ -132,9 +132,11 @@ class ContractTemplateService {
       isActive,
       templateType,
       search,
-      page = 1,
-      limit = 100,
+      page: rawPage = 1,
+      limit: rawLimit = 10,
     } = options;
+    const page = Number(rawPage) || 1;
+    const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
 
     let query = db.select().from(contractTemplatesTable);
@@ -145,9 +147,12 @@ class ContractTemplateService {
       conditions.push(eq(contractTemplatesTable.isActive, isActive));
     }
 
-    // Template type filter
+    // Template type filter (comma-separated)
     if (templateType) {
-      conditions.push(eq(contractTemplatesTable.templateType, templateType));
+      const types = templateType.split(",");
+      conditions.push(types.length === 1
+        ? eq(contractTemplatesTable.templateType, types[0])
+        : inArray(contractTemplatesTable.templateType, types));
     }
 
     // Search filter (name or description)
@@ -176,13 +181,13 @@ class ContractTemplateService {
     const [{ value: total }] = await countQuery;
 
     // Get templates with pagination
-    const templates = await query
+    const data = await query
       .orderBy(desc(contractTemplatesTable.createdAt))
       .limit(limit)
       .offset(offset);
 
     return {
-      templates,
+      data,
       pagination: {
         total,
         page,

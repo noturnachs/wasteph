@@ -35,11 +35,12 @@ export const createClient = async (req, res, next) => {
  */
 export const getAllClients = async (req, res, next) => {
   try {
-    const clients = await clientService.getAllClients();
+    const { status, search, page, limit } = req.query;
+    const result = await clientService.getAllClients({ status, search, page, limit });
 
     res.json({
       success: true,
-      data: clients,
+      ...result,
     });
   } catch (error) {
     next(error);
