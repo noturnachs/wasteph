@@ -9,7 +9,7 @@ import {
   UserCheck,
   BookOpen,
   FileEdit,
-  ScrollText,
+  ClipboardList,
   Image,
   FileSignature,
   Calendar,
@@ -44,7 +44,7 @@ const salesPipelineItems = [
   {
     title: "Proposals",
     url: "/admin/proposals",
-    icon: ScrollText,
+    icon: ClipboardList,
     description: "Your proposal requests",
   },
   {
@@ -141,7 +141,7 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
           {
             title: "Proposals",
             url: "/admin/proposals",
-            icon: ScrollText,
+            icon: ClipboardList,
             description: "Review and approve proposals",
           },
           {
@@ -278,7 +278,7 @@ export const getNavigationByRole = (role, isMasterSales = false) => {
           {
             title: "Proposals",
             url: "/admin/proposals",
-            icon: ScrollText,
+            icon: ClipboardList,
             description: "Review and approve proposals",
           },
           {
