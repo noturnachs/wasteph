@@ -64,6 +64,46 @@ export const createTicketSchema = z.object({
     .transform((val) => sanitizeString(val)),
 });
 
+// Update Ticket Schema (subject, description, category, priority, clientId)
+export const updateTicketSchema = z.object({
+  clientId: z
+    .string()
+    .uuid("Invalid client ID format")
+    .optional(),
+
+  category: z.enum(ticketCategories, {
+    invalid_type_error: "Invalid ticket category",
+  }).optional(),
+
+  priority: z
+    .enum(ticketPriorities, {
+      invalid_type_error: "Invalid ticket priority",
+    })
+    .optional(),
+
+  subject: z
+    .string({
+      invalid_type_error: "Subject must be a string",
+    })
+    .trim()
+    .min(3, "Subject must be at least 3 characters")
+    .max(200, "Subject must be less than 200 characters")
+    .transform((val) => sanitizeString(val))
+    .optional(),
+
+  description: z
+    .string({
+      invalid_type_error: "Description must be a string",
+    })
+    .trim()
+    .min(10, "Description must be at least 10 characters")
+    .max(5000, "Description must be less than 5000 characters")
+    .transform((val) => sanitizeString(val))
+    .optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: "At least one field must be provided for update",
+});
+
 // Update Ticket Status Schema
 export const updateTicketStatusSchema = z.object({
   status: z.enum(ticketStatuses, {

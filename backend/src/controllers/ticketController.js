@@ -88,6 +88,41 @@ export const getTicketById = async (req, res, next) => {
 };
 
 /**
+ * Controller: Update ticket
+ * Route: PATCH /api/tickets/:id
+ * Access: Protected (sales own tickets, admin any)
+ */
+export const updateTicket = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const isMasterSales = req.user.isMasterSales;
+
+    const ticket = await ticketService.updateTicket(
+      id,
+      updateData,
+      userId,
+      userRole,
+      isMasterSales,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Ticket updated successfully",
+      data: ticket,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Controller: Update ticket status
  * Route: PATCH /api/tickets/:id/status
  * Access: Protected (admin only)
@@ -189,6 +224,64 @@ export const addTicketAttachment = async (req, res, next) => {
       success: true,
       message: "Attachment uploaded successfully",
       data: attachment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller: Delete ticket attachment
+ * Route: DELETE /api/tickets/:id/attachments/:attachmentId
+ * Access: Protected (sales own tickets, admin any)
+ */
+export const deleteTicketAttachment = async (req, res, next) => {
+  try {
+    const { id: ticketId, attachmentId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const isMasterSales = req.user.isMasterSales;
+
+    await ticketService.deleteAttachment(
+      ticketId,
+      attachmentId,
+      userId,
+      userRole,
+      isMasterSales
+    );
+
+    res.json({
+      success: true,
+      message: "Attachment deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller: Get attachment view URL (presigned S3 URL)
+ * Route: GET /api/tickets/:id/attachments/:attachmentId/view
+ * Access: Protected (sales, master_sales, admin)
+ */
+export const getTicketAttachmentViewUrl = async (req, res, next) => {
+  try {
+    const { id: ticketId, attachmentId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const isMasterSales = req.user.isMasterSales;
+
+    const result = await ticketService.getAttachmentViewUrl(
+      ticketId,
+      attachmentId,
+      userId,
+      userRole,
+      isMasterSales
+    );
+
+    res.json({
+      success: true,
+      data: result,
     });
   } catch (error) {
     next(error);

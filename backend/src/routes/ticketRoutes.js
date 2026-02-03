@@ -3,13 +3,17 @@ import {
   createTicket,
   getAllTickets,
   getTicketById,
+  updateTicket,
   updateTicketStatus,
   addTicketComment,
   addTicketAttachment,
+  deleteTicketAttachment,
+  getTicketAttachmentViewUrl,
 } from "../controllers/ticketController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import {
   validateCreateTicket,
+  validateUpdateTicket,
   validateUpdateTicketStatus,
   validateAddTicketComment,
   validateGetTicketsQuery,
@@ -76,7 +80,11 @@ router.use(requireAuth);
 // Ticket routes
 router.post("/", validateCreateTicket, createTicket);
 router.get("/", validateGetTicketsQuery, getAllTickets);
+router.get("/:id/attachments/:attachmentId/view", getTicketAttachmentViewUrl);
 router.get("/:id", getTicketById);
+
+// Update ticket (sales own, admin any)
+router.patch("/:id", validateUpdateTicket, updateTicket);
 
 // Update ticket status (admin only)
 router.patch(
@@ -100,5 +108,8 @@ router.post(
   s3Upload,
   addTicketAttachment
 );
+
+// Delete attachment from ticket
+router.delete("/:id/attachments/:attachmentId", deleteTicketAttachment);
 
 export default router;

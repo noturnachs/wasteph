@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,7 +44,15 @@ const getCategoryLabel = (category) => {
   return labels[category] || category;
 };
 
-export const createTicketColumns = ({ userRole, onView, clients }) => [
+const canEditTicket = (ticket, user) => {
+  if (!user) return false;
+  if (user.role === "admin" || user.role === "super_admin") return true;
+  if (user.role === "sales" && user.isMasterSales) return true;
+  if (user.role === "sales" && ticket.createdBy === user.id) return true;
+  return false;
+};
+
+export const createTicketColumns = ({ userRole, onView, onEdit, clients, user }) => [
   {
     accessorKey: "ticketNumber",
     header: "Ticket #",
@@ -170,6 +178,7 @@ export const createTicketColumns = ({ userRole, onView, clients }) => [
     id: "actions",
     cell: ({ row }) => {
       const ticket = row.original;
+      const editable = onEdit && canEditTicket(ticket, user);
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -183,6 +192,12 @@ export const createTicketColumns = ({ userRole, onView, clients }) => [
               <Eye className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
+            {editable && (
+              <DropdownMenuItem onClick={() => onEdit(ticket)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

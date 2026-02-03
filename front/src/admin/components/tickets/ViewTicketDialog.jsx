@@ -25,11 +25,16 @@ import {
   MessageSquare,
   Paperclip,
   CheckCircle,
-  Upload,
+  Eye,
+  Loader2,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 import { useAuth } from "../../contexts/AuthContext";
+import { PDFViewer } from "../PDFViewer";
 
 const getPriorityBadge = (priority) => {
   const config = {
@@ -66,11 +71,20 @@ const getCategoryLabel = (category) => {
   return labels[category] || category;
 };
 
+const canEditTicket = (ticket, user) => {
+  if (!user || !ticket) return false;
+  if (user.role === "admin" || user.role === "super_admin") return true;
+  if (user.role === "sales" && user.isMasterSales) return true;
+  if (user.role === "sales" && ticket.createdBy === user.id) return true;
+  return false;
+};
+
 export const ViewTicketDialog = ({
   open,
   onOpenChange,
   ticketId,
   onRefresh,
+  onEdit,
 }) => {
   const { user } = useAuth();
   const [ticket, setTicket] = useState(null);
@@ -80,8 +94,12 @@ export const ViewTicketDialog = ({
   const [statusUpdate, setStatusUpdate] = useState("");
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFileUrl, setViewerFileUrl] = useState("");
+  const [viewerFileName, setViewerFileName] = useState("");
+  const [viewerFileType, setViewerFileType] = useState("");
+  const [isLoadingViewUrl, setIsLoadingViewUrl] = useState(null);
+  const [commentsExpanded, setCommentsExpanded] = useState(true);
 
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
@@ -141,20 +159,24 @@ export const ViewTicketDialog = ({
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!selectedFile) return;
-
-    setIsUploadingFile(true);
+  const handleViewAttachment = async (attachment) => {
+    setIsLoadingViewUrl(attachment.id);
     try {
-      await api.uploadTicketAttachment(ticketId, selectedFile);
-      toast.success("File uploaded successfully");
-      setSelectedFile(null);
-      fetchTicket();
+      const response = await api.getTicketAttachmentViewUrl(ticketId, attachment.id);
+      const { viewUrl, fileName, fileType } = response?.data || {};
+      if (viewUrl) {
+        setViewerFileUrl(viewUrl);
+        setViewerFileName(fileName || attachment.fileName);
+        setViewerFileType(fileType || "");
+        setViewerOpen(true);
+      } else {
+        toast.error("Failed to load file");
+      }
     } catch (error) {
-      toast.error("Failed to upload file");
-      console.error("Upload file error:", error);
+      toast.error("Failed to load file");
+      console.error("View attachment error:", error);
     } finally {
-      setIsUploadingFile(false);
+      setIsLoadingViewUrl(null);
     }
   };
 
@@ -162,15 +184,38 @@ export const ViewTicketDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Ticket className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-            Ticket Details
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
-            {ticket.ticketNumber}
-          </DialogDescription>
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full"
+        onInteractOutside={(e) => {
+          if (viewerOpen) e.preventDefault();
+        }}
+      >
+        <DialogHeader className="pr-10">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Ticket className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                Ticket Details
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
+                {ticket.ticketNumber}
+              </DialogDescription>
+            </div>
+            {onEdit && canEditTicket(ticket, user) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEdit(ticket);
+                }}
+                className="shrink-0"
+              >
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <ScrollArea className="h-[calc(90vh-120px)]">
@@ -228,45 +273,39 @@ export const ViewTicketDialog = ({
                   {ticket.attachments.map((attachment) => (
                     <div
                       key={attachment.id}
-                      className="flex items-center justify-between p-2 border rounded-lg"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                     >
-                      <div>
-                        <p className="text-sm font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">
                           {attachment.fileName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {(attachment.fileSize / 1024).toFixed(2)} KB
+                          {attachment.fileSize
+                            ? `${(attachment.fileSize / 1024).toFixed(2)} KB`
+                            : "—"}
                         </p>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewAttachment(attachment)}
+                        disabled={isLoadingViewUrl === attachment.id}
+                        className="shrink-0 ml-2"
+                      >
+                        {isLoadingViewUrl === attachment.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </>
+                        )}
+                      </Button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Add Attachment */}
-            <div>
-              <Label htmlFor="file-upload" className="text-sm font-semibold">
-                Upload File
-              </Label>
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <input
-                  id="file-upload"
-                  type="file"
-                  onChange={(e) => setSelectedFile(e.target.files[0])}
-                  className="text-sm flex-1"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleFileUpload}
-                  disabled={!selectedFile || isUploadingFile}
-                  className="w-full sm:w-auto"
-                >
-                  <Upload className="h-4 w-4 mr-1" />
-                  {isUploadingFile ? "Uploading..." : "Upload"}
-                </Button>
-              </div>
-            </div>
 
             <Separator />
 
@@ -334,43 +373,64 @@ export const ViewTicketDialog = ({
 
             {/* Comments */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={() => setCommentsExpanded((prev) => !prev)}
+                className="flex items-center gap-2 w-full text-left text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+                aria-expanded={commentsExpanded}
+                aria-label={commentsExpanded ? "Collapse comments" : "Expand comments"}
+              >
+                <MessageSquare className="h-4 w-4 shrink-0" />
                 Comments ({ticket.comments?.length || 0})
-              </h4>
+                {commentsExpanded ? (
+                  <ChevronDown className="h-4 w-4 shrink-0 ml-1" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 shrink-0 ml-1" />
+                )}
+              </button>
 
-              {ticket.comments && ticket.comments.length > 0 && (
-                <div className="space-y-3">
-                  {ticket.comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="p-3 border rounded-lg space-y-2"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {comment.firstName} {comment.lastName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(
-                              new Date(comment.createdAt),
-                              "MMM dd, yyyy HH:mm"
-                            )}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {comment.role}
-                        </Badge>
+              {commentsExpanded && (
+                <>
+                  {ticket.comments && ticket.comments.length > 0 ? (
+                    <ScrollArea className="h-[200px] rounded-lg border">
+                      <div className="space-y-3 p-3">
+                        {ticket.comments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="p-3 border rounded-lg space-y-2 bg-muted/30"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {comment.firstName} {comment.lastName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(
+                                    new Date(comment.createdAt),
+                                    "MMM dd, yyyy HH:mm"
+                                  )}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {comment.role}
+                              </Badge>
+                            </div>
+                            <p className="text-sm whitespace-pre-wrap">
+                              {comment.content}
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {comment.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    </ScrollArea>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-2">
+                      No comments yet.
+                    </p>
+                  )}
+                </>
               )}
 
-              {/* Add Comment */}
+              {/* Add Comment - always visible */}
               <div className="space-y-2">
                 <Label>Add Comment</Label>
                 <Textarea
@@ -393,6 +453,20 @@ export const ViewTicketDialog = ({
           </div>
         </ScrollArea>
       </DialogContent>
+
+      <PDFViewer
+        fileUrl={viewerFileUrl}
+        fileName={viewerFileName}
+        fileType={viewerFileType}
+        title="Attachment"
+        isOpen={viewerOpen}
+        onClose={() => {
+          setViewerOpen(false);
+          setViewerFileUrl("");
+          setViewerFileName("");
+          setViewerFileType("");
+        }}
+      />
     </Dialog>
   );
 };

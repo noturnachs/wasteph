@@ -37,9 +37,13 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
+        const err = new Error(
           data.message || `Request failed with status ${response.status}`,
         );
+        if (data.errors && Array.isArray(data.errors)) {
+          err.validationErrors = data.errors;
+        }
+        throw err;
       }
 
       return data;
@@ -758,6 +762,13 @@ class ApiClient {
     return this.request(`/tickets/${id}`);
   }
 
+  async updateTicket(id, updateData) {
+    return this.request(`/tickets/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updateData),
+    });
+  }
+
   async updateTicketStatus(id, status, resolutionNotes) {
     return this.request(`/tickets/${id}/status`, {
       method: "PATCH",
@@ -781,6 +792,16 @@ class ApiClient {
       headers: {}, // Let browser set Content-Type for multipart/form-data
       body: formData,
       credentials: "include",
+    });
+  }
+
+  async getTicketAttachmentViewUrl(ticketId, attachmentId) {
+    return this.request(`/tickets/${ticketId}/attachments/${attachmentId}/view`);
+  }
+
+  async deleteTicketAttachment(ticketId, attachmentId) {
+    return this.request(`/tickets/${ticketId}/attachments/${attachmentId}`, {
+      method: "DELETE",
     });
   }
 

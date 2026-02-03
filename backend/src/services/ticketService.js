@@ -9,6 +9,7 @@ import {
 import { eq, desc, and, or, inArray, like, count } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 import counterService from "./counterService.js";
+import { getPresignedUrl } from "./s3Service.js";
 
 /**
  * TicketService - Business logic for client ticket operations
@@ -252,6 +253,65 @@ class TicketService {
   }
 
   /**
+   * Update ticket (subject, description, category, priority, clientId)
+   * Sales can edit their own tickets; admin can edit any
+   * @param {string} ticketId - Ticket ID
+   * @param {Object} updateData - Update data
+   * @param {string} userId - User updating the ticket
+   * @param {string} userRole - Current user role
+   * @param {boolean} isMasterSales - Is user master sales
+   * @param {Object} metadata - Request metadata
+   * @returns {Promise<Object>} Updated ticket
+   */
+  async updateTicket(ticketId, updateData, userId, userRole, isMasterSales, metadata = {}) {
+    const [existingTicket] = await db
+      .select()
+      .from(clientTicketsTable)
+      .where(eq(clientTicketsTable.id, ticketId));
+
+    if (!existingTicket) {
+      throw new AppError("Ticket not found", 404);
+    }
+
+    // Permission: sales can edit own tickets; admin/master_sales can edit any
+    if (
+      userRole === "sales" &&
+      !isMasterSales &&
+      existingTicket.createdBy !== userId
+    ) {
+      throw new AppError("You don't have permission to edit this ticket", 403);
+    }
+
+    const updateValues = {
+      ...Object.fromEntries(
+        Object.entries(updateData).filter(([, v]) => v !== undefined)
+      ),
+      updatedAt: new Date(),
+    };
+
+    const [updatedTicket] = await db
+      .update(clientTicketsTable)
+      .set(updateValues)
+      .where(eq(clientTicketsTable.id, ticketId))
+      .returning();
+
+    await this.logActivity({
+      userId,
+      action: "ticket_updated",
+      entityType: "ticket",
+      entityId: ticketId,
+      details: {
+        ticketNumber: existingTicket.ticketNumber,
+        updatedFields: Object.keys(updateData),
+      },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return updatedTicket;
+  }
+
+  /**
    * Update ticket status (Admin only)
    * @param {string} ticketId - Ticket ID
    * @param {Object} updateData - Update data
@@ -406,6 +466,106 @@ class TicketService {
       .returning();
 
     return attachment;
+  }
+
+  /**
+   * Get attachment view URL (presigned S3 URL)
+   * @param {string} ticketId - Ticket ID
+   * @param {string} attachmentId - Attachment ID
+   * @param {string} userId - Current user ID
+   * @param {string} userRole - Current user role
+   * @param {boolean} isMasterSales - Is user master sales
+   * @returns {Promise<{ viewUrl: string, fileName: string, fileType: string }>}
+   */
+  async getAttachmentViewUrl(ticketId, attachmentId, userId, userRole, isMasterSales) {
+    const [attachment] = await db
+      .select()
+      .from(ticketAttachmentsTable)
+      .where(
+        and(
+          eq(ticketAttachmentsTable.id, attachmentId),
+          eq(ticketAttachmentsTable.ticketId, ticketId)
+        )
+      );
+
+    if (!attachment) {
+      throw new AppError("Attachment not found", 404);
+    }
+
+    const [ticket] = await db
+      .select()
+      .from(clientTicketsTable)
+      .where(eq(clientTicketsTable.id, ticketId));
+
+    if (!ticket) {
+      throw new AppError("Ticket not found", 404);
+    }
+
+    if (userRole === "sales" && !isMasterSales && ticket.createdBy !== userId) {
+      throw new AppError("You don't have permission to view this attachment", 403);
+    }
+
+    const viewUrl = await getPresignedUrl(attachment.fileUrl, 3600);
+
+    return {
+      viewUrl,
+      fileName: attachment.fileName,
+      fileType: attachment.fileType,
+    };
+  }
+
+  /**
+   * Delete attachment from ticket
+   * @param {string} ticketId - Ticket ID
+   * @param {string} attachmentId - Attachment ID
+   * @param {string} userId - Current user ID
+   * @param {string} userRole - Current user role
+   * @param {boolean} isMasterSales - Is user master sales
+   * @returns {Promise<void>}
+   */
+  async deleteAttachment(ticketId, attachmentId, userId, userRole, isMasterSales) {
+    const [attachment] = await db
+      .select()
+      .from(ticketAttachmentsTable)
+      .where(
+        and(
+          eq(ticketAttachmentsTable.id, attachmentId),
+          eq(ticketAttachmentsTable.ticketId, ticketId)
+        )
+      );
+
+    if (!attachment) {
+      throw new AppError("Attachment not found", 404);
+    }
+
+    const [ticket] = await db
+      .select()
+      .from(clientTicketsTable)
+      .where(eq(clientTicketsTable.id, ticketId));
+
+    if (!ticket) {
+      throw new AppError("Ticket not found", 404);
+    }
+
+    if (userRole === "sales" && !isMasterSales && ticket.createdBy !== userId) {
+      throw new AppError("You don't have permission to delete this attachment", 403);
+    }
+
+    await db
+      .delete(ticketAttachmentsTable)
+      .where(
+        and(
+          eq(ticketAttachmentsTable.id, attachmentId),
+          eq(ticketAttachmentsTable.ticketId, ticketId)
+        )
+      );
+
+    try {
+      const { deleteObject } = await import("./s3Service.js");
+      await deleteObject(attachment.fileUrl);
+    } catch (s3Err) {
+      console.error("S3 delete failed (attachment record removed):", s3Err);
+    }
   }
 
   /**

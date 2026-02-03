@@ -2,17 +2,21 @@ import { useState, useEffect } from "react";
 import { X, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
 /**
- * Reusable PDF Viewer Component
- * Displays PDF in a full-screen modal with loading and error states
+ * Reusable PDF/Image Viewer Component
+ * Displays PDF or images in a full-screen modal with loading and error states
  */
 export function PDFViewer({
   fileUrl,
   fileName,
+  fileType,
   onClose,
-  title = "PDF Preview",
+  title = "File Preview",
   isOpen = true,
 }) {
+  const isImage = fileType && IMAGE_TYPES.includes(fileType);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -82,7 +86,7 @@ export function PDFViewer({
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="h-10 w-10 animate-spin text-green-600" />
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Loading document...
+                  Loading...
                 </p>
               </div>
             </div>
@@ -96,10 +100,10 @@ export function PDFViewer({
                   <AlertCircle className="h-8 w-8 text-red-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Failed to load document
+                  Failed to load file
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                  The PDF could not be displayed. Please try again or contact support.
+                  The file could not be displayed. Please try again or contact support.
                 </p>
                 <Button variant="outline" onClick={onClose}>
                   Close
@@ -108,15 +112,27 @@ export function PDFViewer({
             </div>
           )}
 
-          {/* PDF iframe */}
+          {/* Content: img for images, iframe for PDFs and other docs */}
           {fileUrl ? (
-            <iframe
-              src={fileUrl}
-              className="w-full h-full border-0 bg-white"
-              title="PDF Viewer"
-              onLoad={handleLoad}
-              onError={handleError}
-            />
+            isImage ? (
+              <div className="w-full h-full flex items-center justify-center p-4 overflow-auto bg-gray-100 dark:bg-gray-900">
+                <img
+                  src={fileUrl}
+                  alt={fileName || "Image"}
+                  className="max-w-full max-h-full object-contain"
+                  onLoad={handleLoad}
+                  onError={handleError}
+                />
+              </div>
+            ) : (
+              <iframe
+                src={fileUrl}
+                className="w-full h-full border-0 bg-white"
+                title={fileName || "Document Viewer"}
+                onLoad={handleLoad}
+                onError={handleError}
+              />
+            )
           ) : !isLoading && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center px-6 max-w-md">
@@ -124,10 +140,10 @@ export function PDFViewer({
                   <AlertCircle className="h-8 w-8 text-yellow-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  No PDF available
+                  No file available
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                  The PDF could not be generated. Please check your template or try again.
+                  The file could not be loaded. Please try again.
                 </p>
                 <Button variant="outline" onClick={onClose}>
                   Close

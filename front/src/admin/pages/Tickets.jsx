@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,8 @@ import { FacetedFilter } from "../components/FacetedFilter";
 import { SearchInput } from "../components/SearchInput";
 import { createTicketColumns } from "../components/tickets/ticketColumns";
 import { ViewTicketDialog } from "../components/tickets/ViewTicketDialog";
+import { CreateTicketDialog } from "../components/tickets/CreateTicketDialog";
+import { EditTicketDialog } from "../components/tickets/EditTicketDialog";
 
 export default function Tickets() {
   const { user } = useAuth();
@@ -64,7 +66,52 @@ export default function Tickets() {
 
   // Dialogs
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [editTicketId, setEditTicketId] = useState(null);
+
+  const canCreateTicket = user?.role === "sales" || user?.role === "admin" || user?.role === "super_admin";
+
+  const handleCreateTicket = async (ticketData, attachmentFiles = []) => {
+    try {
+      const response = await api.createTicket(ticketData);
+      const ticketId = response?.data?.id;
+
+      let uploadedCount = 0;
+      const failedFiles = [];
+
+      if (attachmentFiles?.length > 0 && ticketId) {
+        for (const file of attachmentFiles) {
+          try {
+            const uploadResponse = await api.uploadTicketAttachment(ticketId, file);
+            if (uploadResponse?.success && uploadResponse?.data?.fileUrl) {
+              uploadedCount += 1;
+            }
+          } catch (uploadError) {
+            failedFiles.push(file.name);
+            console.error(`Attachment upload error for ${file.name}:`, uploadError);
+          }
+        }
+
+        if (failedFiles.length > 0) {
+          toast.error(`Ticket created. ${failedFiles.length} attachment(s) failed: ${failedFiles.join(", ")}`);
+        } else if (uploadedCount > 0) {
+          toast.success(`Ticket created. ${uploadedCount} attachment(s) uploaded to S3.`);
+        }
+      } else {
+        toast.success("Ticket created successfully");
+      }
+
+      setIsCreateDialogOpen(false);
+      fetchTickets(pagination.page, pagination.limit);
+    } catch (error) {
+      if (!error.validationErrors?.length) {
+        toast.error("Failed to create ticket");
+      }
+      throw error;
+    }
+  };
 
   // Fetch clients on mount
   useEffect(() => {
@@ -79,7 +126,7 @@ export default function Tickets() {
 
   const fetchClients = async () => {
     try {
-      const response = await api.getClients();
+      const response = await api.getClients({ limit: 500 });
       setClients(response.data || []);
     } catch (error) {
       console.error("Failed to fetch clients:", error);
@@ -129,6 +176,11 @@ export default function Tickets() {
     setIsViewDialogOpen(true);
   };
 
+  const handleEdit = (ticket) => {
+    setEditTicketId(ticket.id);
+    setIsEditDialogOpen(true);
+  };
+
   const handleToggleColumn = (columnKey) => {
     setColumnVisibility((prev) => ({
       ...prev,
@@ -139,7 +191,9 @@ export default function Tickets() {
   const allColumns = createTicketColumns({
     userRole: user?.role,
     onView: handleView,
+    onEdit: handleEdit,
     clients: clients,
+    user,
   });
 
   const columns = allColumns.filter((column) => {
@@ -154,11 +208,22 @@ export default function Tickets() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
-        <p className="text-muted-foreground">
-          Manage client tickets and support requests
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
+          <p className="text-muted-foreground">
+            Manage client tickets and support requests
+          </p>
+        </div>
+        {canCreateTicket && (
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="shrink-0"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create Ticket
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -396,6 +461,29 @@ export default function Tickets() {
         onOpenChange={setIsViewDialogOpen}
         ticketId={selectedTicketId}
         onRefresh={fetchTickets}
+        onEdit={handleEdit}
+      />
+
+      {canCreateTicket && (
+        <CreateTicketDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          clients={clients}
+          onSuccess={handleCreateTicket}
+        />
+      )}
+
+      <EditTicketDialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditTicketId(null);
+        }}
+        ticketId={editTicketId}
+        clients={clients}
+        onSuccess={() => {
+          fetchTickets(pagination.page, pagination.limit);
+        }}
       />
     </div>
   );

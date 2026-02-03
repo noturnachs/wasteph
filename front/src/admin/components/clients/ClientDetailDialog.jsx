@@ -22,7 +22,6 @@ import { toast } from "../../utils/toast";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Ticket components
-import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
 import { TicketsList } from "../tickets/TicketsList";
 
 // Notes components
@@ -51,7 +50,6 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [isCreateTicketOpen, setIsCreateTicketOpen] = useState(false);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
 
@@ -103,17 +101,6 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
       console.error("Fetch events error:", error);
     } finally {
       setIsLoadingEvents(false);
-    }
-  };
-
-  const handleCreateTicket = async (ticketData) => {
-    try {
-      await api.createTicket(ticketData);
-      toast.success("Ticket created successfully");
-      fetchTickets();
-    } catch (error) {
-      toast.error("Failed to create ticket");
-      throw error;
     }
   };
 
@@ -330,13 +317,7 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
               </TabsContent>
 
               <TabsContent value="tickets" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Support Tickets</h3>
-                  <Button size="sm" onClick={() => setIsCreateTicketOpen(true)}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Create Ticket
-                  </Button>
-                </div>
+                <h3 className="text-lg font-semibold">Support Tickets</h3>
 
                 {isLoadingTickets ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -451,13 +432,6 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
           </Tabs>
         </DialogContent>
       </Dialog>
-
-      <CreateTicketDialog
-        open={isCreateTicketOpen}
-        onOpenChange={setIsCreateTicketOpen}
-        clientId={client?.id}
-        onSuccess={handleCreateTicket}
-      />
 
       <CreateNoteDialog
         open={isCreateNoteOpen}
