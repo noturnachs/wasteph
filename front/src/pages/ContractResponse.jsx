@@ -110,8 +110,8 @@ const ContractResponse = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-lg">
-        <CardHeader className="text-center border-b">
+      <Card className="w-full max-w-2xl border-0 shadow-lg">
+        <CardHeader className="text-center border-b border-gray-200">
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
               <FileText className="h-8 w-8 text-green-700" />
@@ -144,8 +144,8 @@ const ContractResponse = () => {
           {stage === "confirmation" && contractDetails && (
             <div className="space-y-6">
               {/* Contract Details */}
-              <div className="bg-white border rounded-lg p-5 space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">
+              <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4 shadow-sm">
+                <h3 className="font-semibold text-lg text-gray-900 border-b border-gray-200 pb-2">
                   Contract Information
                 </h3>
 
@@ -186,7 +186,7 @@ const ContractResponse = () => {
               {/* File Upload */}
               <div className="space-y-3">
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-500 transition-colors"
+                  className="rounded-lg p-6 text-center cursor-pointer bg-white border-0 shadow-md hover:shadow-lg transition-shadow duration-200"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {selectedFile ? (
@@ -221,7 +221,7 @@ const ContractResponse = () => {
                 <Button
                   onClick={handleUpload}
                   disabled={!selectedFile}
-                  className="px-6 bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                  className="px-6 !bg-green-600 hover:!bg-green-700 !text-white border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Signed Contract
@@ -307,7 +307,7 @@ const ContractResponse = () => {
 
           {/* Contact Information */}
           {(stage === "error" || stage === "success") && (
-            <div className="border-t pt-6">
+            <div className="border-t border-gray-200 pt-6">
               <h4 className="font-semibold text-gray-900 mb-3 text-center">
                 Need Assistance?
               </h4>

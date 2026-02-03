@@ -758,8 +758,8 @@ class EmailService {
     .btn-upload {
       display: inline-block;
       background-color: #106934;
-      color: #ffffff;
-      text-decoration: none;
+      color: #ffffff !important;
+      text-decoration: none !important;
       padding: 14px 32px;
       border-radius: 6px;
       font-size: 16px;
@@ -785,7 +785,7 @@ class EmailService {
 <body>
   <div class="container">
     <div class="header">
-      <h1>📄 Your Contract is Ready!</h1>
+      <h1>Your Contract is Ready!</h1>
       <p>WastePH - Professional Waste Management Solutions</p>
     </div>
 
@@ -795,14 +795,19 @@ class EmailService {
       <p>Thank you for your continued interest in our services. We are pleased to provide you with your finalized contract.</p>
 
       <div class="highlight-box">
-        <p><strong>📎 Your contract is attached to this email as a PDF document.</strong></p>
+        <p><strong>Your contract is attached to this email as a PDF document.</strong></p>
         <p style="margin-top: 10px; font-size: 14px;">Please review the contract carefully and contact us if you have any questions.</p>
       </div>
 
       <p>Once you have reviewed and signed the contract, please upload your signed copy using the button below:</p>
 
       <div class="action-buttons">
-        <a href="${frontendUrl}/contract-response/${contractId}?token=${responseToken}" class="btn-upload">📄 Upload Signed Contract</a>
+        <a href="${frontendUrl}/contract-response/${contractId}?token=${responseToken}" class="btn-upload">
+          <span style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          Upload Signed Contract
+        </a>
       </div>
 
       <p style="font-size: 13px; color: #888;">You will be taken to a secure page where you can upload your signed contract document.</p>

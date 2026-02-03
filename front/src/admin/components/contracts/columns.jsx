@@ -193,11 +193,12 @@ export const createColumns = ({
           {/* Sales: Request Contract button (pending_request) */}
           {userRole === "sales" && status === "pending_request" && (
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => onRequestContract(contract)}
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="h-4 w-4 mr-1" />
               Request Contract
             </Button>
           )}
@@ -205,12 +206,12 @@ export const createColumns = ({
           {/* Admin: Submit Contract button (requested) */}
           {(userRole === "admin" || userRole === "super_admin") && status === "requested" && (
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => onSubmitContract(contract)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="h-4 w-4 mr-1" />
               Submit Contract
             </Button>
           )}
@@ -218,11 +219,12 @@ export const createColumns = ({
           {/* Sales: Send to Client button (sent_to_sales) */}
           {userRole === "sales" && status === "sent_to_sales" && (
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => onSendToClient(contract)}
+              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
             >
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="h-4 w-4 mr-1" />
               Send to Client
             </Button>
           )}
@@ -230,11 +232,12 @@ export const createColumns = ({
           {/* Admin: Upload Hardbound button (signed) */}
           {(userRole === "admin" || userRole === "super_admin") && status === "signed" && (
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => onUploadHardbound(contract)}
+              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
-              <Upload className="mr-2 h-4 w-4" />
+              <Upload className="h-4 w-4 mr-1" />
               Upload Hardbound
             </Button>
           )}

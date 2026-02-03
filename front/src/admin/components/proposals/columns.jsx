@@ -185,7 +185,7 @@ export const createColumns = ({ users = [], onReview, onDelete, onRevise, onSend
               variant="ghost"
               size="sm"
               onClick={() => onSendToClient(proposal)}
-              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
             >
               <Send className="h-4 w-4 mr-1" />
               Send to Client
