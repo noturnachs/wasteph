@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../services/api";
 import { toast } from "../utils/toast";
@@ -59,6 +59,9 @@ export default function Proposals() {
     createdAt: true,
   });
 
+  // Track latest fetch to ignore stale responses
+  const fetchIdRef = useRef(0);
+
   // Users for assignment display
   const [users, setUsers] = useState([]);
 
@@ -93,6 +96,7 @@ export default function Proposals() {
   };
 
   const fetchProposals = async (page = pagination.page, limit = pagination.limit) => {
+    const currentFetchId = ++fetchIdRef.current;
     setIsLoading(true);
     try {
       const filters = {
@@ -103,6 +107,10 @@ export default function Proposals() {
       };
 
       const response = await api.getProposals(filters);
+
+      // Ignore response if a newer fetch has already been triggered
+      if (currentFetchId !== fetchIdRef.current) return;
+
       const data = response.data || [];
       const meta = response.pagination || {
         total: data.length,
@@ -114,10 +122,13 @@ export default function Proposals() {
       setProposals(data);
       setPagination(meta);
     } catch (error) {
+      if (currentFetchId !== fetchIdRef.current) return;
       toast.error("Failed to fetch proposals");
       console.error("Fetch proposals error:", error);
     } finally {
-      setIsLoading(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -357,7 +368,7 @@ export default function Proposals() {
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => fetchProposals(pagination.page - 1)}
+            onClick={() => fetchProposals(Math.max(pagination.page - 1, 1))}
             disabled={pagination.page === 1 || isLoading}
           >
             <span className="sr-only">Previous page</span>
@@ -369,7 +380,7 @@ export default function Proposals() {
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => fetchProposals(pagination.page + 1)}
+            onClick={() => fetchProposals(Math.min(pagination.page + 1, pagination.totalPages))}
             disabled={pagination.page >= pagination.totalPages || isLoading}
           >
             <span className="sr-only">Next page</span>
