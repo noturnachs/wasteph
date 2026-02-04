@@ -219,7 +219,7 @@ class ProposalServiceWithSocket {
    * @returns {Promise<Object>} Updated proposal
    */
   async sendProposalToClient(proposalId, userId, emailData) {
-    const proposal = await this.proposalService.sendProposalToClient(
+    const proposal = await this.proposalService.sendProposal(
       proposalId,
       userId,
       emailData
@@ -289,19 +289,98 @@ class ProposalServiceWithSocket {
     return this.proposalService.renderProposalAsPdf(proposalId);
   }
 
-  async acceptProposalPublic(proposalId, acceptanceToken) {
-    return this.proposalService.acceptProposalPublic(
+  /**
+   * Record client approval with socket emission
+   * @param {string} proposalId - Proposal ID
+   * @param {string} ipAddress - Client IP address
+   * @returns {Promise<Object>} Updated proposal
+   */
+  async recordClientApproval(proposalId, ipAddress) {
+    const proposal = await this.proposalService.recordClientApproval(
       proposalId,
-      acceptanceToken
+      ipAddress
     );
+
+    // Emit socket event
+    if (this.proposalEvents && proposal) {
+      try {
+        // Get full proposal with inquiry data
+        const { db } = await import("../db/index.js");
+        const { proposalTable, inquiryTable } = await import("../db/schema.js");
+        const { eq } = await import("drizzle-orm");
+
+        const [fullProposal] = await db
+          .select({
+            id: proposalTable.id,
+            proposalNumber: proposalTable.proposalNumber,
+            status: proposalTable.status,
+            requestedBy: proposalTable.requestedBy,
+            clientResponseAt: proposalTable.clientResponseAt,
+            // Inquiry details
+            inquiryName: inquiryTable.name,
+            inquiryCompany: inquiryTable.company,
+          })
+          .from(proposalTable)
+          .leftJoin(inquiryTable, eq(proposalTable.inquiryId, inquiryTable.id))
+          .where(eq(proposalTable.id, proposal.id))
+          .limit(1);
+
+        if (fullProposal) {
+          await this.proposalEvents.emitProposalAccepted(fullProposal);
+        }
+      } catch (error) {
+        console.error("Error emitting proposal accepted event:", error);
+      }
+    }
+
+    return proposal;
   }
 
-  async declineProposalPublic(proposalId, acceptanceToken, declineReason = "") {
-    return this.proposalService.declineProposalPublic(
+  /**
+   * Record client rejection with socket emission
+   * @param {string} proposalId - Proposal ID
+   * @param {string} ipAddress - Client IP address
+   * @returns {Promise<Object>} Updated proposal
+   */
+  async recordClientRejection(proposalId, ipAddress) {
+    const proposal = await this.proposalService.recordClientRejection(
       proposalId,
-      acceptanceToken,
-      declineReason
+      ipAddress
     );
+
+    // Emit socket event
+    if (this.proposalEvents && proposal) {
+      try {
+        // Get full proposal with inquiry data
+        const { db } = await import("../db/index.js");
+        const { proposalTable, inquiryTable } = await import("../db/schema.js");
+        const { eq } = await import("drizzle-orm");
+
+        const [fullProposal] = await db
+          .select({
+            id: proposalTable.id,
+            proposalNumber: proposalTable.proposalNumber,
+            status: proposalTable.status,
+            requestedBy: proposalTable.requestedBy,
+            clientResponseAt: proposalTable.clientResponseAt,
+            // Inquiry details
+            inquiryName: inquiryTable.name,
+            inquiryCompany: inquiryTable.company,
+          })
+          .from(proposalTable)
+          .leftJoin(inquiryTable, eq(proposalTable.inquiryId, inquiryTable.id))
+          .where(eq(proposalTable.id, proposal.id))
+          .limit(1);
+
+        if (fullProposal) {
+          await this.proposalEvents.emitProposalDeclined(fullProposal);
+        }
+      } catch (error) {
+        console.error("Error emitting proposal declined event:", error);
+      }
+    }
+
+    return proposal;
   }
 
   async uploadRevisions(proposalId, file, userId, metadata = {}) {
@@ -315,6 +394,26 @@ class ProposalServiceWithSocket {
 
   async getRevisions(proposalId) {
     return this.proposalService.getRevisions(proposalId);
+  }
+
+  async validateResponseToken(proposalId, token) {
+    return this.proposalService.validateResponseToken(proposalId, token);
+  }
+
+  async retryProposalEmail(proposalId, userId, metadata = {}) {
+    return this.proposalService.retryProposalEmail(
+      proposalId,
+      userId,
+      metadata
+    );
+  }
+
+  async readPDF(pdfUrl) {
+    return this.proposalService.readPDF(pdfUrl);
+  }
+
+  async generatePreviewPDF(proposalId) {
+    return this.proposalService.generatePreviewPDF(proposalId);
   }
 }
 

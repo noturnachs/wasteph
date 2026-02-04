@@ -149,7 +149,8 @@ export const approveProposal = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: proposal,
-      message: "Proposal approved successfully. Sales can now send it to the client.",
+      message:
+        "Proposal approved successfully. Sales can now send it to the client.",
     });
   } catch (error) {
     next(error);
@@ -212,10 +213,10 @@ export const sendProposal = async (req, res, next) => {
       throw new AppError("Only sales users can send proposals", 403);
     }
 
-    const proposal = await proposalService.sendProposal(
+    const proposal = await proposalServiceWithSocket.sendProposalToClient(
       id,
       req.user.id,
-      metadata
+      req.body
     );
 
     res.status(200).json({
@@ -273,7 +274,7 @@ export const retryProposalEmail = async (req, res, next) => {
       throw new AppError("Only admins can retry email sends", 403);
     }
 
-    const result = await proposalService.retryProposalEmail(
+    const result = await proposalServiceWithSocket.retryProposalEmail(
       id,
       req.user.id,
       metadata
@@ -311,7 +312,7 @@ export const downloadProposalPDF = async (req, res, next) => {
     }
 
     // Read PDF buffer
-    const pdfBuffer = await proposalService.readPDF(proposal.pdfUrl);
+    const pdfBuffer = await proposalServiceWithSocket.readPDF(proposal.pdfUrl);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -343,7 +344,7 @@ export const previewProposalPDF = async (req, res, next) => {
     }
 
     // Generate PDF on-the-fly (don't save)
-    const pdfBuffer = await proposalService.generatePreviewPDF(id);
+    const pdfBuffer = await proposalServiceWithSocket.generatePreviewPDF(id);
 
     // Return PDF as base64 for frontend display
     const base64PDF = pdfBuffer.toString("base64");
@@ -371,10 +372,13 @@ export const handleClientApproval = async (req, res, next) => {
     const ipAddress = req.ip;
 
     // Validate token
-    await proposalService.validateResponseToken(id, token);
+    await proposalServiceWithSocket.validateResponseToken(id, token);
 
     // Record approval
-    const proposal = await proposalService.recordClientApproval(id, ipAddress);
+    const proposal = await proposalServiceWithSocket.recordClientApproval(
+      id,
+      ipAddress
+    );
 
     res.json({
       success: true,
@@ -402,10 +406,13 @@ export const handleClientRejection = async (req, res, next) => {
     const ipAddress = req.ip;
 
     // Validate token
-    await proposalService.validateResponseToken(id, token);
+    await proposalServiceWithSocket.validateResponseToken(id, token);
 
     // Record rejection
-    const proposal = await proposalService.recordClientRejection(id, ipAddress);
+    const proposal = await proposalServiceWithSocket.recordClientRejection(
+      id,
+      ipAddress
+    );
 
     res.json({
       success: true,
@@ -432,7 +439,10 @@ export const getProposalStatusPublic = async (req, res, next) => {
     const { token } = req.query;
 
     // Validate token
-    const proposal = await proposalService.validateResponseToken(id, token);
+    const proposal = await proposalServiceWithSocket.validateResponseToken(
+      id,
+      token
+    );
 
     res.json({
       success: true,
@@ -461,14 +471,20 @@ export const getProposalPDFPublic = async (req, res, next) => {
     const { token } = req.query;
 
     // Validate token
-    const proposal = await proposalService.validateResponseToken(id, token);
+    const proposal = await proposalServiceWithSocket.validateResponseToken(
+      id,
+      token
+    );
 
     // Generate PDF
-    const pdfBuffer = await proposalService.generatePreviewPDF(id);
+    const pdfBuffer = await proposalServiceWithSocket.generatePreviewPDF(id);
 
     // Set headers for PDF response
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="proposal-${proposal.proposalNumber}.pdf"`);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="proposal-${proposal.proposalNumber}.pdf"`
+    );
 
     // Send PDF
     res.send(pdfBuffer);

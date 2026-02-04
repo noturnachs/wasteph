@@ -287,6 +287,162 @@ class ProposalEventEmitter {
   }
 
   /**
+   * Emit proposal accepted by client event (Client → Sales + Admin)
+   * @param {Object} proposal - Proposal data
+   */
+  async emitProposalAccepted(proposal) {
+    try {
+      const eventData = {
+        proposal: {
+          id: proposal.id,
+          proposalNumber: proposal.proposalNumber,
+          status: proposal.status,
+          clientResponseAt: proposal.clientResponseAt,
+          inquiryName: proposal.inquiryName,
+          inquiryCompany: proposal.inquiryCompany,
+        },
+      };
+
+      // Notify the sales person who created it
+      if (proposal.requestedBy) {
+        this.socketServer.emitToUser(
+          proposal.requestedBy,
+          PROPOSAL_EVENTS.PROPOSAL_ACCEPTED,
+          eventData
+        );
+
+        // Create notification for sales person
+        if (this.notificationService) {
+          await this.notificationService.createNotification({
+            userId: proposal.requestedBy,
+            type: "proposal_accepted",
+            title: "Client Accepted Proposal",
+            message: `Client accepted proposal ${proposal.proposalNumber}`,
+            entityType: "proposal",
+            entityId: proposal.id,
+            metadata: {
+              proposalNumber: proposal.proposalNumber,
+              inquiryName: proposal.inquiryName,
+              inquiryCompany: proposal.inquiryCompany,
+              acceptedAt: proposal.clientResponseAt,
+            },
+          });
+        }
+      }
+
+      // Also notify admins
+      this.socketServer.emitToRoles(
+        ["admin", "super_admin"],
+        PROPOSAL_EVENTS.PROPOSAL_ACCEPTED,
+        eventData
+      );
+
+      // Create notifications for admins
+      if (this.notificationService) {
+        const adminIds = await this._getAdminUserIds();
+
+        await this.notificationService.createBulkNotifications(adminIds, {
+          type: "proposal_accepted",
+          title: "Client Accepted Proposal",
+          message: `Client accepted proposal ${proposal.proposalNumber}`,
+          entityType: "proposal",
+          entityId: proposal.id,
+          metadata: {
+            proposalNumber: proposal.proposalNumber,
+            inquiryName: proposal.inquiryName,
+            inquiryCompany: proposal.inquiryCompany,
+            acceptedAt: proposal.clientResponseAt,
+          },
+        });
+      }
+
+      console.log(
+        `✅ Proposal accepted event emitted: ${proposal.proposalNumber}`
+      );
+    } catch (error) {
+      console.error("Error emitting proposal accepted event:", error);
+    }
+  }
+
+  /**
+   * Emit proposal declined by client event (Client → Sales + Admin)
+   * @param {Object} proposal - Proposal data
+   */
+  async emitProposalDeclined(proposal) {
+    try {
+      const eventData = {
+        proposal: {
+          id: proposal.id,
+          proposalNumber: proposal.proposalNumber,
+          status: proposal.status,
+          clientResponseAt: proposal.clientResponseAt,
+          inquiryName: proposal.inquiryName,
+          inquiryCompany: proposal.inquiryCompany,
+        },
+      };
+
+      // Notify the sales person who created it
+      if (proposal.requestedBy) {
+        this.socketServer.emitToUser(
+          proposal.requestedBy,
+          PROPOSAL_EVENTS.PROPOSAL_DECLINED,
+          eventData
+        );
+
+        // Create notification for sales person
+        if (this.notificationService) {
+          await this.notificationService.createNotification({
+            userId: proposal.requestedBy,
+            type: "proposal_declined",
+            title: "Client Declined Proposal",
+            message: `Client declined proposal ${proposal.proposalNumber}`,
+            entityType: "proposal",
+            entityId: proposal.id,
+            metadata: {
+              proposalNumber: proposal.proposalNumber,
+              inquiryName: proposal.inquiryName,
+              inquiryCompany: proposal.inquiryCompany,
+              declinedAt: proposal.clientResponseAt,
+            },
+          });
+        }
+      }
+
+      // Also notify admins
+      this.socketServer.emitToRoles(
+        ["admin", "super_admin"],
+        PROPOSAL_EVENTS.PROPOSAL_DECLINED,
+        eventData
+      );
+
+      // Create notifications for admins
+      if (this.notificationService) {
+        const adminIds = await this._getAdminUserIds();
+
+        await this.notificationService.createBulkNotifications(adminIds, {
+          type: "proposal_declined",
+          title: "Client Declined Proposal",
+          message: `Client declined proposal ${proposal.proposalNumber}`,
+          entityType: "proposal",
+          entityId: proposal.id,
+          metadata: {
+            proposalNumber: proposal.proposalNumber,
+            inquiryName: proposal.inquiryName,
+            inquiryCompany: proposal.inquiryCompany,
+            declinedAt: proposal.clientResponseAt,
+          },
+        });
+      }
+
+      console.log(
+        `✅ Proposal declined event emitted: ${proposal.proposalNumber}`
+      );
+    } catch (error) {
+      console.error("Error emitting proposal declined event:", error);
+    }
+  }
+
+  /**
    * Get all admin user IDs
    * @returns {Promise<Array<string>>} Array of admin user IDs
    */
