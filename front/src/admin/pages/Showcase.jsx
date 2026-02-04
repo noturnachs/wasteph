@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "../utils/toast";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Calendar, Image as ImageIcon, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Calendar,
+  Image as ImageIcon,
+  Loader2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,17 +60,22 @@ const Showcase = () => {
       setLoading(true);
       const data = await fetchAllShowcases();
       setShowcases(data || []);
-      
+
       // Calculate stats
       const total = data?.length || 0;
-      const active = data?.filter(s => s.isActive).length || 0;
+      const active = data?.filter((s) => s.isActive).length || 0;
       const inactive = total - active;
       setStats({ total, active, inactive });
     } catch (error) {
       console.error("Error loading showcases:", error);
       // Check if it's a database/table error
-      if (error.message.includes("500") || error.message.includes("Internal Server Error")) {
-        toast.error("Database error. Please run 'npm run db:push' in the backend directory to create the showcase table.");
+      if (
+        error.message.includes("500") ||
+        error.message.includes("Internal Server Error")
+      ) {
+        toast.error(
+          "Database error. Please run 'npm run db:push' in the backend directory to create the showcase table."
+        );
       } else {
         toast.error("Failed to load showcases");
       }
@@ -91,7 +105,9 @@ const Showcase = () => {
     try {
       await toggleShowcaseStatus(showcase.id);
       toast.success(
-        `Showcase ${showcase.isActive ? "deactivated" : "activated"} successfully`
+        `Showcase ${
+          showcase.isActive ? "deactivated" : "activated"
+        } successfully`
       );
       hasFetchedRef.current = false;
       loadShowcases();
@@ -135,7 +151,9 @@ const Showcase = () => {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="dark:border-white/10 dark:bg-black/40">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Showcases</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Showcases
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{stats.total}</div>
@@ -206,9 +224,9 @@ const Showcase = () => {
                     {/* Left Section: Image + Content */}
                     <div className="flex flex-1 gap-4">
                       {/* Image */}
-                      {showcase.image ? (
+                      {showcase.imageUrl || showcase.image ? (
                         <img
-                          src={showcase.image}
+                          src={showcase.imageUrl || showcase.image}
                           alt={showcase.title}
                           className="h-24 w-24 flex-shrink-0 rounded-lg object-cover"
                         />
@@ -221,9 +239,7 @@ const Showcase = () => {
                       {/* Content */}
                       <div className="flex-1 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3
-                            className="text-lg font-bold text-slate-900 dark:text-white"
-                          >
+                          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                             {showcase.title}
                           </h3>
                           <Badge
@@ -237,9 +253,7 @@ const Showcase = () => {
                           </Badge>
                         </div>
                         {showcase.tagline && (
-                          <p
-                            className="text-sm text-slate-600 dark:text-white/60"
-                          >
+                          <p className="text-sm text-slate-600 dark:text-white/60">
                             {showcase.tagline}
                           </p>
                         )}
@@ -262,7 +276,9 @@ const Showcase = () => {
                         {togglingId === showcase.id ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {showcase.isActive ? "Deactivating..." : "Activating..."}
+                            {showcase.isActive
+                              ? "Deactivating..."
+                              : "Activating..."}
                           </>
                         ) : showcase.isActive ? (
                           <>
@@ -319,12 +335,16 @@ const Showcase = () => {
         />
       )}
 
-      <Dialog open={!!deletingShowcase} onOpenChange={() => setDeletingShowcase(null)}>
+      <Dialog
+        open={!!deletingShowcase}
+        onOpenChange={() => setDeletingShowcase(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Showcase</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deletingShowcase?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{deletingShowcase?.title}"? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

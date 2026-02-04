@@ -12,7 +12,8 @@ const urlSchema = z
   .url("Invalid URL format")
   .max(2000, "URL must be less than 2000 characters")
   .optional()
-  .or(z.literal(""));
+  .or(z.literal(""))
+  .or(z.null());
 
 // Create Showcase Schema
 export const createShowcaseSchema = z.object({
@@ -103,9 +104,4 @@ export const updateShowcaseSchema = z.object({
     .optional(),
 
   isActive: z.boolean().optional(),
-}); 
-
-
-
-
-
+});

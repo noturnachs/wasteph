@@ -1,7 +1,7 @@
 import { db } from "../db/index.js";
 import { showcaseTable } from "../db/schema.js";
 import { eq, desc, and } from "drizzle-orm";
-import { deleteObject } from "./s3Service.js";
+import { deleteObject, getPresignedUrl } from "./s3Service.js";
 
 /**
  * Showcase Service
@@ -9,6 +9,21 @@ import { deleteObject } from "./s3Service.js";
  */
 
 class ShowcaseService {
+  /**
+   * Add presigned URLs to showcase image
+   */
+  async addPresignedUrls(showcase) {
+    if (showcase.image) {
+      try {
+        showcase.imageUrl = await getPresignedUrl(showcase.image, 3600); // 1 hour expiry
+      } catch (error) {
+        console.warn(`Failed to generate presigned URL for image: ${showcase.image}`, error);
+        showcase.imageUrl = null;
+      }
+    }
+    return showcase;
+  }
+
   /**
    * Get all active showcases (public)
    */
@@ -20,7 +35,8 @@ class ShowcaseService {
       .orderBy(desc(showcaseTable.displayOrder), desc(showcaseTable.createdAt))
       .limit(limit);
 
-    return showcases;
+    // Add presigned URLs for images
+    return await Promise.all(showcases.map(s => this.addPresignedUrls(s)));
   }
 
   /**
@@ -32,7 +48,8 @@ class ShowcaseService {
       .from(showcaseTable)
       .orderBy(desc(showcaseTable.displayOrder), desc(showcaseTable.createdAt));
 
-    return showcases;
+    // Add presigned URLs for images
+    return await Promise.all(showcases.map(s => this.addPresignedUrls(s)));
   }
 
   /**
@@ -45,7 +62,10 @@ class ShowcaseService {
       .where(eq(showcaseTable.id, id))
       .limit(1);
 
-    return showcase || null;
+    if (!showcase) return null;
+
+    // Add presigned URL for image
+    return await this.addPresignedUrls(showcase);
   }
 
   /**

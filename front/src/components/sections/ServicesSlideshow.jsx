@@ -101,7 +101,7 @@ const EventCard = ({ event, index, isActive, onClick, onViewDetails }) => {
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
         <img
-          src={event.image}
+          src={event.imageUrl || event.image}
           alt={event.title}
           className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
           loading="lazy"
@@ -198,7 +198,8 @@ const ServicesSlideshow = () => {
           }),
           tagline: showcase.tagline || "",
           description: showcase.description,
-          image: showcase.image || null,
+          imageUrl: showcase.imageUrl || showcase.image || null,
+          image: showcase.image || null, // Keep for fallback compatibility
           link: showcase.link || null,
         }));
         setShowcaseEvents(transformedShowcases);
@@ -308,7 +309,10 @@ const ServicesSlideshow = () => {
       </div>
 
       {/* Showcase Detail Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && handleCloseDialog()}>
+      <Dialog
+        open={!!selectedEvent}
+        onOpenChange={(open) => !open && handleCloseDialog()}
+      >
         <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-hidden !border-[#16a34a]/40 !bg-[#0a2818] !text-white lg:max-w-5xl">
           {selectedEvent && (
             <>
@@ -317,7 +321,7 @@ const ServicesSlideshow = () => {
                   <DialogTitle className="!text-2xl !font-bold !text-white">
                     {selectedEvent.title}
                   </DialogTitle>
-                  
+
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 rounded-full border border-[#15803d]/40 bg-[#15803d]/10 px-3 py-1">
                       <svg
@@ -328,14 +332,23 @@ const ServicesSlideshow = () => {
                         strokeWidth="2"
                         aria-hidden="true"
                       >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <rect
+                          x="3"
+                          y="4"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
                         <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
-                      <span className="text-sm font-medium text-white">{selectedEvent.date}</span>
+                      <span className="text-sm font-medium text-white">
+                        {selectedEvent.date}
+                      </span>
                     </div>
-                    
+
                     {selectedEvent.tagline && (
                       <DialogDescription className="!text-base !italic !text-[#16a34a]">
                         {selectedEvent.tagline}
@@ -345,15 +358,18 @@ const ServicesSlideshow = () => {
                 </div>
               </DialogHeader>
 
-              <div className="overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 200px)" }}>
+              <div
+                className="overflow-y-auto px-1 py-4"
+                style={{ maxHeight: "calc(90vh - 200px)" }}
+              >
                 {/* Two Column Layout - Image Left, Content Right */}
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
                   {/* Image - Left Side - Sticky on large screens */}
-                  {selectedEvent.image && (
+                  {(selectedEvent.imageUrl || selectedEvent.image) && (
                     <div className="flex-shrink-0 lg:sticky lg:top-0 lg:w-1/2">
                       <div className="overflow-hidden rounded-lg border border-[#15803d]/20 bg-black/20">
                         <img
-                          src={selectedEvent.image}
+                          src={selectedEvent.imageUrl || selectedEvent.image}
                           alt={selectedEvent.title}
                           className="h-auto w-full object-contain"
                         />
@@ -362,10 +378,18 @@ const ServicesSlideshow = () => {
                   )}
 
                   {/* Description - Right Side - Scrollable content */}
-                  <div className={`flex min-h-0 flex-col ${selectedEvent.image ? 'lg:w-1/2' : 'w-full'}`}>
-                    <div 
+                  <div
+                    className={`flex min-h-0 flex-col ${
+                      selectedEvent.imageUrl || selectedEvent.image
+                        ? "lg:w-1/2"
+                        : "w-full"
+                    }`}
+                  >
+                    <div
                       className="prose max-w-none prose-headings:text-white prose-p:text-white/90 prose-p:leading-relaxed prose-strong:text-white prose-strong:font-bold prose-em:text-[#16a34a] prose-em:italic prose-ul:list-disc prose-ul:pl-6 prose-ul:text-white/90 prose-ol:list-decimal prose-ol:pl-6 prose-ol:text-white/90 prose-li:text-white/90 prose-li:my-1 [&>*]:text-white/90 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
-                      dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
+                      dangerouslySetInnerHTML={{
+                        __html: selectedEvent.description,
+                      }}
                     />
 
                     {/* External Link Button */}
