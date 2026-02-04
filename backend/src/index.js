@@ -35,7 +35,7 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
-
+app.set("trust proxy", 1);
 // Initialize Socket.IO
 socketServer.initialize(httpServer);
 
@@ -122,20 +122,28 @@ const startServer = async () => {
     }
 
     // Initialize notification service
-    const notificationService = (await import("./services/notificationService.js")).default;
+    const notificationService = (
+      await import("./services/notificationService.js")
+    ).default;
 
     // Initialize socket events for ticket service
-    const ticketService = (await import("./services/ticketServiceWithSocket.js")).default;
+    const ticketService = (
+      await import("./services/ticketServiceWithSocket.js")
+    ).default;
     ticketService.initializeSocketEvents();
     ticketService.ticketEvents.setNotificationService(notificationService);
 
     // Initialize socket events for proposal service
-    const proposalService = (await import("./services/proposalServiceWithSocket.js")).default;
+    const proposalService = (
+      await import("./services/proposalServiceWithSocket.js")
+    ).default;
     proposalService.initializeSocket(socketServer);
     proposalService.setNotificationService(notificationService);
 
     // Initialize socket events for contract service
-    const contractService = (await import("./services/contractServiceWithSocket.js")).default;
+    const contractService = (
+      await import("./services/contractServiceWithSocket.js")
+    ).default;
     contractService.initializeSocket(socketServer);
     contractService.setNotificationService(notificationService);
 
