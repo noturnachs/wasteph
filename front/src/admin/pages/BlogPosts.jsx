@@ -633,13 +633,33 @@ const BlogPosts = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Cover Image</label>
+
+              {/* Show current cover image if exists and no new preview */}
+              {!coverImagePreview && selectedPost?.coverImageUrl && (
+                <div className="mb-2 rounded border border-muted p-2">
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Current cover image:
+                  </p>
+                  <img
+                    src={selectedPost.coverImageUrl}
+                    alt="Current cover"
+                    className="h-32 w-full rounded object-cover"
+                  />
+                </div>
+              )}
+
               <Input
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp"
                 onChange={handleCoverImageChange}
               />
+
+              {/* Show new image preview */}
               {coverImagePreview && (
-                <div className="mt-2">
+                <div className="mt-2 rounded border border-primary p-2">
+                  <p className="mb-2 text-xs font-medium text-primary">
+                    New cover image preview:
+                  </p>
                   <img
                     src={coverImagePreview}
                     alt="Cover preview"
@@ -647,8 +667,12 @@ const BlogPosts = () => {
                   />
                 </div>
               )}
+
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG, or WebP. Max 5MB.
+                JPEG, PNG, or WebP. Max 5MB.{" "}
+                {selectedPost?.coverImageUrl
+                  ? "Upload new file to replace current image."
+                  : ""}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

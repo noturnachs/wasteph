@@ -1,7 +1,7 @@
 import { db } from "../db/index.js";
 import { blogPostTable } from "../db/schema.js";
 import { eq, desc, and, or, like, sql } from "drizzle-orm";
-import { deleteObject } from "./s3Service.js";
+import { deleteObject, getPresignedUrl } from "./s3Service.js";
 
 /**
  * Generate a URL-friendly slug from title
@@ -26,6 +26,21 @@ function calculateReadTime(content) {
 }
 
 /**
+ * Add presigned URLs to blog post cover image
+ */
+async function addPresignedUrls(post) {
+  if (post.coverImage) {
+    try {
+      post.coverImageUrl = await getPresignedUrl(post.coverImage, 3600); // 1 hour expiry
+    } catch (error) {
+      console.warn(`Failed to generate presigned URL for cover image: ${post.coverImage}`, error);
+      post.coverImageUrl = null;
+    }
+  }
+  return post;
+}
+
+/**
  * Get all published blog posts (public)
  */
 export async function getPublishedPosts(limit = 50) {
@@ -36,7 +51,8 @@ export async function getPublishedPosts(limit = 50) {
     .orderBy(desc(blogPostTable.publishedAt))
     .limit(limit);
 
-  return posts;
+  // Add presigned URLs for cover images
+  return await Promise.all(posts.map(p => addPresignedUrls(p)));
 }
 
 /**
@@ -61,9 +77,12 @@ export async function getPublishedPostBySlug(slug) {
       .where(eq(blogPostTable.id, post.id));
     
     post.views = (post.views || 0) + 1;
+    
+    // Add presigned URL for cover image
+    return await addPresignedUrls(post);
   }
 
-  return post;
+  return null;
 }
 
 /**
@@ -98,7 +117,9 @@ export async function getAllPosts(filters = {}) {
   }
 
   const posts = await query.orderBy(desc(blogPostTable.createdAt));
-  return posts;
+  
+  // Add presigned URLs for cover images
+  return await Promise.all(posts.map(p => addPresignedUrls(p)));
 }
 
 /**
@@ -110,7 +131,10 @@ export async function getPostById(id) {
     .from(blogPostTable)
     .where(eq(blogPostTable.id, id));
 
-  return post;
+  if (!post) return null;
+  
+  // Add presigned URL for cover image
+  return await addPresignedUrls(post);
 }
 
 /**

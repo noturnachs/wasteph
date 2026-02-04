@@ -104,9 +104,9 @@ const BlogCard = ({ post }) => {
     >
       {/* Cover Image */}
       <div className="relative aspect-video overflow-hidden bg-linear-to-br from-[#15803d]/20 to-[#16a34a]/20">
-        {post.coverImage ? (
+        {post.coverImageUrl || post.coverImage ? (
           <img
-            src={post.coverImage}
+            src={post.coverImageUrl || post.coverImage}
             alt={post.title}
             className="h-full w-full object-cover"
             loading="lazy"
@@ -147,14 +147,16 @@ const BlogCard = ({ post }) => {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {(Array.isArray(post.tags) ? post.tags : []).slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors duration-300 group-hover:bg-[#15803d]/20 group-hover:text-[#16a34a]"
-            >
-              #{tag}
-            </span>
-          ))}
+          {(Array.isArray(post.tags) ? post.tags : [])
+            .slice(0, 3)
+            .map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors duration-300 group-hover:bg-[#15803d]/20 group-hover:text-[#16a34a]"
+              >
+                #{tag}
+              </span>
+            ))}
         </div>
 
         {/* Read More Arrow */}
@@ -215,9 +217,7 @@ const Blog = () => {
       searchQuery === "" ||
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
