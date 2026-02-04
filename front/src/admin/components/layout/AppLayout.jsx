@@ -178,10 +178,10 @@ export default function AppLayout() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative h-10 w-10 rounded-xl bg-gray-100 hover:bg-gray-200 border-0 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700"
+                    className="relative h-10 w-10 rounded-xl bg-gray-100 hover:bg-gray-200 border-0 shadow-sm dark:bg-white/10 dark:hover:bg-white/20"
                     aria-label="Notifications"
                   >
-                    <Bell className="h-5 w-5 text-green-700 dark:text-green-400" />
+                    <Bell className="h-5 w-5 text-slate-700 dark:text-green-400" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
                         {unreadCount > 99 ? "99+" : unreadCount}
@@ -191,7 +191,7 @@ export default function AppLayout() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-96 p-0 border-0 rounded-xl shadow-lg overflow-hidden bg-gray-50 dark:bg-slate-900"
+                  className="w-96 p-0 border-0 rounded-xl shadow-lg overflow-hidden bg-gray-50 dark:bg-black/90 dark:backdrop-blur-xl"
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3">
@@ -278,11 +278,11 @@ export default function AppLayout() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="h-10 w-10 rounded-xl bg-gray-100 hover:bg-gray-200 border-0 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="h-10 w-10 rounded-xl bg-gray-100 hover:bg-gray-200 border-0 shadow-sm dark:bg-white/10 dark:hover:bg-white/20"
                 aria-label="Toggle theme"
               >
-                <Sun className="h-5 w-5 text-green-700 dark:text-green-400 hidden dark:block" />
-                <Moon className="h-5 w-5 text-green-700 dark:text-green-400 dark:hidden" />
+                <Sun className="h-5 w-5 text-green-400 hidden dark:block" />
+                <Moon className="h-5 w-5 text-slate-700 block dark:hidden" />
               </Button>
             </div>
           </div>
