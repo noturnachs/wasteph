@@ -52,6 +52,13 @@ export default function Tickets() {
   const [priorityFilter, setPriorityFilter] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Filter counts (unfiltered counts for display)
+  const [filterCounts, setFilterCounts] = useState({
+    status: {},
+    category: {},
+    priority: {},
+  });
+
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useState({
     ticketNumber: true,
@@ -247,6 +254,41 @@ export default function Tickets() {
     }
   };
 
+  // Fetch counts for filters (without current filter applied)
+  const fetchFilterCounts = async () => {
+    try {
+      // Fetch tickets with a high limit to get all tickets for counting
+      // Apply search and other filters, but fetch more to get accurate counts
+      const countsFilters = {
+        page: 1,
+        limit: 1000, // Get enough tickets to calculate counts
+        ...(searchTerm && { search: searchTerm }),
+      };
+
+      const response = await api.getTickets(countsFilters);
+      const allTickets = response.data || [];
+
+      // Calculate counts from all tickets
+      const counts = {
+        status: {},
+        category: {},
+        priority: {},
+      };
+
+      allTickets.forEach((ticket) => {
+        counts.status[ticket.status] = (counts.status[ticket.status] || 0) + 1;
+        counts.category[ticket.category] =
+          (counts.category[ticket.category] || 0) + 1;
+        counts.priority[ticket.priority] =
+          (counts.priority[ticket.priority] || 0) + 1;
+      });
+
+      setFilterCounts(counts);
+    } catch (error) {
+      console.error("Failed to fetch filter counts:", error);
+    }
+  };
+
   const fetchTickets = async (
     page = pagination.page,
     limit = pagination.limit
@@ -281,6 +323,10 @@ export default function Tickets() {
 
       setTickets(data);
       setPagination(meta);
+
+      // Fetch unfiltered counts for each filter type
+      // This ensures counts don't show 0 when other filters are applied
+      await fetchFilterCounts();
     } catch (error) {
       if (currentFetchId !== fetchIdRef.current) return;
       toast.error("Failed to fetch tickets");
@@ -321,10 +367,6 @@ export default function Tickets() {
     if (!column.accessorKey) return true; // Always show actions
     return columnVisibility[column.accessorKey];
   });
-
-  // Stats from current page data
-  const getStatusCount = (status) =>
-    tickets.filter((t) => t.status === status).length;
 
   return (
     <div className="space-y-6">
@@ -368,7 +410,7 @@ export default function Tickets() {
               ]}
               selectedValues={statusFilter}
               onSelectionChange={setStatusFilter}
-              getCount={getStatusCount}
+              getCount={(status) => filterCounts.status[status] || 0}
             />
 
             <FacetedFilter
@@ -384,9 +426,7 @@ export default function Tickets() {
               ]}
               selectedValues={categoryFilter}
               onSelectionChange={setCategoryFilter}
-              getCount={(category) =>
-                tickets.filter((t) => t.category === category).length
-              }
+              getCount={(category) => filterCounts.category[category] || 0}
             />
 
             <FacetedFilter
@@ -399,9 +439,7 @@ export default function Tickets() {
               ]}
               selectedValues={priorityFilter}
               onSelectionChange={setPriorityFilter}
-              getCount={(priority) =>
-                tickets.filter((t) => t.priority === priority).length
-              }
+              getCount={(priority) => filterCounts.priority[priority] || 0}
             />
 
             {(statusFilter.length > 0 ||
@@ -471,15 +509,21 @@ export default function Tickets() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Open</p>
-          <p className="text-2xl font-bold">{getStatusCount("open")}</p>
+          <p className="text-2xl font-bold">
+            {tickets.filter((t) => t.status === "open").length}
+          </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">In Progress</p>
-          <p className="text-2xl font-bold">{getStatusCount("in_progress")}</p>
+          <p className="text-2xl font-bold">
+            {tickets.filter((t) => t.status === "in_progress").length}
+          </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Resolved</p>
-          <p className="text-2xl font-bold">{getStatusCount("resolved")}</p>
+          <p className="text-2xl font-bold">
+            {tickets.filter((t) => t.status === "resolved").length}
+          </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Total</p>

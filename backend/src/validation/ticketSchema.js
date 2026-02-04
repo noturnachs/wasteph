@@ -65,44 +65,45 @@ export const createTicketSchema = z.object({
 });
 
 // Update Ticket Schema (subject, description, category, priority, clientId)
-export const updateTicketSchema = z.object({
-  clientId: z
-    .string()
-    .uuid("Invalid client ID format")
-    .optional(),
+export const updateTicketSchema = z
+  .object({
+    clientId: z.string().uuid("Invalid client ID format").optional(),
 
-  category: z.enum(ticketCategories, {
-    invalid_type_error: "Invalid ticket category",
-  }).optional(),
+    category: z
+      .enum(ticketCategories, {
+        invalid_type_error: "Invalid ticket category",
+      })
+      .optional(),
 
-  priority: z
-    .enum(ticketPriorities, {
-      invalid_type_error: "Invalid ticket priority",
-    })
-    .optional(),
+    priority: z
+      .enum(ticketPriorities, {
+        invalid_type_error: "Invalid ticket priority",
+      })
+      .optional(),
 
-  subject: z
-    .string({
-      invalid_type_error: "Subject must be a string",
-    })
-    .trim()
-    .min(3, "Subject must be at least 3 characters")
-    .max(200, "Subject must be less than 200 characters")
-    .transform((val) => sanitizeString(val))
-    .optional(),
+    subject: z
+      .string({
+        invalid_type_error: "Subject must be a string",
+      })
+      .trim()
+      .min(3, "Subject must be at least 3 characters")
+      .max(200, "Subject must be less than 200 characters")
+      .transform((val) => sanitizeString(val))
+      .optional(),
 
-  description: z
-    .string({
-      invalid_type_error: "Description must be a string",
-    })
-    .trim()
-    .min(10, "Description must be at least 10 characters")
-    .max(5000, "Description must be less than 5000 characters")
-    .transform((val) => sanitizeString(val))
-    .optional(),
-}).refine((data) => Object.keys(data).length > 0, {
-  message: "At least one field must be provided for update",
-});
+    description: z
+      .string({
+        invalid_type_error: "Description must be a string",
+      })
+      .trim()
+      .min(10, "Description must be at least 10 characters")
+      .max(5000, "Description must be less than 5000 characters")
+      .transform((val) => sanitizeString(val))
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update",
+  });
 
 // Update Ticket Status Schema
 export const updateTicketStatusSchema = z.object({
@@ -135,8 +136,48 @@ export const addTicketCommentSchema = z.object({
 // Get Tickets Query Schema
 export const getTicketsQuerySchema = z.object({
   clientId: z.string().uuid("Invalid client ID format").optional(),
-  status: z.enum(ticketStatuses).optional(),
-  category: z.enum(ticketCategories).optional(),
-  priority: z.enum(ticketPriorities).optional(),
+  // Accept single value or comma-separated string for filters
+  status: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Split comma-separated values and validate each
+      const values = val.split(",").map((v) => v.trim());
+      values.forEach((v) => {
+        if (!ticketStatuses.includes(v)) {
+          throw new Error(`Invalid status value: ${v}`);
+        }
+      });
+      return val; // Return original comma-separated string for service layer
+    }),
+  category: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Split comma-separated values and validate each
+      const values = val.split(",").map((v) => v.trim());
+      values.forEach((v) => {
+        if (!ticketCategories.includes(v)) {
+          throw new Error(`Invalid category value: ${v}`);
+        }
+      });
+      return val; // Return original comma-separated string for service layer
+    }),
+  priority: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Split comma-separated values and validate each
+      const values = val.split(",").map((v) => v.trim());
+      values.forEach((v) => {
+        if (!ticketPriorities.includes(v)) {
+          throw new Error(`Invalid priority value: ${v}`);
+        }
+      });
+      return val; // Return original comma-separated string for service layer
+    }),
   createdBy: z.string().optional(),
 });
