@@ -24,7 +24,9 @@ const BUCKET = process.env.S3_BUCKET_NAME;
  * @returns {Promise<string>} The key that was uploaded
  */
 export async function uploadObject(key, buffer, contentType) {
-  console.log(`[S3] UPLOAD → key: ${key} | size: ${buffer.length} bytes | type: ${contentType} | bucket: ${BUCKET}`);
+  console.log(
+    `[S3] UPLOAD → key: ${key} | size: ${buffer.length} bytes | type: ${contentType}`
+  );
   const start = Date.now();
 
   await s3Client.send(
@@ -46,7 +48,7 @@ export async function uploadObject(key, buffer, contentType) {
  * @returns {Promise<Buffer>} File content
  */
 export async function getObject(key) {
-  console.log(`[S3] DOWNLOAD → key: ${key} | bucket: ${BUCKET}`);
+  console.log(`[S3] DOWNLOAD → key: ${key}`);
   const start = Date.now();
 
   const response = await s3Client.send(
@@ -63,7 +65,11 @@ export async function getObject(key) {
   }
   const buffer = Buffer.concat(chunks);
 
-  console.log(`[S3] DOWNLOAD ✓ → key: ${key} | size: ${buffer.length} bytes | took: ${Date.now() - start}ms`);
+  console.log(
+    `[S3] DOWNLOAD ✓ → key: ${key} | size: ${buffer.length} bytes | took: ${
+      Date.now() - start
+    }ms`
+  );
   return buffer;
 }
 
@@ -90,7 +96,7 @@ export async function getPresignedUrl(key, expiresIn = 900) {
  * @returns {Promise<void>}
  */
 export async function deleteObject(key) {
-  console.log(`[S3] DELETE → key: ${key} | bucket: ${BUCKET}`);
+  console.log(`[S3] DELETE → key: ${key}`);
   const start = Date.now();
 
   await s3Client.send(

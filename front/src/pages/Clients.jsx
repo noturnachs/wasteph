@@ -128,7 +128,7 @@ const ClientStoryCard = ({ story }) => {
   return (
     <div className="group overflow-hidden rounded-xl border border-white/10 bg-linear-to-br from-black/40 to-black/20 backdrop-blur-xl transition-all duration-500 hover:border-[#15803d]/50 hover:shadow-[0_20px_60px_rgba(21,128,61,0.3)] sm:rounded-2xl">
       {/* Logo Header - Full Width Banner */}
-      {story.logo && !imageError ? (
+      {(story.logoUrl || story.logo) && !imageError ? (
         <div className="relative h-28 w-full overflow-hidden bg-white/90 sm:h-32 md:h-40">
           {/* Loading Skeleton */}
           {!imageLoaded && (
@@ -138,7 +138,7 @@ const ClientStoryCard = ({ story }) => {
           )}
           
           <img
-            src={story.logo}
+            src={story.logoUrl || story.logo}
             alt={`${story.company} logo`}
             loading="lazy"
             decoding="async"

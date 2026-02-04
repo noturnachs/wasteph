@@ -16,7 +16,12 @@ import { updateClientShowcase } from "../../../services/clientsShowcaseService";
 import { api } from "../../services/api";
 import { toast } from "../../utils/toast";
 
-export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client }) {
+export function EditClientShowcaseDialog({
+  isOpen,
+  onClose,
+  onSuccess,
+  client,
+}) {
   const [formData, setFormData] = useState({
     company: "",
     logo: "",
@@ -62,11 +67,25 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
         rating: client.rating || 5,
         wasteReduction: client.wasteReduction || "",
         partnership: client.partnership || "",
-        achievements: Array.isArray(client.achievements) ? client.achievements : [],
+        achievements: Array.isArray(client.achievements)
+          ? client.achievements
+          : [],
         achievementInput: "",
       });
+      // Reset logo preview when client changes
+      setLogoPreview(null);
+      setLogoFile(null);
     }
   }, [client]);
+
+  // Clean up object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
 
   const validateForm = () => {
     const errors = {};
@@ -75,6 +94,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
     }
     if (!formData.industry?.trim()) {
       errors.industry = "Industry is required";
+    }
+    if (!formData.location?.trim()) {
+      errors.location = "Location is required";
     }
     if (!formData.background?.trim()) {
       errors.background = "Background is required";
@@ -94,15 +116,21 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
     if (!file) return;
 
     // Validate file type (including SVG for logos)
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Only JPEG, PNG, WebP, and SVG images are allowed");
       return;
     }
 
-    // Validate file size (2MB for logos)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Logo size must be less than 2MB");
+    // Validate file size (10MB for logos)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Logo size must be less than 10MB");
       return;
     }
 
@@ -143,15 +171,17 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
       setFormErrors({ submit: errorMessage });
 
       // Parse and display errors with proper line breaks
-      const parts = errorMessage.split(': ');
-      if (parts.length > 1 && parts[1].includes(' • ')) {
+      const parts = errorMessage.split(": ");
+      if (parts.length > 1 && parts[1].includes(" • ")) {
         const header = parts[0];
-        const errors = parts[1].split(' • ');
+        const errors = parts[1].split(" • ");
         toast.error(
           <div className="space-y-1">
             <div className="font-semibold">{header}:</div>
             {errors.map((err, idx) => (
-              <div key={idx} className="text-sm">• {err}</div>
+              <div key={idx} className="text-sm">
+                • {err}
+              </div>
             ))}
           </div>
         );
@@ -190,6 +220,10 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
   const handleOpenChange = (open) => {
     if (!open) {
       setFormErrors({});
+      // Clean up object URL before closing
+      if (logoPreview && logoPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
       setLogoFile(null);
       setLogoPreview(null);
       onClose();
@@ -198,7 +232,10 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[95vh] max-w-4xl overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-h-[95vh] max-w-4xl overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Edit Client Showcase</DialogTitle>
           <DialogDescription>
@@ -207,7 +244,10 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-          <div className="space-y-4 overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 180px)" }}>
+          <div
+            className="space-y-4 overflow-y-auto px-1 py-4"
+            style={{ maxHeight: "calc(90vh - 180px)" }}
+          >
             {/* Company Info */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -222,20 +262,42 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                   className={formErrors.company ? "border-destructive" : ""}
                 />
                 {formErrors.company && (
-                  <p className="text-sm text-destructive">{formErrors.company}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.company}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="logo">Logo</Label>
+
+                {/* Show current logo if exists and no new preview */}
+                {!logoPreview && client?.logoUrl && (
+                  <div className="mb-2 rounded border border-muted p-2">
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      Current logo:
+                    </p>
+                    <img
+                      src={client.logoUrl}
+                      alt={`${client.company} logo`}
+                      className="h-16 w-auto rounded object-contain"
+                    />
+                  </div>
+                )}
+
                 <Input
                   id="logo"
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
                   onChange={handleLogoChange}
                 />
+
+                {/* Show new logo preview */}
                 {logoPreview && (
-                  <div className="mt-2">
+                  <div className="mt-2 rounded border border-primary p-2">
+                    <p className="mb-2 text-xs font-medium text-primary">
+                      New logo preview:
+                    </p>
                     <img
                       src={logoPreview}
                       alt="Logo preview"
@@ -243,8 +305,12 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                     />
                   </div>
                 )}
+
                 <p className="text-xs text-muted-foreground">
-                  JPEG, PNG, WebP, or SVG. Max 2MB. Leave empty to keep current logo.
+                  JPEG, PNG, WebP, or SVG. Max 10MB.{" "}
+                  {client?.logoUrl
+                    ? "Upload new file to replace current logo."
+                    : ""}
                 </p>
               </div>
             </div>
@@ -262,18 +328,28 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                   className={formErrors.industry ? "border-destructive" : ""}
                 />
                 {formErrors.industry && (
-                  <p className="text-sm text-destructive">{formErrors.industry}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.industry}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">
+                  Location <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="location"
                   value={formData.location}
                   onChange={(e) => handleChange("location", e.target.value)}
                   placeholder="e.g., Metro Manila"
+                  className={formErrors.location ? "border-destructive" : ""}
                 />
+                {formErrors.location && (
+                  <p className="text-sm text-destructive">
+                    {formErrors.location}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -323,7 +399,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                 className={formErrors.background ? "border-destructive" : ""}
               />
               {formErrors.background && (
-                <p className="text-sm text-destructive">{formErrors.background}</p>
+                <p className="text-sm text-destructive">
+                  {formErrors.background}
+                </p>
               )}
             </div>
 
@@ -365,7 +443,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                 className={formErrors.testimonial ? "border-destructive" : ""}
               />
               {formErrors.testimonial && (
-                <p className="text-sm text-destructive">{formErrors.testimonial}</p>
+                <p className="text-sm text-destructive">
+                  {formErrors.testimonial}
+                </p>
               )}
             </div>
 
@@ -383,7 +463,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                   className={formErrors.author ? "border-destructive" : ""}
                 />
                 {formErrors.author && (
-                  <p className="text-sm text-destructive">{formErrors.author}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.author}
+                  </p>
                 )}
               </div>
 
@@ -408,7 +490,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                   min="1"
                   max="5"
                   value={formData.rating}
-                  onChange={(e) => handleChange("rating", parseInt(e.target.value) || 5)}
+                  onChange={(e) =>
+                    handleChange("rating", parseInt(e.target.value) || 5)
+                  }
                   placeholder="1-5"
                 />
               </div>
@@ -418,7 +502,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                 <Input
                   id="wasteReduction"
                   value={formData.wasteReduction}
-                  onChange={(e) => handleChange("wasteReduction", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("wasteReduction", e.target.value)
+                  }
                   placeholder="e.g., 60%"
                 />
               </div>
@@ -431,7 +517,9 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                 <Input
                   id="achievements"
                   value={formData.achievementInput}
-                  onChange={(e) => handleChange("achievementInput", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("achievementInput", e.target.value)
+                  }
                   placeholder="Add achievement and press Enter"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -440,7 +528,11 @@ export function EditClientShowcaseDialog({ isOpen, onClose, onSuccess, client })
                     }
                   }}
                 />
-                <Button type="button" onClick={handleAddAchievement} variant="outline">
+                <Button
+                  type="button"
+                  onClick={handleAddAchievement}
+                  variant="outline"
+                >
                   Add
                 </Button>
               </div>

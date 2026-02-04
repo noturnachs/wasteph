@@ -18,9 +18,15 @@ const router = express.Router();
 // Multer configuration for client showcase logos
 const uploadClientLogo = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for logos
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for logos
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+    const allowedMimes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -55,20 +61,66 @@ const s3UploadClientLogo = async (req, res, next) => {
 // Public routes
 router.get("/", getActiveClientsShowcase);
 
-// Protected routes (require authentication)
-router.get("/all", requireAuth, getAllClientsShowcase);
-router.get("/:id", requireAuth, getClientsShowcaseById);
-router.post("/", requireAuth, createClientsShowcase);
-router.put("/:id", requireAuth, updateClientsShowcase);
-router.delete("/:id", requireAuth, deleteClientsShowcase);
-router.patch("/:id/toggle", requireAuth, toggleClientsShowcaseStatus);
+// Protected routes (require authentication and role)
+router.get(
+  "/all",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  getAllClientsShowcase
+);
+router.get(
+  "/:id",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  getClientsShowcaseById
+);
+router.post(
+  "/",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  createClientsShowcase
+);
+router.put(
+  "/:id",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  updateClientsShowcase
+);
+router.delete(
+  "/:id",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  deleteClientsShowcase
+);
+router.patch(
+  "/:id/toggle",
+  requireAuth,
+  requireRole("super_admin", "social_media"),
+  toggleClientsShowcaseStatus
+);
 
-// Logo upload route
+// Logo upload route with error handling
 router.post(
   "/:id/upload-logo",
   requireAuth,
   requireRole("super_admin", "social_media"),
-  uploadClientLogo.single("logo"),
+  (req, res, next) => {
+    uploadClientLogo.single("logo")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Logo size must be less than 10MB",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Failed to upload logo",
+        });
+      }
+      next();
+    });
+  },
   s3UploadClientLogo,
   uploadLogo
 );

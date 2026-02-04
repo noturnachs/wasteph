@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +44,15 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
 
+  // Clean up object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
   const validateForm = () => {
     const errors = {};
     if (!formData.company?.trim()) {
@@ -74,15 +83,21 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
     if (!file) return;
 
     // Validate file type (including SVG for logos)
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Only JPEG, PNG, WebP, and SVG images are allowed");
       return;
     }
 
-    // Validate file size (2MB for logos)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Logo size must be less than 2MB");
+    // Validate file size (10MB for logos)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Logo size must be less than 10MB");
       return;
     }
 
@@ -123,15 +138,17 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
       setFormErrors({ submit: errorMessage });
 
       // Parse and display errors with proper line breaks
-      const parts = errorMessage.split(': ');
-      if (parts.length > 1 && parts[1].includes(' • ')) {
+      const parts = errorMessage.split(": ");
+      if (parts.length > 1 && parts[1].includes(" • ")) {
         const header = parts[0];
-        const errors = parts[1].split(' • ');
+        const errors = parts[1].split(" • ");
         toast.error(
           <div className="space-y-1">
             <div className="font-semibold">{header}:</div>
             {errors.map((err, idx) => (
-              <div key={idx} className="text-sm">• {err}</div>
+              <div key={idx} className="text-sm">
+                • {err}
+              </div>
             ))}
           </div>
         );
@@ -164,6 +181,10 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
       achievementInput: "",
     });
     setFormErrors({});
+    // Clean up object URL before resetting
+    if (logoPreview && logoPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreview);
+    }
     setLogoFile(null);
     setLogoPreview(null);
   };
@@ -201,7 +222,10 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[95vh] max-w-4xl overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-h-[95vh] max-w-4xl overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Add New Client Showcase</DialogTitle>
           <DialogDescription>
@@ -210,7 +234,10 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-          <div className="space-y-4 overflow-y-auto px-1 py-4" style={{ maxHeight: "calc(90vh - 180px)" }}>
+          <div
+            className="space-y-4 overflow-y-auto px-1 py-4"
+            style={{ maxHeight: "calc(90vh - 180px)" }}
+          >
             {/* Company Info */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -225,7 +252,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   className={formErrors.company ? "border-destructive" : ""}
                 />
                 {formErrors.company && (
-                  <p className="text-sm text-destructive">{formErrors.company}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.company}
+                  </p>
                 )}
               </div>
 
@@ -247,7 +276,7 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  JPEG, PNG, WebP, or SVG. Max 2MB.
+                  JPEG, PNG, WebP, or SVG. Max 10MB.
                 </p>
               </div>
             </div>
@@ -265,7 +294,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   className={formErrors.industry ? "border-destructive" : ""}
                 />
                 {formErrors.industry && (
-                  <p className="text-sm text-destructive">{formErrors.industry}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.industry}
+                  </p>
                 )}
               </div>
 
@@ -281,7 +312,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   className={formErrors.location ? "border-destructive" : ""}
                 />
                 {formErrors.location && (
-                  <p className="text-sm text-destructive">{formErrors.location}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.location}
+                  </p>
                 )}
               </div>
             </div>
@@ -332,7 +365,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                 className={formErrors.background ? "border-destructive" : ""}
               />
               {formErrors.background && (
-                <p className="text-sm text-destructive">{formErrors.background}</p>
+                <p className="text-sm text-destructive">
+                  {formErrors.background}
+                </p>
               )}
             </div>
 
@@ -374,7 +409,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                 className={formErrors.testimonial ? "border-destructive" : ""}
               />
               {formErrors.testimonial && (
-                <p className="text-sm text-destructive">{formErrors.testimonial}</p>
+                <p className="text-sm text-destructive">
+                  {formErrors.testimonial}
+                </p>
               )}
             </div>
 
@@ -392,7 +429,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   className={formErrors.author ? "border-destructive" : ""}
                 />
                 {formErrors.author && (
-                  <p className="text-sm text-destructive">{formErrors.author}</p>
+                  <p className="text-sm text-destructive">
+                    {formErrors.author}
+                  </p>
                 )}
               </div>
 
@@ -417,7 +456,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                   min="1"
                   max="5"
                   value={formData.rating}
-                  onChange={(e) => handleChange("rating", parseInt(e.target.value) || 5)}
+                  onChange={(e) =>
+                    handleChange("rating", parseInt(e.target.value) || 5)
+                  }
                   placeholder="1-5"
                 />
               </div>
@@ -427,7 +468,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                 <Input
                   id="wasteReduction"
                   value={formData.wasteReduction}
-                  onChange={(e) => handleChange("wasteReduction", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("wasteReduction", e.target.value)
+                  }
                   placeholder="e.g., 60%"
                 />
               </div>
@@ -440,7 +483,9 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                 <Input
                   id="achievements"
                   value={formData.achievementInput}
-                  onChange={(e) => handleChange("achievementInput", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("achievementInput", e.target.value)
+                  }
                   placeholder="Add achievement and press Enter"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -449,7 +494,11 @@ export function AddClientShowcaseDialog({ isOpen, onClose, onSuccess }) {
                     }
                   }}
                 />
-                <Button type="button" onClick={handleAddAchievement} variant="outline">
+                <Button
+                  type="button"
+                  onClick={handleAddAchievement}
+                  variant="outline"
+                >
                   Add
                 </Button>
               </div>
