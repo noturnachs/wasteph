@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { clientTable, contractsTable, activityLogTable } from "../db/schema.js";
-import { eq, desc, and, like, or, count } from "drizzle-orm";
+import { eq, desc, and, like, or, count, sql } from "drizzle-orm";
 import { AppError } from "../middleware/errorHandler.js";
 
 /**
@@ -104,23 +104,49 @@ class ClientService {
       .from(clientTable)
       .where(whereClause);
 
-    // Paginated data
-    const rows = await db
-      .select({
-        client: clientTable,
-        contractStatus: contractsTable.status,
-      })
+    // Paginated data - get clients with DISTINCT to prevent duplicates from joins
+    const clientRows = await db
+      .selectDistinct()
       .from(clientTable)
-      .leftJoin(contractsTable, eq(contractsTable.clientId, clientTable.id))
       .where(whereClause)
       .orderBy(desc(clientTable.createdAt))
       .limit(limit)
       .offset(offset);
 
+    // For each client, get their latest contract status efficiently using a batch query
+    const clientIds = clientRows.map((c) => c.id);
+    
+    // Get latest contract for each client in one query using IN clause
+    let latestContracts = [];
+    if (clientIds.length > 0) {
+      const { inArray } = await import("drizzle-orm");
+      
+      // Get all contracts for these clients
+      const allContracts = await db
+        .select({
+          clientId: contractsTable.clientId,
+          status: contractsTable.status,
+          createdAt: contractsTable.createdAt,
+        })
+        .from(contractsTable)
+        .where(inArray(contractsTable.clientId, clientIds))
+        .orderBy(desc(contractsTable.createdAt));
+
+      // Group by clientId and take only the first (latest) for each
+      const contractMap = new Map();
+      allContracts.forEach((contract) => {
+        if (!contractMap.has(contract.clientId)) {
+          contractMap.set(contract.clientId, contract.status);
+        }
+      });
+
+      latestContracts = contractMap;
+    }
+
     return {
-      data: rows.map((row) => ({
-        ...row.client,
-        contractStatus: row.contractStatus || null,
+      data: clientRows.map((client) => ({
+        ...client,
+        contractStatus: latestContracts.get(client.id) || null,
       })),
       pagination: {
         total,

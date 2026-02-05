@@ -182,14 +182,14 @@ export const ViewTicketDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full"
+        className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full [&>button]:top-4 [&>button]:right-4"
         onInteractOutside={(e) => {
           if (viewerOpen) e.preventDefault();
         }}
       >
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="flex-1">
               <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Ticket className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 Ticket Details

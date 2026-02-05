@@ -15,6 +15,8 @@ import {
   FileText,
   Plus,
   Calendar as CalendarIcon,
+  FileSignature,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { api } from "../../services/api";
@@ -50,6 +52,8 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [isLoadingContracts, setIsLoadingContracts] = useState(false);
+  const [contracts, setContracts] = useState([]);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
 
@@ -61,6 +65,8 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
         fetchNotes();
       } else if (activeTab === "calendar") {
         fetchEvents();
+      } else if (activeTab === "contracts") {
+        fetchContracts();
       }
     }
   }, [open, client, activeTab]);
@@ -101,6 +107,21 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
       console.error("Fetch events error:", error);
     } finally {
       setIsLoadingEvents(false);
+    }
+  };
+
+  const fetchContracts = async () => {
+    setIsLoadingContracts(true);
+    try {
+      const response = await api.getContracts({ clientId: client.id });
+      // Extract just the contract objects from the nested response
+      const contractsData = response.data?.map(item => item.contract) || [];
+      setContracts(contractsData);
+    } catch (error) {
+      toast.error("Failed to fetch contracts");
+      console.error("Fetch contracts error:", error);
+    } finally {
+      setIsLoadingContracts(false);
     }
   };
 
@@ -155,8 +176,16 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
     ? `${manager.firstName} ${manager.lastName}`
     : "-";
 
-  const formatDate = (date) =>
-    date ? format(new Date(date), "MMM dd, yyyy") : "-";
+  const formatDate = (date) => {
+    if (!date) return "—";
+    try {
+      const parsed = new Date(date);
+      if (isNaN(parsed.getTime())) return "—";
+      return format(parsed, "MMM dd, yyyy");
+    } catch {
+      return "—";
+    }
+  };
 
   return (
     <>
@@ -177,10 +206,14 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">
                 <Users className="h-4 w-4 mr-2" />
                 Overview
+              </TabsTrigger>
+              <TabsTrigger value="contracts">
+                <FileSignature className="h-4 w-4 mr-2" />
+                Contracts
               </TabsTrigger>
               <TabsTrigger value="tickets">
                 <TicketIcon className="h-4 w-4 mr-2" />
@@ -307,6 +340,97 @@ export const ClientDetailDialog = ({ open, onOpenChange, client, users }) => {
                     <p className="text-sm whitespace-pre-wrap">
                       {client.notes}
                     </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="contracts" className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Contracts</h3>
+                </div>
+
+                {isLoadingContracts ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : contracts.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-8 text-center">
+                    <FileSignature className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      No contracts found for this client
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {contracts.map((contract) => (
+                      <div
+                        key={contract.id}
+                        className="rounded-lg border p-4 hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">
+                                {contract.contractData 
+                                  ? JSON.parse(contract.contractData).contractNumber 
+                                  : contract.id?.slice(0, 8).toUpperCase() || "N/A"}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  contract.status === "signed" || contract.status === "hardbound_received"
+                                    ? "bg-green-100 text-green-700 border-green-300"
+                                    : contract.status === "sent_to_client"
+                                    ? "bg-blue-100 text-blue-700 border-blue-300"
+                                    : "bg-gray-100 text-gray-700 border-gray-300"
+                                }
+                              >
+                                {contract.status?.replace(/_/g, " ").toUpperCase()}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Company: </span>
+                                <span className="font-medium">{contract.companyName || "—"}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Type: </span>
+                                <span className="font-medium">
+                                  {contract.contractType?.replace(/_/g, " ") || "—"}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Start Date: </span>
+                                <span className="font-medium">
+                                  {formatDate(contract.contractStartDate)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">End Date: </span>
+                                <span className="font-medium">
+                                  {formatDate(contract.contractEndDate)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Created: </span>
+                                <span className="font-medium">
+                                  {formatDate(contract.createdAt)}
+                                </span>
+                              </div>
+                              {contract.signedAt && (
+                                <div>
+                                  <span className="text-muted-foreground">Signed: </span>
+                                  <span className="font-medium">
+                                    {formatDate(contract.signedAt)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </TabsContent>

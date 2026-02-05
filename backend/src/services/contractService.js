@@ -85,7 +85,7 @@ class ContractService {
    * @returns {Promise<Object>} Contracts with pagination
    */
   async getAllContracts(options = {}, userId, userRole, isMasterSales) {
-    const { status, search, page: rawPage = 1, limit: rawLimit = 10 } = options;
+    const { status, search, clientId, page: rawPage = 1, limit: rawLimit = 10 } = options;
     const page = Number(rawPage) || 1;
     const limit = Number(rawLimit) || 10;
     const offset = (page - 1) * limit;
@@ -111,6 +111,11 @@ class ContractService {
 
     // Build filter conditions
     let conditions = [];
+
+    // Filter by client ID (for client detail dialog)
+    if (clientId) {
+      conditions.push(eq(contractsTable.clientId, clientId));
+    }
 
     // Permission: Sales can only see their own contracts (unless master sales)
     if (userRole === "sales" && !isMasterSales) {
@@ -870,10 +875,17 @@ class ContractService {
     const inquiry = contractData.inquiry;
 
     // Get or create client record
-    const clientEmail =
-      contract.clientEmailContract || inquiry?.email || contract.clientEmail;
+    const clientEmail = (
+      contract.clientEmailContract || 
+      inquiry?.email || 
+      contract.clientEmail
+    )?.toLowerCase().trim();
 
-    // Check if client already exists by email
+    if (!clientEmail) {
+      throw new AppError("Client email is required to create client record", 400);
+    }
+
+    // Check if client already exists by email (case-insensitive)
     const [existingClient] = await db
       .select()
       .from(clientTable)

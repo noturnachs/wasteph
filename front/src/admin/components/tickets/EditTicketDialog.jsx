@@ -94,6 +94,11 @@ export const EditTicketDialog = ({
 
   useEffect(() => {
     if (open && ticketId) {
+      // Blur any focused element to prevent aria-hidden focus warning
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      
       const fetchTicket = async () => {
         setIsLoadingTicket(true);
         setTicket(null);
@@ -335,15 +340,25 @@ export const EditTicketDialog = ({
               onValueChange={(value) => handleChange("clientId", value)}
               required
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full [&>span]:truncate">
                 <SelectValue placeholder="Select client" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-w-[calc(100vw-2rem)]">
                 {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.companyName}
-                    {client.contactPerson ? ` (${client.contactPerson})` : ""}
-                    {client.email ? ` · ${client.email}` : ""}
+                  <SelectItem 
+                    key={client.id} 
+                    value={client.id}
+                    className="cursor-pointer"
+                  >
+                    <span className="block truncate">
+                      {client.companyName}
+                      {client.contactPerson && (
+                        <span className="text-muted-foreground"> ({client.contactPerson})</span>
+                      )}
+                      {client.email && (
+                        <span className="text-muted-foreground"> · {client.email}</span>
+                      )}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -436,9 +451,9 @@ export const EditTicketDialog = ({
                 Existing Attachments ({ticket.attachments.length})
               </Label>
               <div className="space-y-2 rounded-lg border p-3">
-                {ticket.attachments.map((attachment) => (
+                {ticket.attachments.map((attachment, index) => (
                   <div
-                    key={attachment.id}
+                    key={`existing-${attachment.id}-${index}`}
                     className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2"
                   >
                     <div className="min-w-0 flex-1">
